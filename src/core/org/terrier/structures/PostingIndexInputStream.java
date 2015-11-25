@@ -17,7 +17,7 @@
  *
  * The Original Code is PostingIndexInputStream.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -52,4 +52,7 @@ public interface PostingIndexInputStream extends Closeable, Iterator<IterablePos
 	 * @return int the number of entries skipped.
 	 */
 	int getEntriesSkipped();
+
+	/** Renders the entire structure to stdout */
+	void print();
 }

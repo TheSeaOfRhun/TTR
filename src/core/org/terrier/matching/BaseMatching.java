@@ -17,7 +17,7 @@
  *
  * The Original Code is BaseMatching.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -32,23 +32,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 import org.apache.log4j.Logger;
-
 import org.terrier.matching.dsms.DocumentScoreModifier;
 import org.terrier.matching.models.WeightingModel;
-import org.terrier.structures.BitIndexPointer;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
 import org.terrier.structures.Index;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.Lexicon;
 import org.terrier.structures.LexiconEntry;
+import org.terrier.structures.Pointer;
 import org.terrier.structures.PostingIndex;
 import org.terrier.structures.collections.MapEntry;
-
 import org.terrier.utility.ApplicationSetup;
-import org.terrier.utility.HeapSort;
 
 
 /**
@@ -104,7 +100,7 @@ public abstract class BaseMatching implements Matching
 	protected Lexicon<String> lexicon;
 	
 	/** The inverted file.*/
-	protected PostingIndex<BitIndexPointer> invertedIndex;
+	protected PostingIndex<Pointer> invertedIndex;
 	
 	/** The collection statistics */
 	protected CollectionStatistics collectionStatistics;
@@ -152,13 +148,14 @@ public abstract class BaseMatching implements Matching
 	 * Constructs an instance of the BaseMatching
 	 * @param _index
 	 */
+	@SuppressWarnings("unchecked")
 	public BaseMatching(Index _index) 
 	{
 		documentModifiers = new ArrayList<DocumentScoreModifier>();
 		
 		this.index = _index;
 		this.lexicon = _index.getLexicon();	
-		this.invertedIndex = _index.getInvertedIndex();
+		this.invertedIndex = (PostingIndex<Pointer>) _index.getInvertedIndex();
 		this.collectionStatistics = _index.getCollectionStatistics();
 				
 		String defaultDSMS = ApplicationSetup.getProperty("matching.dsms","");
@@ -272,7 +269,7 @@ public abstract class BaseMatching implements Matching
 		//sets the actual size of the result set.
 		resultSet.setResultSize(set_size);
 		
-		HeapSort.descendingHeapSort(resultSet.getScores(), resultSet.getDocids(), resultSet.getOccurrences(), set_size);
+		resultSet.sort(set_size);
 		//long sortingEnd = System.currentTimeMillis();
 		
 		/*we apply the query dependent document score modifiers first and then 
@@ -296,7 +293,7 @@ public abstract class BaseMatching implements Matching
 
 		for (int t = NumberOfQueryDSMs-1; t >= 0; t--) {
 			if (dsms[t].modifyScores(index, queryTerms, resultSet))
-				HeapSort.descendingHeapSort(resultSet.getScores(), resultSet.getDocids(), resultSet.getOccurrences(), resultSet.getResultSize());
+				resultSet.sort(resultSet.getResultSize());
 		}
 		
 		/*application dependent modification of scores
@@ -304,7 +301,7 @@ public abstract class BaseMatching implements Matching
 		sorting the result set after applying each DSM*/
 		for (int t = 0; t < numOfDocModifiers; t++) {
 			if (documentModifiers.get(t).modifyScores(index, queryTerms, resultSet))
-				HeapSort.descendingHeapSort(resultSet.getScores(), resultSet.getDocids(), resultSet.getOccurrences(), resultSet.getResultSize());
+				resultSet.sort(resultSet.getResultSize());
 		}
 		logger.debug("number of retrieved documents: " + resultSet.getResultSize());
 		

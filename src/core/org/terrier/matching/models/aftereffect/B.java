@@ -17,7 +17,7 @@
  *
  * The Original Code is B.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,13 +30,12 @@ package org.terrier.matching.models.aftereffect;
  * after effect. B stands for the binomial model.
  * @author Ben He
   */
-public class B extends AfterEffect{
-	/**
-	 * 
-	 */
+public class B extends AfterEffect {
+
 	private static final long serialVersionUID = 1L;
 	/** The name of the model. */
 	protected final String methodName = "B";
+
 	/**
 	 * This method returns the name of the model.
 	 * @return String Return the name of the model.
@@ -44,6 +43,7 @@ public class B extends AfterEffect{
 	public String getInfo(){
 		return this.methodName;
 	}
+
 	/**
 	 * This method computes the gain of encountering an extra token of the query term.
 	 * @param tf The term frequency in the document

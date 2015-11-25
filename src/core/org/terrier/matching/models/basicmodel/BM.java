@@ -17,7 +17,7 @@
  *
  * The Original Code is BM.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,8 +25,7 @@
  */
 package org.terrier.matching.models.basicmodel;
 
-import org.terrier.matching.models.Idf;
-
+import static org.terrier.matching.models.WeightingModelLibrary.*;
 
 /**
  * This class implements the BM weighting model, which generates the original
@@ -42,10 +41,9 @@ import org.terrier.matching.models.Idf;
  * @author Ben He
   */
 public class BM extends BasicModel{
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
+
 	/** The constant k_1.*/
 	private double k_1 = 1.2d;
 	/** The constant k_3.*/
@@ -65,6 +63,7 @@ public class BM extends BasicModel{
 	public String getInfo(){
 		return this.modelName;
 	}
+
 	/**
 	 * This method computes the score for the implemented weighting model.
 	 * @param tf The term frequency in the document
@@ -79,10 +78,11 @@ public class BM extends BasicModel{
 		double documentFrequency,
 		double termFrequency,
 		double keyFrequency,
-		double documentLength){
-		return 	((k_1 + 1) * tf)/(k_1 + tf) * 
-				(((k_3+1)*keyFrequency)/(k_3+keyFrequency)) *
-				Idf.log((numberOfDocuments - documentFrequency + 0.5d) /
-								(documentFrequency + 0.5d));
+		double documentLength) {
+		keyFrequency = tf_concave_k(keyFrequency, k_3);
+		tf = tf_concave_k(tf, k_1);
+		final double idf =
+				log((numberOfDocuments - documentFrequency + 0.5d) / (documentFrequency + 0.5d));
+		return 	keyFrequency * tf * idf;
 	}
 }

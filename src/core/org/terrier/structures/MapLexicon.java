@@ -17,7 +17,7 @@
  *
  * The Original Code is MapLexicon.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,12 +26,14 @@
 package org.terrier.structures;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
 
 import org.apache.hadoop.io.Text;
-import org.terrier.structures.seralization.WriteableFactory;
-
 import org.terrier.structures.collections.OrderedMap;
+import org.terrier.structures.seralization.WriteableFactory;
 
 /** Implementation of a lexicon. This class should be subclassed by
  * any lexicon implementation which use a java.util.Map for storing
@@ -42,11 +44,24 @@ import org.terrier.structures.collections.OrderedMap;
 public abstract class MapLexicon extends Lexicon<String> implements Closeable
 {
 	protected WriteableFactory<Text> keyFactory = null;
+	
+	protected Object modificationLock = new Object();
+	
+	/**
+	 * Interface for getting the lexicon term index for a given term id
+	 * @author Richard McCreadie
+	 *
+	 */
     protected interface Id2EntryIndexLookup
     {
         int getIndex(int termid) throws IOException; 
     }
     
+    /**
+	 * Lexicon map where the termid is the term index
+	 * @author Richard McCreadie
+	 *
+	 */
     protected static class IdIsIndex implements Id2EntryIndexLookup
     {
         public int getIndex(int termid)
@@ -55,7 +70,7 @@ public abstract class MapLexicon extends Lexicon<String> implements Closeable
         }
     }
     
-    final Map<Text,LexiconEntry> map;
+    protected final Map<Text,LexiconEntry> map;
     Id2EntryIndexLookup idlookup;
     /**
      * Construct an instance of the class with
@@ -80,31 +95,77 @@ public abstract class MapLexicon extends Lexicon<String> implements Closeable
     
     protected void setTermIdLookup(Id2EntryIndexLookup idlookupobject)
     {
+    	synchronized(modificationLock) {
+    	
         this.idlookup = idlookupobject;
+        
+    	}
     }
 	/** 
 	 * {@inheritDoc} 
 	 */
     public LexiconEntry getLexiconEntry(String term)
     {
+    	synchronized(modificationLock) {
+    	
     	Text key = keyFactory.newInstance();
     	key.set(term);
+    	if (!map.containsKey(key)) return null;
         return map.get(key);
+    	}
     }
 	/** 
 	 * {@inheritDoc} 
 	 */
     public Map.Entry<String,LexiconEntry> getIthLexiconEntry(int index) 
     {
+    	synchronized(modificationLock) {
+    	
         if (! (map instanceof OrderedMap))
             throw new UnsupportedOperationException();
         return toStringEntry(((OrderedMap<Text, LexiconEntry>)map).get(index));
+    	}
     }
+    
+    /** 
+	 * {@inheritDoc} 
+	 */
+    public Iterator<Map.Entry<String,LexiconEntry>> getLexiconEntryRange(String from, String to)
+    {
+    	synchronized(modificationLock) {
+    	if (! (map instanceof SortedMap))
+    		throw new UnsupportedOperationException();
+		Text key1 = keyFactory.newInstance();
+		key1.set(from);
+		Text key2 = keyFactory.newInstance();
+		key2.set(to);
+		final Iterator<Map.Entry<Text,LexiconEntry>> iter = ((SortedMap<Text,LexiconEntry>)map).subMap(key1, key2).entrySet().iterator();
+		return new Iterator<Map.Entry<String,LexiconEntry>>()
+		{
+			@Override
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+			
+			@Override
+			public Entry<String, LexiconEntry> next() {
+				return toStringEntry(iter.next());
+			}
+			
+			@Override
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
+    	}
+    }
+    
 	/** 
 	 * {@inheritDoc} 
 	 */
     public Map.Entry<String,LexiconEntry> getLexiconEntry(int termid)
     {
+    	synchronized(modificationLock) {
     	int id;
     	try{
     		id = idlookup.getIndex(termid);
@@ -114,6 +175,7 @@ public abstract class MapLexicon extends Lexicon<String> implements Closeable
     	if (id == -1)
     		return null;
         return getIthLexiconEntry(id);
+    	}
     }
 	/** 
 	 * {@inheritDoc} 

@@ -17,7 +17,7 @@
  *
  * The Original Code is DFR_BM.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,8 +25,7 @@
  */
 package org.terrier.matching.models.basicmodel;
 
-import org.terrier.matching.models.Idf;
-
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /**
  * This class implements the DFR BM weighting model, which is an approximation of 
@@ -80,7 +79,7 @@ public class DFR_BM extends BasicModel{
 		double documentLength){
 		double NORM = 1d / (tf + k_1);
 		return  ( (k_3 + 1d) * keyFrequency / (k_3 + keyFrequency)) * NORM 
-				* tf * Idf.log((numberOfDocuments - documentFrequency + 0.5d) / 
+				* tf * log((numberOfDocuments - documentFrequency + 0.5d) / 
 						(documentFrequency + 0.5d));
 	}
 }

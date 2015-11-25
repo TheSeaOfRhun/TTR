@@ -17,7 +17,7 @@
  *
  * The Original Code is FSAFieldDocumentIndex.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,6 +27,8 @@ package org.terrier.structures;
 
 import java.io.IOException;
 import java.util.Iterator;
+
+import org.terrier.utility.TerrierTimer;
 /** 
  * Fields document index stored as a fixed size array
  */
@@ -41,28 +43,31 @@ public class FSAFieldDocumentIndex
 	 * @param structureName
 	 * @throws IOException
 	 */
-	public FSAFieldDocumentIndex(Index index, String structureName) throws IOException
+	public FSAFieldDocumentIndex(IndexOnDisk index, String structureName) throws IOException
 	{
 		super(index, structureName, false);
 		initialise(index, structureName);
 	}	
 	
 	@Override
-	protected void initialise(Index index, String structureName)
+	protected void initialise(IndexOnDisk index, String structureName)
 			throws IOException 
 	{
-		logger.info("Loading document + field lengths for " + structureName + " structure into memory");
+		logger.debug("Loading document + field lengths for " + structureName + " structure into memory", new Exception());
 		docLengths = new int[this.size()];
 		fieldLengths = new int[this.size()][];
 		int i=0;
 		Iterator<DocumentIndexEntry> iter = new FSADocumentIndexIterator(index, structureName);
+		TerrierTimer tt = new TerrierTimer("Loading "+structureName+ " document + field lengths", this.size());tt.start();
 		while(iter.hasNext())
 		{
 			FieldDocumentIndexEntry fdie = (FieldDocumentIndexEntry)iter.next();
 			docLengths[i] = fdie.getDocumentLength();
 			fieldLengths[i] = fdie.getFieldLengths();
 			i++;
+			tt.increment();
 		}
+		tt.finished();
 		IndexUtil.close(iter);
 	}
 	/** 

@@ -17,7 +17,7 @@
  *
  * The Original Code is BasicModel.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,11 +25,13 @@
  *   Ben He <ben{a.}dcs.gla.ac.uk> 
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk>
  */
+
 package org.terrier.matching.models.basicmodel;
 
-import java.io.Serializable;
 
+import java.io.Serializable;
 import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /**
  * This class provides a contract for implementing the basic models for randomness in the DFR framework, 
@@ -38,7 +40,7 @@ import org.terrier.matching.models.Idf;
  * @author Ben He
   * @see org.terrier.matching.models.DFRWeightingModel
  */
-public abstract class BasicModel implements Serializable{
+public abstract class BasicModel implements Serializable, Cloneable{
 	/**
 	 * 
 	 */
@@ -49,17 +51,32 @@ public abstract class BasicModel implements Serializable{
 	protected double numberOfDocuments;
 	/** The number of tokens in the whole collection */
 	protected double numberOfTokens;
+
 	/**
 	 * A default constructor that initialises the idf i attribute
 	 */
 	public BasicModel() {
 		i = new Idf();
 	}
+	
+	/** Clone this weighting model */
+	@Override
+	public BasicModel clone() {
+		try{
+			BasicModel newModel = (BasicModel)super.clone();
+			newModel.i = (Idf)this.i.clone();
+			return newModel;
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(e.toString());
+		}
+	}
+	
 	/**
 	 * Returns the name of the model.
 	 * @return java.lang.String
 	 */
 	public abstract String getInfo();
+
 	/**
 	 * Sets the number of documents in the collection.
 	 * @param numOfDocs the number of documents in the collection.
@@ -68,6 +85,7 @@ public abstract class BasicModel implements Serializable{
 		this.numberOfDocuments = numOfDocs;
 		this.i.setNumberOfDocuments(numOfDocs);
 	}
+
 	/**
 	 * Set the number of tokens in the collection.
 	 * @param numTokens double The number of tokens in the collection.
@@ -91,6 +109,7 @@ public abstract class BasicModel implements Serializable{
 		double termFrequency,
 		double keyFrequency,
 		double documentLength);
+
 	/**
 	* This method provides the contract for implementing the 
 	* Stirling formula for the power series.
@@ -100,6 +119,6 @@ public abstract class BasicModel implements Serializable{
 	*/
 	public double stirlingPower(double n, double m) {
 		double dif = n - m;
-		return (m + 0.5d) * Idf.log(n / m) + dif * Idf.log(n);
+		return (m + 0.5d) * log(n / m) + dif * log(n);
 	}
 }

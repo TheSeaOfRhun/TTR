@@ -210,9 +210,10 @@ public class TestCompressingMetaIndex extends ApplicationSetupBasedTest {
 		});
 	}
 	
+	
 	protected void testBase(String name, String[] keyNames, int[] keyLengths, String[] revKeys, String[][] data) throws Exception
 	{
-		Index index = Index.createNewIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX);
+		IndexOnDisk index = Index.createNewIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX);
 		assertNotNull("Index should not be null", index);
 		MetaIndexBuilder b = new CompressingMetaIndexBuilder(index, name,
 				keyNames, keyLengths, revKeys);
@@ -247,7 +248,7 @@ public class TestCompressingMetaIndex extends ApplicationSetupBasedTest {
 		checkMRInputFormat(index, name, meta_for_first_key, 10);// 3 splits
 		
 		index.close();
-		IndexUtil.deleteIndex(index.getPath(), index.getPrefix());
+		IndexUtil.deleteIndex(((IndexOnDisk)index).getPath(), ((IndexOnDisk)index).getPrefix());
 	}
 	
 	protected static String[] slice(String[][] in, int index)

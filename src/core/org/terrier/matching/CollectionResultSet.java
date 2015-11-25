@@ -17,7 +17,7 @@
  *
  * The Original Code is CollectionResultSet.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,6 +29,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.terrier.utility.HeapSort;
 
 //import org.apache.log4j.Logger;
 /**
@@ -341,5 +343,15 @@ public class CollectionResultSet implements ResultSet, Serializable{
 	 */
 	public String[] getMetaKeys() {
 		return null;
+	}
+
+	@Override
+	public void sort() {
+		sort(this.docids.length);
+	}
+
+	@Override
+	public void sort(int topDocs) {
+		HeapSort.descendingHeapSort(getScores(), getDocids(), getOccurrences(), topDocs);
 	}
 }

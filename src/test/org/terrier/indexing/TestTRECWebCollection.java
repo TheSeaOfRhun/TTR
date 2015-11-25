@@ -17,7 +17,7 @@
  *
  * The Original Code is TestTRECWebCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -57,6 +57,7 @@ public class TestTRECWebCollection extends ApplicationSetupBasedTest  {
 		assertEquals("http://host/document/", d.getProperty("url"));		
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	//test a document with WT2G style DOCHDR tag
@@ -84,12 +85,12 @@ public class TestTRECWebCollection extends ApplicationSetupBasedTest  {
 		assertEquals("doc1", d.getProperty("docno"));
 		assertEquals("http://www.social.com:80/social/hypermail/news/online_news/Jan_21_Jan_27_1996/0014.html", d.getProperty("url"));
 		assertEquals("text/html", d.getProperty("contenttype"));
-		assertNull(d.getProperty("charset"));
 		assertEquals("Sunday, 28-Jan-96 05:49:42 GMT", d.getProperty("lastmodified"));
 		assertEquals("2195", d.getProperty("docbytelength"));
 		assertEquals("853243281", d.getProperty("crawldate"));
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	//test a document with Blogs06 style DOCHDR tag
@@ -127,11 +128,12 @@ public class TestTRECWebCollection extends ApplicationSetupBasedTest  {
 		assertEquals("doc1", d.getProperty("docno"));
 		assertEquals("http://anotherblog.blogspot.com/2008/07/hello.html", d.getProperty("url"));
 		assertEquals("text/html; charset=UTF-8", d.getProperty("contenttype"));
-		assertEquals("utf-8", d.getProperty("charset"));
+		assertEquals("UTF-8", d.getProperty("charset"));
 		assertEquals("Tue, 30 Sep 2008 12:42:16 GMT", d.getProperty("lastmodified"));
 		assertEquals("29410", d.getProperty("docbytelength"));
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 
 }

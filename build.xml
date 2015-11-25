@@ -19,7 +19,7 @@
  *
  * The Original Code is build.xml
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,34 +27,39 @@
  *  Alan Dunk
  */
 -->
-<project basedir="." name="Terrier" default="core-jar">
+<project basedir="." name="Terrier" default="jar">
 
 	<property file="build.properties"/>
+	
+    <property name="Name" value="Terrier"/>
+    <property name="name" value="terrier"/>
+    <property name="version" value="4.0"/>
+    <property name="final.name" value="${name}-${version}"/>
+    <property name="year" value="2014"/>
+    <property name="url" value="http://terrier.org/"/>
+    <property name="main.source" value="org/terrier"/>
+    <property name="test.output" value="false"/>
 	
 	<property name="base.dir"	value="." />
 	<property name="lib.dir"	 value="${base.dir}/lib" />
 	<property name="src.dir"	 value="${base.dir}/src" />
 	<property name="src.core.dir" value="${src.dir}/core" />
+	<property name="src.trec.dir" value="${src.dir}/trec" />
+	<property name="src.websitesearch.dir" value="${src.dir}/websitesearch" />
+	<property name="src.desktop.dir" value="${src.dir}/desktop" />
+	<property name="src.learning.dir" value="${src.dir}/learning" />
 	<property name="src.test.dir" value="${src.dir}/test" />
-	<property name="classes.dir" value="${base.dir}/classes" />
+	<property name="classes.dir" value="${base.dir}/build" />
 	<property name="javadoc.dir" value="${base.dir}/doc/javadoc" />
 	
+	<property name="build.dir" value="${base.dir}/dist/${final.name}" />	
 
 	<property name="javac.debuglevel" value="lines,vars,source" />
 	<property name="javac.debug" value="on"/>
 	<property name="javac.optimize" value="on"/>
 	<property name="javac.deprecation" value="off"/>
-	<property name="javac.version" value="1.6"/>
+	<property name="javac.version" value="1.7"/>
 	<property name="javac.args" value="-Xlint:unchecked"/>
-
-	<property name="Name" value="Terrier"/>
-	<property name="name" value="terrier"/>
-	<property name="version" value="3.5"/>
-	<property name="final.name" value="${name}-${version}"/>
-	<property name="year" value="2011"/>
-	<property name="url" value="http://terrier.org/"/>
-	<property name="main.source" value="org/terrier"/>
-	<property name="test.output" value="false"/>
 
 	<property name="javadoc.link.java"
 		value="http://download.oracle.com/javase/6/docs/api/"/>
@@ -64,23 +69,33 @@
 			<include name="*.jar"/>
 		</fileset>
 		<fileset dir="${lib.dir}">
-			<include name="hadoop0.20/*.jar"/>
+			<include name="hadoop/*.jar"/>
+		</fileset>
+		<fileset dir="${lib.dir}">
+			<include name="poi/*.jar"/>
+		</fileset>
+		<fileset dir="${lib.dir}">
+		        <include name="crawler4j/*.jar"/>
 		</fileset>
 	</path>
 
 	<!-- builds both the core and testing jar files -->	
-	<target name="jar" depends="core-jar,test-jar"/>
+	<target name="jar" depends="core-jar,test-jar,desktop-jar,trec-jar,websitesearch-jar"/>
 
 	<!-- removes the build information -->
 	<target name="clean" description="Remove all generated files">
 		<delete dir="${classes.dir}" />
-		<delete dir="${classes.dir}_test" />
+		<delete dir="${build.dir}" />
 	</target>
 
 	<!-- creates folder for putting built class files in -->
 	<target name="init" description="Create the folders required for compilation">
-		<mkdir dir="${classes.dir}" />
-		<mkdir dir="${classes.dir}_test" />
+		<mkdir dir="${classes.dir}/core" />
+		<mkdir dir="${classes.dir}/trec" />
+		<mkdir dir="${classes.dir}/desktop" />
+		<mkdir dir="${classes.dir}/websitesearch" />
+		<mkdir dir="${classes.dir}/test" />
+		<mkdir dir="${classes.dir}/learning" />
 	</target>
 
 	<!-- aliase to create the core jar file -->
@@ -101,7 +116,7 @@
 
 	<!-- compiles the java files in the core -->
 	<target name="compile-core-classes" description="Compile core Terrier classes" depends="init,compile-core-grammars">
-		<javac srcdir="${src.core.dir}" destdir="${classes.dir}" 
+		<javac srcdir="${src.core.dir}" destdir="${classes.dir}/core" 
 			debuglevel="${javac.debuglevel}"
 			debug="${javac.debug}"
 			optimize="${javac.optimize}"
@@ -109,7 +124,7 @@
 			source="${javac.version}"
 			deprecation="${javac.deprecation}"
 		>
-        	<compilerarg line="${javac.args}"/>
+			<compilerarg line="${javac.args}"/>
 			<classpath refid="classpath" />
 			<include name="**/*.java" />
 		</javac>
@@ -117,13 +132,103 @@
 
 	<!-- builds the jar file for the core -->
 	<target name="core-jar" description="Build the core jar file" depends="compile-core-classes">
-		<jar jarfile="${lib.dir}/${final.name}-core.jar" basedir="${classes.dir}" />
+		<jar jarfile="${lib.dir}/${final.name}-core.jar" basedir="${classes.dir}/core" />
+	</target>
+	
+	<!-- compiles the java files in the trec -->
+	<target name="compile-trec-classes" description="Compile trec Terrier classes" depends="init,core-jar">
+		<javac srcdir="${src.trec.dir}" destdir="${classes.dir}/trec" 
+			debuglevel="${javac.debuglevel}"
+			debug="${javac.debug}"
+			optimize="${javac.optimize}"
+			target="${javac.version}"
+			source="${javac.version}"
+			deprecation="${javac.deprecation}"
+		>
+			<compilerarg line="${javac.args}"/>
+			<classpath refid="classpath" />
+			<include name="**/*.java" />
+		</javac>
 	</target>
 
+	<!-- builds the jar file for the core -->
+	<target name="trec-jar" description="Build the trec jar file" depends="compile-trec-classes">
+		<jar jarfile="${lib.dir}/${final.name}-trec.jar" basedir="${classes.dir}/trec" />
+	</target>
+
+	<!-- compiles the java files in the desktop -->
+	<target name="compile-desktop-classes" description="Compile desktop Terrier classes" depends="init,core-jar">
+		<javac srcdir="${src.desktop.dir}" destdir="${classes.dir}/desktop" 
+			debuglevel="${javac.debuglevel}"
+			debug="${javac.debug}"
+			optimize="${javac.optimize}"
+			target="${javac.version}"
+			source="${javac.version}"
+			deprecation="${javac.deprecation}"
+		>
+			<compilerarg line="${javac.args}"/>
+			<classpath refid="classpath" />
+			<include name="**/*.java" />
+		</javac>
+	</target>
+
+	<!-- builds the jar file for the core -->
+	<target name="desktop-jar" description="Build the desktop jar file" depends="compile-desktop-classes">
+		<jar jarfile="${lib.dir}/${final.name}-desktop.jar" basedir="${classes.dir}/desktop" />
+	</target>
+	
+	<!-- compiles the java files in the websitesearch -->
+	<target name="compile-websitesearch-classes" description="Compile websitesearch Terrier classes" depends="init,core-jar">
+		<javac srcdir="${src.websitesearch.dir}" destdir="${classes.dir}/websitesearch" 
+			debuglevel="${javac.debuglevel}"
+			debug="${javac.debug}"
+			optimize="${javac.optimize}"
+			target="${javac.version}"
+			source="${javac.version}"
+			deprecation="${javac.deprecation}"
+		>
+			<compilerarg line="${javac.args}"/>
+			<classpath refid="classpath" />
+			<include name="**/*.java" />
+		</javac>
+	</target>
+
+	<!-- builds the jar file for the core -->
+	<target name="websitesearch-jar" description="Build the websitesearch jar file" depends="compile-websitesearch-classes">
+		<jar jarfile="${lib.dir}/${final.name}-websitesearch.jar" basedir="${classes.dir}/websitesearch" />
+	</target>
+
+	<!-- compiles the java files in the learning package -->
+		<target name="compile-learning-classes" description="Compile learning Terrier classes" depends="init,core-jar">
+			<javac srcdir="${src.learning.dir}" destdir="${classes.dir}/learning" 
+				debuglevel="${javac.debuglevel}"
+				debug="${javac.debug}"
+				optimize="${javac.optimize}"
+				target="${javac.version}"
+				source="${javac.version}"
+				deprecation="${javac.deprecation}"
+			>
+				<compilerarg line="${javac.args}"/>
+				<classpath refid="classpath" />
+				<include name="**/*.java" />
+			</javac>
+		</target>
+
+		<!-- builds the jar file for the core -->
+		<target name="learning-jar" description="Build the learning jar file" depends="compile-learning-classes">
+			<jar jarfile="${lib.dir}/${final.name}-learning.jar" basedir="${classes.dir}/learning" />
+		</target>
 
 	<!-- compiles the java files for testing -->
-	<target name="compile-test-classes" description="Compile core Terrier classes" depends="core-jar,init">
-		<javac srcdir="${src.test.dir}" destdir="${classes.dir}_test" deprecation="off">
+	<target name="compile-test-classes" description="Compile test Terrier classes" depends="trec-jar,learning-jar,core-jar,init">
+		<javac srcdir="${src.test.dir}" destdir="${classes.dir}/test" 
+			debuglevel="${javac.debuglevel}"
+			debug="${javac.debug}"
+			optimize="${javac.optimize}"
+			target="${javac.version}"
+			source="${javac.version}"
+			deprecation="${javac.deprecation}"
+		>
 			<compilerarg value="-Xlint:unchecked"/>
 			<classpath refid="classpath" />
 			<include name="**/*.java" />
@@ -132,7 +237,7 @@
 
 	<!-- builds the jar file for testing -->
 	<target name="test-jar" description="Build the test jar file" depends="compile-test-classes">
-		<jar jarfile="${lib.dir}/${final.name}-test.jar" basedir="${classes.dir}_test" />
+		<jar jarfile="${lib.dir}/${final.name}-test.jar" basedir="${classes.dir}/test" />
 	</target>
 
 	<!-- runs the unit tests -->
@@ -149,20 +254,20 @@
 	</target>
 
 	<!-- runs the batch end to end tests -->
-    <target name="batch-test" description="Runs the batch (TREC) collection end to end tests" depends="test-jar">
-        <junit showoutput="true" haltonfailure="no"
-            fork="yes" maxmemory="1024M" dir="${basedir}" printsummary="yes"
-            errorProperty="tests.failed" failureProperty="tests.failed">
-            <formatter type="plain" />
-            <classpath refid="classpath" />
-            <test name="org.terrier.tests.TRECWT2GEndtoEndTest" if="wt2g.corpus" />
+	<target name="batch-test" description="Runs the batch (TREC) collection end to end tests" depends="test-jar">
+		<junit showoutput="true" haltonfailure="no"
+			fork="yes" maxmemory="1024M" dir="${basedir}" printsummary="yes"
+			errorProperty="tests.failed" failureProperty="tests.failed">
+			<formatter type="plain" />
+			<classpath refid="classpath" />
+			<test name="org.terrier.tests.TRECWT2GEndtoEndTest" if="wt2g.corpus" />
 			<jvmarg value="-Dterrier.test.debug=true"/>
-            <jvmarg value="-Dwt2g.corpus=${wt2g.corpus}"/>
-            <jvmarg value="-Dwt2g.topics=${wt2g.topics}"/>
-            <jvmarg value="-Dwt2g.qrels=${wt2g.qrels}"/>
-        </junit>
-        <fail if="tests.failed">Batch End to End failed!</fail>
-    </target>
+			<jvmarg value="-Dwt2g.corpus=${wt2g.corpus}"/>
+			<jvmarg value="-Dwt2g.topics=${wt2g.topics}"/>
+			<jvmarg value="-Dwt2g.qrels=${wt2g.qrels}"/>
+		</junit>
+		<fail if="tests.failed">Batch End to End failed!</fail>
+	</target>
 
 	<!-- generate the javadoc -->
 	<target name="javadoc" description="Generate javadoc">
@@ -170,7 +275,6 @@
 		 <javadoc
 			destdir="${javadoc.dir}"
 			overview="${src.core.dir}/overview.html"
-			sourcepath="${src.core.dir}"
 			packagenames="org.terrier.*"
 			author="true"
 			version="true"
@@ -180,6 +284,13 @@
 			bottom="&lt;a href='${url}'&gt;${Name}&lt;/a&gt; ${version}. Copyright &amp;copy; 2004-${year} &lt;a href='http://www.gla.ac.uk/'&gt;University of Glasgow&lt;/a&gt;"
 			failonerror="true"
 		>
+			<sourcepath>
+				<path location="${src.core.dir}"/>
+				<path location="${src.desktop.dir}"/>
+				<path location="${src.trec.dir}"/>
+				<path location="${src.learning.dir}"/>
+				<path location="${src.websitesearch.dir}"/>
+			</sourcepath>
 			<classpath refid="classpath" />
 			<link href="${javadoc.link.java}"/>
 			<group title="Terrier ${version}" packages="org.terrier.*"/>
@@ -187,8 +298,7 @@
 	</target>
 
 	<!-- builds the final distributable .tar.gz, .tar.bz2 and .zip files -->
-	<target name="dist" description="Build the {final.name}.tar.gz file" depends="clean, core-jar, javadoc, test">
-		<property name="build.dir" value="${base.dir}/dist/${final.name}" />
+	<target name="dist" description="Build the {final.name}.tar.gz file" depends="clean, jar, javadoc">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.dir}/var" />
 		<mkdir dir="${build.dir}/var/index" />
@@ -231,6 +341,18 @@
 
 		<echo>Chmodding exectuable scripts</echo>
 		<chmod dir="${build.dir}/bin" perm="ugo+rx" includes="**/*.sh"/>
+		<exec executable="chmod">
+		<arg value="-v"/>
+			<arg value="+rx"/>
+			<arg value="${build.dir}/bin/anyclass.sh"/>
+			<arg value="${build.dir}/bin/compile_package.sh"/>
+			<arg value="${build.dir}/bin/desktop_terrier.sh"/>
+			<arg value="${build.dir}/bin/http_terrier.sh"/>
+			<arg value="${build.dir}/bin/interactive_terrier.sh"/>
+			<arg value="${build.dir}/bin/terrier-env.sh"/>
+			<arg value="${build.dir}/bin/trec_setup.sh"/>
+			<arg value="${build.dir}/bin/trec_terrier.sh"/>
+		</exec>
 		<delete file="${base.dir}/dist/${final.name}.tar" />
 		<tar destfile="${base.dir}/dist/${final.name}.tar" basedir="${base.dir}/dist/" longfile="gnu">
 			<tarfileset	dir="${build.dir}/">

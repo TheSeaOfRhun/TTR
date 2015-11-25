@@ -17,7 +17,7 @@
  *
  * The Original Code is CompressingMetaIndex.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,10 +27,13 @@ package org.terrier.structures;
 
 import gnu.trove.TObjectIntHashMap;
 
+import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -43,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -70,6 +74,7 @@ import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.ArrayUtils;
 import org.terrier.utility.Files;
+import org.terrier.utility.TerrierTimer;
 import org.terrier.utility.Wrapper;
 import org.terrier.utility.io.HadoopUtility;
 import org.terrier.utility.io.RandomDataInput;
@@ -84,6 +89,9 @@ import org.terrier.utility.io.WrappedIOException;
  */
 @SuppressWarnings("deprecation")
 public class CompressingMetaIndex implements MetaIndex {
+	
+	private final static Pattern SPLIT_SPACE = Pattern.compile("\\s+");
+	
 	/** logger to be used in this class */
 	private static Logger logger = Logger.getLogger(CompressingMetaIndex.class);
 	/** 
@@ -153,7 +161,7 @@ public class CompressingMetaIndex implements MetaIndex {
 			final int startID;
 			final int endID;
 			
-			public MetaIndexInputStreamRecordReader(Index index, String structureName, int startingDocID, int endingID)
+			public MetaIndexInputStreamRecordReader(IndexOnDisk index, String structureName, int startingDocID, int endingID)
 				throws IOException
 			{
 				in = new InputStream(index, structureName, startingDocID, endingID);
@@ -206,7 +214,7 @@ public class CompressingMetaIndex implements MetaIndex {
 			
 			//load the index
 			Index.setIndexLoadingProfileAsRetrieval(false);
-			Index index = HadoopUtility.fromHConfiguration(jc);
+			IndexOnDisk index = HadoopUtility.fromHConfiguration(jc);
 			if (index == null)
 				throw new IOException("Index could not be loaded from JobConf: " + Index.getLastIndexLoadError() );
 			
@@ -242,7 +250,7 @@ public class CompressingMetaIndex implements MetaIndex {
 			logger.setLevel(Level.DEBUG);
 			HadoopUtility.loadTerrierJob(jc);
 			List<InputSplit> splits = new ArrayList<InputSplit>(advisedNumberOfSplits);
-			Index index = HadoopUtility.fromHConfiguration(jc);
+			IndexOnDisk index = HadoopUtility.fromHConfiguration(jc);
 			String structureName = jc.get(STRUCTURE_NAME_JC_KEY);
 			final String dataFilename = index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + structureName + ".zdata";
 			final String indxFilename = index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + structureName + ".idx";
@@ -655,7 +663,7 @@ public class CompressingMetaIndex implements MetaIndex {
 		 * @param _endId
 		 * @throws IOException
 		 */
-		public InputStream(Index _index, String _structureName, int _startingId, int _endId) throws IOException
+		public InputStream(IndexOnDisk _index, String _structureName, int _startingId, int _endId) throws IOException
 		{
 			final String dataFilename = _index.getPath() + ApplicationSetup.FILE_SEPARATOR + _index.getPrefix() + "." + _structureName + ".zdata";
 			final String indxFilename = _index.getPath() + ApplicationSetup.FILE_SEPARATOR + _index.getPrefix() + "." + _structureName + ".idx";
@@ -725,7 +733,7 @@ public class CompressingMetaIndex implements MetaIndex {
 		 * @param structureName
 		 * @throws IOException
 		 */
-		public InputStream(Index _index, String structureName) throws IOException
+		public InputStream(IndexOnDisk _index, String structureName) throws IOException
 		{
 			this(_index, structureName, 0, -1 + _index.getIntIndexProperty("index."+structureName+".entries", 0));
 		}
@@ -828,7 +836,7 @@ public class CompressingMetaIndex implements MetaIndex {
 	 * @param structureName
 	 * @throws IOException
 	 */
-	public CompressingMetaIndex(Index index, String structureName)
+	public CompressingMetaIndex(IndexOnDisk index, String structureName)
 		throws IOException
 	{
 		this.path = index.getPath(); this.prefix = index.getPrefix();
@@ -846,6 +854,7 @@ public class CompressingMetaIndex implements MetaIndex {
 				logger.debug("Caching metadata file "+ dataFilename + " to memory");
 				final DataInputStream di = new DataInputStream(Files.openFileStream(dataFilename));
 				_dataSource = new RandomDataInputAccessor(new RandomDataInputMemory(di, dataFileLength));
+				di.close();
 			} catch (OutOfMemoryError oome) {
 				logger.warn("OutOfMemoryError: Structure "+ structureName + " reading data file directly from disk");
 				//logger.debug("Metadata will be read directly from disk");
@@ -858,7 +867,8 @@ public class CompressingMetaIndex implements MetaIndex {
 		}
 		else if (fileSource.equals("file"))
 		{
-			logger.warn("Structure "+ structureName + " reading data file directly from disk (SLOW)");
+			logger.warn("Structure "+ structureName + " reading data file directly from disk (SLOW) - try index."
+					+structureName+".data-source=fileinmem in the index properties file");
 			//logger.debug("Metadata will be read directly from disk");
 			RandomDataInput rfi = Files.openFileRandom(dataFilename);
 			dataSource = (rfi instanceof RandomAccessFile)
@@ -1023,7 +1033,7 @@ public class CompressingMetaIndex implements MetaIndex {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadIndex(Index index, String structureName) throws IOException {
+	protected void loadIndex(IndexOnDisk index, String structureName) throws IOException {
 	     
 		//1. int - how much zlib was used
 		compressionLevel = index.getIntIndexProperty("index."+structureName+".compression-level", 5);
@@ -1103,7 +1113,8 @@ public class CompressingMetaIndex implements MetaIndex {
 				}
 			}	
 		} else {
-			logger.warn("Structure "+ structureName + " reading lookup file directly from disk (SLOW)");
+			logger.warn("Structure "+ structureName + " reading lookup file directly from disk (SLOW) - try index."+
+					structureName+".index-source=fileinmem in the index properties file");
 			//logger.debug("Metadata lookup will be read directly from disk: "+ length +" entries, size "+ dataFileLength + " bytes");
 			RandomDataInput rfi = Files.openFileRandom(indexFilename);
 			offsetLookup = new OnDiskDocid2OffsetLookup(
@@ -1211,7 +1222,7 @@ public class CompressingMetaIndex implements MetaIndex {
 		
 		//load structures that we actually need
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index index = Index.createIndex();
+		IndexOnDisk index = Index.createIndex();
 		if (args[0].equals("print"))
 		{
 			IndexUtil.printMetaIndex(index, "meta");
@@ -1235,6 +1246,99 @@ public class CompressingMetaIndex implements MetaIndex {
 			{
 				System.out.println(keys[i] + "=" + values[i]);
 			}
+		}
+		else if (args[0].equals("lookup"))
+		{
+			MetaIndex m = index.getMetaIndex();			
+			int docid = m.getDocument(args[1], args[2]);
+			System.out.println(args[1] + " " + args[2] + " -> " + docid);
+		}
+		else if (args[0].equals("rundocid2docno"))
+		{
+			final BufferedReader br = args.length > 1 
+					? Files.openFileReader(args[1])
+					: new BufferedReader(new InputStreamReader(System.in));
+			final PrintWriter out = args.length > 2
+				? new PrintWriter(Files.writeFileWriter(args[2]))
+				: new PrintWriter(System.out);
+			
+			MetaIndex m = index.getMetaIndex();		
+			String line = null;
+			while((line = br.readLine()) != null)
+			{
+				final String[] parts = SPLIT_SPACE.split(line);
+				parts[2] = m.getItem("docno", Integer.parseInt(parts[2]));
+				out.println(ArrayUtils.join(parts, ' '));
+			}
+			br.close();
+			out.close();
+		}
+		else if (args[0].equals("rundocno2docid"))
+		{
+			final BufferedReader br = args.length > 1 
+					? Files.openFileReader(args[1])
+					: new BufferedReader(new InputStreamReader(System.in));
+			final PrintWriter out = args.length > 2
+				? new PrintWriter(Files.writeFileWriter(args[2]))
+				: new PrintWriter(System.out);
+			
+			MetaIndex m = index.getMetaIndex();		
+			String line = null;
+			while((line = br.readLine()) != null)
+			{
+				final String[] parts = SPLIT_SPACE.split(line);
+				parts[2] = String.valueOf(m.getDocument("docno", parts[2]));
+				out.println(ArrayUtils.join(parts, ' '));
+			}
+			br.close();
+			out.close();
+		}
+		else if (args[0].equals("rundocno2docid_seq"))
+		{
+			final BufferedReader br = args.length > 1 
+					? Files.openFileReader(args[1])
+					: new BufferedReader(new InputStreamReader(System.in));
+			final PrintWriter out = args.length > 2
+				? new PrintWriter(Files.writeFileWriter(args[2]))
+				: new PrintWriter(System.out);
+			
+			List<String[]> lines = new ArrayList<String[]>();
+			TObjectIntHashMap<String> docnos = new TObjectIntHashMap<String>();
+			String line = null;
+			while((line = br.readLine()) != null)
+			{
+				final String[] parts = SPLIT_SPACE.split(line);
+				lines.add(parts);
+				docnos.put(parts[2], -1);
+			}
+			@SuppressWarnings("unchecked")
+			Iterator<String[]> metaIn = (Iterator<String[]>) index.getIndexStructureInputStream("meta");
+			int docid = 0;
+			TerrierTimer tt = new TerrierTimer("Reading metaindex", index.getCollectionStatistics().getNumberOfDocuments());
+			tt.start();
+			try{
+				while(metaIn.hasNext())
+				{
+					String docno = metaIn.next()[0];
+					if (docnos.containsKey(docno))
+					{
+						docnos.put(docno, docid);
+					}
+					docid++;
+					tt.increment();
+				}
+			}
+			finally {
+				IndexUtil.close(metaIn);
+				tt.finished();
+			}
+			for(String[] parts : lines)
+			{
+				parts[2] = String.valueOf(docnos.get(parts[2]));
+				out.println(ArrayUtils.join(parts, ' '));
+			}
+			br.close();
+			out.close();
 		}
 		else
 		{

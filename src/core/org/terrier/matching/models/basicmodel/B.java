@@ -17,14 +17,15 @@
  *
  * The Original Code is B.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Ben He <ben{a.}dcs.gla.ac.uk> 
  */
 package org.terrier.matching.models.basicmodel;
-import org.terrier.matching.models.Idf;
+
+import static org.terrier.matching.models.WeightingModelLibrary.*;
 
 /**
  * This class implements the B basic model for randomness. B stands
@@ -32,18 +33,10 @@ import org.terrier.matching.models.Idf;
  * @author Ben He
   */
 public class B extends BasicModel{
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	/** The name of the model. */
 	protected String modelName = "B";
-	/** 
-	 * A default constructor.
-	 */
-	public B(){
-		super();
-	}
+
 	/**
 	 * Returns the name of the model.
 	 * @return the name of the model
@@ -51,6 +44,7 @@ public class B extends BasicModel{
 	public String getInfo(){
 		return this.modelName;
 	}
+
 	/**
 	 * This method computes the score for the implemented weighting model.
 	 * @param tf The term frequency in the document
@@ -67,8 +61,8 @@ public class B extends BasicModel{
 		double keyFrequency,
 		double documentLength){
 		return keyFrequency * (
-			- Idf.log(numberOfDocuments - 1)
-			- Idf.REC_LOG_2_OF_E
+			- log(numberOfDocuments - 1)
+			- LOG_2_OF_E
 			+ stirlingPower(
 				numberOfDocuments
 					+ termFrequency

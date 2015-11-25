@@ -17,7 +17,7 @@
  *
  * The Original Code is StopWords.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -178,6 +178,6 @@ public class Stopwords implements TermPipeline
 	
 	/** {@inheritDoc} */
 	public boolean reset() {
-		return true;
+		return next.reset();
 	}
 }

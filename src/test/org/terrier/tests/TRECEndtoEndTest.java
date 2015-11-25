@@ -17,7 +17,7 @@
  *
  * The Original Code is TRECEndtoEndTest.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -37,6 +37,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.terrier.applications.FileFind;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.indexing.singlepass.Inverted2DirectIndexBuilder;
 import org.terrier.utility.Files;
 
@@ -170,7 +171,7 @@ public abstract class TRECEndtoEndTest extends BatchEndToEndTest
 	
 	
 	@Override
-	protected void addDirectStructure(Index index) throws Exception {
+	protected void addDirectStructure(IndexOnDisk index) throws Exception {
 		if (! index.hasIndexStructure("direct"))
 		{
 			new Inverted2DirectIndexBuilder(index).createDirectIndex();

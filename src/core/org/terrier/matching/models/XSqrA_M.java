@@ -17,13 +17,15 @@
  *
  * The Original Code is XSqrA_M.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Gianni Amati <gba{a.}fub.it> (Original author)
  */
 package org.terrier.matching.models;
+
+
 /**
  * This class implements the XSqrA_M weighting model, which computed the 
  * inner product of Pearson's X^2 with the information growth computed 
@@ -76,15 +78,22 @@ public class XSqrA_M extends WeightingModel {
 	}
 
 	
-	/**
-	 * Uses XSqrA_M to compute a weight for a term in a document.
-	 * @param tf The term frequency of the term in the document
-	 * @param docLength the document's length
-	 * @param documentFrequency The document frequency of the term (ignored)
-	 * @param termFrequency the term frequency in the collection (ignored)
-	 * @param keyFrequency the term frequency in the query (ignored).
-	 * @return the score assigned by the weighting model XSqrA_M.
-	 */
+		/**
+		 * This method provides the contract for implementing weighting models.
+		 * 
+		 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+		 * since it is not used. The two parameter score method should be used
+		 * instead. Tagged for removal in a later version.
+		 * 
+		 * @param tf The term frequency in the document
+		 * @param docLength the document's length
+		 * @param documentFrequency The document frequency of the term
+		 * @param termFrequency the term frequency in the collection
+		 * @param keyFrequency the term frequency in the query
+		 * @return the score returned by the implemented weighting model.
+		 */
+		@Deprecated
+		@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -102,7 +111,7 @@ public class XSqrA_M extends WeightingModel {
 	    /** The divergence measure (Pearson) of the two neighbouring distributions*/
 	    double XSqrA =   Math.pow(1d-maximumLikelihoodEstimate,2)/(tf+1d)  ;  
 	    // The information growth in the document from the the true probability to the smoothed one and wrt the collection priors
-	    double InformationDelta =  ((tf+1d) * Idf.log (smoothedProbability/collectionPrior) -tf*Idf.log (maximumLikelihoodEstimate /collectionPrior) +0.5*Idf.log(smoothedProbability/maximumLikelihoodEstimate));
+	    double InformationDelta =  ((tf+1d) * WeightingModelLibrary.log (smoothedProbability/collectionPrior) -tf*WeightingModelLibrary.log (maximumLikelihoodEstimate /collectionPrior) +0.5*WeightingModelLibrary.log(smoothedProbability/maximumLikelihoodEstimate));
 	    //the inner product
 	    return keyFrequency * tf*XSqrA *InformationDelta;	
 	 }

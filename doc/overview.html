@@ -13,16 +13,18 @@
 <p>Below, you can find a succinct list of features offered by Terrier.
 <h3>General</h3>
 <ul>
-<li>Indexing support for common desktop file formats, and for commonly used TREC research collections (e.g. TREC CDs 1-5, WT2G, WT10G, GOV, GOV2, Blogs06, Blog08, ClueWeb09).</li>
+<li>Indexing support for common desktop file formats, and for commonly used TREC research collections (e.g. TREC CDs 1-5, WT2G, WT10G, GOV, GOV2, Blogs06, Blog08, ClueWeb09, ClueWeb12).</li>
 <li>Many document weighting models, such as many parameter-free Divergence from Randomness weighting models, Okapi BM25 and language modelling.</li>
+<li><font color="#CC0000"><b><i>NEW!</i></b></font> Supervised (machine learned) ranking models are supported via learning to rank.</li> 
 <li>Conventional query language supported, including phrases, and terms occurring in tags.</li>
 <li>Handling full-text indexing of large-scale document collections, in a centralised architecture to at least 50 million documents, 
   and using the Hadoop MapReduce distributed indexing scheme for even larger collections.</li>
+<li><font color="#CC0000"><i><b>NEW!</b></i></font> Incremental indexing and retrieval capabilities to support real-time search</li>
 <li>Modular and open indexing and querying APIs, to allow easy extension for your own applications and research.</li>
 <li>Active Information Retrieval research fed into the Open Source platform.</li>
 <li>Open Source (Mozilla Public Licence).</li>
 <li>Written in cross-platform Java - works on Windows, Mac OS X, Linux and Unix.</li>
-<li>Large user-base over 7 years of public release.</li>
+<li>Large user-base over 10 years of public release.</li>
 </ul>
 
 <h3>Indexing</h3>
@@ -36,9 +38,10 @@
 <li>Indexing of position information on a word, or a block (e.g. a window of terms within a distance) level.</li>
 <li>Support for various encodings of documents (UTF), to facilitate multi-lingual retrieval.</li>
 <li>Support for changing the tokenisation being used.</li>
+<li><font color="#CC0000"><i><b>NEW!</b></i></font> Updatable indices to support real-time search</li>
 <li>Indexing support for query-biased summarisation.</li> 
 <li>Support for fetching files to index by HTTP, allowing intranets to be easily searched.</li>
-<li>Highly compressed index disk data structures.</li>
+<li><font color="#CC0000"><i><b>NEW!</b></i></font> Highly compressed index disk data structures with built-in pluggable compression algorithms.</li>
 <li>Highly compressed direct file for efficient query expansion.</li>
 <li>Alternative faster single-pass and MapReduce based indexing.</li>
 <li>Various stemming techniques supported, including the Snowball stemmer for European languages.</li>
@@ -52,6 +55,7 @@
 a batch setting for research and experimentation.</li>
 <li>Provides many standard document weighting models, including up to 126 Divergence From Randomness (DFR) document ranking models, and other models such as Okapi BM25, language modelling and TF-IDF. Two new 2nd generation DFR weighting model, JsKLs and XSqrA_M, are also included, which provide robust performance on a range of test collections without the need for any parameter tuning or training.</li>
 <li>Advanced <a href="querylanguage.html">query language</a> that supports synonyms, +/- operators, phrase and proximity search, and fields.</li>
+<li><font color="#CC0000"><i><b>NEW!</b></i></font> Learning-to-rank support enables out-of-the-box supervised ranking models.</li>
 <li>Provides a number of parameter-free DFR term weighting models for automatic query expansion, in addition to Rocchio's query expansion.</li>
 <li>Flexible processing of terms through a pipeline of components, such as stopword removers and stemmers.</li>
 </ul>
@@ -72,7 +76,7 @@ a batch setting for research and experimentation.</li>
 <small> Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. 
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. 
 All Rights Reserved. </small>
 </body>
 </html>

@@ -17,13 +17,15 @@
  *
  * The Original Code is PerFieldNormWeightingModel.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Craig Macdonald <craigm{a.}dcs.gla.ac.uk> (original author)
  */
 package org.terrier.matching.models;
+
+import java.util.Arrays;
 
 import org.terrier.matching.models.basicmodel.BasicModel;
 import org.terrier.matching.models.normalisation.Normalisation;
@@ -51,14 +53,16 @@ import org.terrier.utility.StaTools;
  * @since 3.0
  */
 public class PerFieldNormWeightingModel extends WeightingModel {
+
 	private static final long serialVersionUID = 1L;
-	String[] params;
-	BasicModel basicModel;
-	Normalisation[] fieldNormalisations;
+
+	protected String[] params;
+	protected BasicModel basicModel;
+	protected Normalisation[] fieldNormalisations;
 	
-	double[] fieldGlobalFrequencies;
-	double[] fieldWeights;
-	int fieldCount;
+	protected double[] fieldGlobalFrequencies;
+	protected double[] fieldWeights;
+	protected int fieldCount;
 	
 	Class<? extends Normalisation> normClass;
 	/** 
@@ -88,6 +92,23 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 	}
 	
 	@Override
+	public PerFieldNormWeightingModel clone() {
+		PerFieldNormWeightingModel rtr = (PerFieldNormWeightingModel) super.clone();
+		rtr.basicModel = (BasicModel) this.basicModel.clone();
+		rtr.params = Arrays.copyOf(this.params,  this.params.length);
+		if (fieldGlobalFrequencies != null)
+			rtr.fieldGlobalFrequencies = Arrays.copyOf(fieldGlobalFrequencies, this.fieldCount);
+		if (fieldWeights != null)
+		rtr.fieldWeights = Arrays.copyOf(fieldWeights, this.fieldCount);
+		if (fieldNormalisations != null)
+			rtr.fieldNormalisations = new Normalisation[this.fieldCount];
+		for(int fi=0;fi<fieldCount;fi++)
+			rtr.fieldNormalisations[fi] = fieldNormalisations[fi].clone();
+			
+		return rtr;
+	}
+	
+	@Override
 	public void prepare() {
 		super.prepare();
 	}
@@ -100,9 +121,13 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 		final double[] normFieldFreqs = new double[fieldCount];
 		for(int i=0;i<fieldCount;i++)
 		{
-			normFieldFreqs[i] = fieldWeights[i] * fieldNormalisations[i].normalise(tff[i], fieldLengths[i], fieldGlobalFrequencies[i]);
+			if (tff[i] != 0.0d)
+				normFieldFreqs[i] = fieldWeights[i] * fieldNormalisations[i].normalise(tff[i], fieldLengths[i], fieldGlobalFrequencies[i]);
 		}
 		final double tf = StaTools.sum(normFieldFreqs);
+		//System.err.println("tf=" + tf);
+		if (tf == 0.0d)
+			return 0.0d;
 		return basicModel.score(tf, super.documentFrequency, super.termFrequency, super.keyFrequency, p.getDocumentLength());
 	}
 
@@ -120,8 +145,7 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 		fieldNormalisations = new Normalisation[fieldCount];
 		fieldGlobalFrequencies  = new double[fieldCount];
 		fieldWeights = new double[fieldCount];
-		try
-		{			
+		try {			
 			for(int fi=0;fi<fieldCount;fi++)
 			{
 				fieldWeights[fi] = Double.parseDouble(ApplicationSetup.getProperty("w."+ fi, ""+1.0));
@@ -138,6 +162,9 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 		}
 	}
 
+	/** 
+	 * {@inheritDoc} 
+	 */
 	@Override
 	public void setEntryStatistics(EntryStatistics _es) {
 		super.setEntryStatistics(_es);
@@ -152,7 +179,10 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 			fieldNormalisations[i].setDocumentFrequency(getOverflowed(es.getDocumentFrequency()));
 		}
 	}
-	
+
+	/** 
+	 * {@inheritDoc} 
+	 */	
 	@Override
 	public String getInfo() {
 		StringBuilder s = new StringBuilder();
@@ -176,6 +206,21 @@ public class PerFieldNormWeightingModel extends WeightingModel {
 		return 0;
 	}
 
+	/**
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
+	 * @param tf The term frequency in the document
+	 * @param docLength the document's length
+	 * @param n_t The document frequency of the term
+	 * @param F_t the term frequency in the collection
+	 * @param keyFrequency the term frequency in the query
+	 * @return the score returned by the implemented weighting model.
+	 */
+	@Deprecated
 	@Override
 	public double score(double tf, double docLength, double n_t, double F_t,
 			double keyFrequency) {

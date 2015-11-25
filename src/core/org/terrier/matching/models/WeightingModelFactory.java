@@ -17,7 +17,7 @@
  *
  * The Original Code is WeightingModelFactory.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -46,6 +46,11 @@ public class WeightingModelFactory {
 	/** A cache for instantiated weighting models. */
 	private static Map<Index, Map<String, WeightingModel>> cache = new HashMap<Index, Map<String, WeightingModel>>();
 
+	/** Clear the cache underlying this WeightingModelFactory */
+	public static void clearCache() {
+		cache.clear();
+	}
+	
 	/**
 	 * Returns the requested weighting model.
 	 * @param name The name of the weighting model to instantiate.
@@ -60,7 +65,7 @@ public class WeightingModelFactory {
 	 * @param index The index where the weighting model should be applied.
 	 */
 	public static WeightingModel newInstance(String name, Index index) {
-		Logger logger = Logger.getLogger(WeightingModelFactory.class);
+		final Logger logger = Logger.getLogger(WeightingModelFactory.class);
 		WeightingModel model = null;
 		
 		name = name.replaceFirst("^([^\\.]+(\\(|$))", NAMESPACE + "$1");
@@ -83,7 +88,7 @@ public class WeightingModelFactory {
 							.newInstance(new Object[]{parameters});
 				}
 				else{						
-					model = (WeightingModel) Class.forName(name).asSubclass(WeightingModel.class).newInstance();
+					model = Class.forName(name).asSubclass(WeightingModel.class).newInstance();
 				}
 				
 			} catch(InvocationTargetException e) {

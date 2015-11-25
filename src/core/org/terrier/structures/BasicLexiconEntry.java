@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockDirectIndex.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -150,7 +150,7 @@ public class BasicLexiconEntry extends LexiconEntry implements BitIndexPointer {
 	
 	/** returns a string representation of this lexicon entry */	
 	public String toString() {
-		return "term"+ termId + " Nt=" + n_t + " TF=" + TF 
+		return "term"+ termId + " Nt=" + this.getDocumentFrequency() + " TF=" + this.getFrequency() 
 			+ " @{"+ this.getFileNumber() +" " + startOffset + " " + this.getOffsetBits()+"}";
 	}
 	/** 

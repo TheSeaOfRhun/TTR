@@ -17,7 +17,7 @@
  *
  * The Original Code is IDComparator.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,7 +35,7 @@ import java.util.Map;
  * Compares String objects. It is used to sort the Map ID's for the MapData files loaded
  * during the reduce step. It makes sure that the Map ID's are in order of the documents
  * that they processed. 
- * @author richardm
+ * @author Richard McCreadie
  * @since 3.0
  */
 public class IDComparator implements Comparator<String> {

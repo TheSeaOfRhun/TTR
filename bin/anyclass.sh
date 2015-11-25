@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Terrier - Terabyte Retriever
-# Webpage: http://terrier.org
+# Webpage: http://ir.dcs.gla.ac.uk/terrier 
 # Contact: terrier@dcs.gla.ac.uk 
 #
 # The contents of this file are subject to the Mozilla Public
@@ -17,7 +17,7 @@
 # The Original Code is anyclass.sh
 #
 # The Initial Developer of the Original Code is the University of Glasgow.
-# Portions created by The Initial Developer are Copyright (C) 2004-2011
+# Portions created by The Initial Developer are Copyright (C) 2004 
 # the initial Developer. All Rights Reserved.
 #
 # Contributor(s):
@@ -91,7 +91,7 @@ else
 	CLASSPATH=$CLASSPATH:$JAVA_HOME/lib/tools.jar
 fi
 
-for jar in $TERRIER_LIB/*.jar $TERRIER_LIB/hadoop0.20/*.jar; do
+for jar in $TERRIER_LIB/*.jar $TERRIER_LIB/hadoop/*.jar  $TERRIER_LIB/poi/*.jar $TERRIER_LIB/crawler4j/*.jar; do
 	if [ ! -n "$CLASSPATH" ]
 	then
 		CLASSPATH=$jar
@@ -106,9 +106,20 @@ then
     TERRIER_HEAP_MEM=1024M
 fi
 
+if [ -e "$TERRIER_ETC/terrier-log.xml" ];
+then
+    LOGGER_OPTIONS="-Dlog4j.configuration=file:$TERRIER_ETC/terrier-log.xml"
+elif [ -e "$TERRIER_ETC/log4j.xml" ];
+then
+    LOGGER_OPTIONS="-Dlog4j.configuration=file:$TERRIER_ETC/log4j.xml"
+elif [ -e "$TERRIER_ETC/log4j.properties" ];
+then
+    LOGGER_OPTIONS="-Dlog4j.configuration=file:$TERRIER_ETC/log4j.properties"
+fi
+
 #JAVA_OPTIONS=
 
-$JAVA_HOME/bin/java -Xmx$TERRIER_HEAP_MEM $JAVA_OPTIONS $TERRIER_OPTIONS \
+$JAVA_HOME/bin/java -Xmx$TERRIER_HEAP_MEM $JAVA_OPTIONS $LOGGER_OPTIONS $TERRIER_OPTIONS \
 	 -Dterrier.etc=$TERRIER_ETC \
 	 -Dterrier.home=$TERRIER_HOME \
      -Dterrier.setup=$TERRIER_ETC/terrier.properties \

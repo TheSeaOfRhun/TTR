@@ -17,7 +17,7 @@
  *
  * The Original Code is TestTaggedDocument.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,6 +26,12 @@
  */
 package org.terrier.indexing;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 
@@ -34,6 +40,7 @@ import org.terrier.indexing.tokenisation.EnglishTokeniser;
 import org.terrier.indexing.tokenisation.Tokeniser;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.ArrayUtils;
+import org.terrier.utility.Files;
 
 public class TestTaggedDocument extends BaseTestDocument {
 
@@ -58,7 +65,24 @@ public class TestTaggedDocument extends BaseTestDocument {
 		testDocument(makeDocument("<DOCHDR>firstly </DOCHDR> <BODY>hello</BODY>", ENGLISH_TOKENISER), "hello");		
 		ApplicationSetup.setProperty("TrecDocTags.skip", "body");
 		testDocument(makeDocument("firstly<body>hello</body>", ENGLISH_TOKENISER), "firstly");
-		testDocument(makeDocument("firstly <body>hello</body>", ENGLISH_TOKENISER), "firstly");		
+		testDocument(makeDocument("firstly <body>hello</body>", ENGLISH_TOKENISER), "firstly");
+		
+		ApplicationSetup.setProperty("TrecDocTags.skip", "script");		
+		//non empty: token
+		testDocument(makeDocument("firstly <script>hello</script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		testDocument(makeDocument("firstly <script src=\"a.js\">hello</script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+
+		//non empty: tokens and cdata
+		testDocument(makeDocument("firstly <script type=\"text/javascript\">/*<![CDATA[*/ var skin = \"monobook\"; /*]]>*/</script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		testDocument(makeDocument("firstly <script type= \"text/javascript\">/*<![CDATA[*/ var skin = \"monobook\"; /*]]>*/</script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		
+		//empty
+		testDocument(makeDocument("firstly <script></script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		testDocument(makeDocument("firstly <script src=\"a.js\"></script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		
+		//empty non-tokens
+		testDocument(makeDocument("firstly <script src=\"a.js\"> </script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
+		testDocument(makeDocument("firstly <script><!-- not a script --></script> secondly", ENGLISH_TOKENISER), "firstly", "secondly");
 	}	
 
 	@Test public void testFields()
@@ -108,6 +132,61 @@ public class TestTaggedDocument extends BaseTestDocument {
 		testDocument(makeDocument("hello there, <!-- mr --> wolfie&amp<b>man</b>", ENGLISH_TOKENISER), "hello", "there", "wolfie", "man");
 	}
 	
+	@Test
+	public void testSpaceInTagBodies()
+	{
+		ApplicationSetup.setProperty("TrecDocTags.process", "body" );
+		testDocument(makeDocument("<reda><body>hello</body></reda>", ENGLISH_TOKENISER), "hello" ); 
+		testDocument(makeDocument("<reda ><body>hello</body></reda>", ENGLISH_TOKENISER), "hello" );
+	}
 	
+	
+	public void testAbstractCreation() {
+		
+		ApplicationSetup.setProperty("TrecDocTags.process", "TITLE,TEXT");
+		ApplicationSetup.setProperty("TaggedDocument.abstracts", "TITLE");
+		ApplicationSetup.setProperty("TaggedDocument.abstracts.tags", "TITLE");
+		ApplicationSetup.setProperty("TaggedDocument.abstracts.lengths", "11");
+		try {
+			String dataFilename = writeTemporaryFile("test.trec", new String[]{
+					"<DOC>",
+					"<DOCNO>doc1</DOCNO>",
+					"<TITLE>No 'title' LIKE THIS title</TITLE>",
+					"<TEXT>test</TEXT>",
+					"</DOC>",
+					"<DOC>",
+					"<DOCNO>doc2</DOCNO>",
+					"<TITLE>NOT</TITLE>",
+					"<TEXT>test this here now</TEXT>",
+					"</DOC>"
+					
+				});
+			Collection c = new TRECCollection(Files.openFileStream(dataFilename));
+			Document d;
+			assertTrue(c.nextDocument());
+			d = c.getDocument();
+			assertNotNull(d);
+			assertEquals("doc1", d.getProperty("docno"));
+			assertEquals("No 'title'", d.getProperty("TITLE"));
+			//if (d.getProperty("SUPERAWSOMEHEADER").compareTo("no 'header'")==0) assertTrue(false);
+			
+			assertTrue(c.nextDocument());
+			d = c.getDocument();
+			assertNotNull(d);
+			assertEquals("doc2", d.getProperty("docno"));
+			assertEquals("NOT", d.getProperty("TITLE"));
+			assertFalse(c.nextDocument());
+			c.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			assertTrue(false);
+		}
+		
+		
+		
+	}
 	
 }

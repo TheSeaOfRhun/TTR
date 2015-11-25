@@ -29,7 +29,7 @@ two purposes:</p>
 <br />
 <li><b>MacOS X</b>: Double click on bin/desktop_terrier.sh to start Desktop Terrier.
 Should this fail:
-<ol><li>Make sure you have Java 1.6 (Tiger on PowerPC is not supported)</li> 
+<ol><li>Make sure you have Java 1.7</li> 
 <li>Select bin/desktop_terrier.sh in Finder</li>
 	<li>In File menu, select Get Info (Command-I)</li>
 	<li>Select "Terminal" application with "Open with". Terminal is in the Folder Applications/Utilities.</li>
@@ -45,7 +45,7 @@ this from an Xterm environment (or similar), or by double clicking bin/desktop_t
 
 <p>
 The application window of the Desktop Search features two main tabs: "Search" and
-"Index". In the following paragraphs we will explain how you can use the application
+"Index". In the following, we will explain how you can use the application
 to index and search documents on your computer.
 </p>
 
@@ -69,7 +69,7 @@ to index and search documents on your computer.
   </p>  
 
 <p>The "Create Index" button will initiate the indexing process.
-  At the moment Terrier does not support incremental indexing. That means that
+  At the moment the Desktop Terrier does not support the updatable indices. That means that
   every time you press the "Create Index" button Terrier will remove the old index and
   index all specified folders from scratch.
   Once you have selected the folders to index, you may click 
@@ -117,9 +117,9 @@ least one of the query terms.</p>
 
 <p>In order to open one of the retrieved documents, you may double-click on
 its filename, i.e. the corresponding cell of the second column. Opening the
-retrieved files is a platform-dependent function. In Windows environments,
+retrieved files is a platform-dependent function. In Windows and Mac OS X environments,
 the application uses the file associations used by the operating system,
-while in other environments, such as Linux or Mac OS X, the file associations
+while in other environments, such as Linux the file associations
 need to be set by the user. In these cases, the associations are saved in
 a file with the default name desktop.fileassoc in the var directory of
 your installation.</p>
@@ -158,7 +158,7 @@ On Windows use the Scheduled Tasks functionality, which can be found in the Cont
 <p>You can configure the Desktop using many of the properties listed elsewhere in the Terrier documentation. These can be set in the <tt>etc/terrier.properties</tt> file. Moreover, it is possible to configure the Desktop using the following properties:</p>
 <p><b>Properties:</b>
  <ul><li><tt>desktop.directories.spec</tt> - Where is the collection.spec for the desktop. Defaults to <tt>var/desktop.spec</tt></li>
- <li><tt>desktop.matching</tt> - Which matching class to use for desktop. Defaults to Matching.</li>
+ <li><tt>desktop.matching</tt> - Which matching class to use for desktop. Defaults to org.terrier.matching.taat.Full.</li>
  <li><tt>desktop.model</tt> - Which weighting model to use for the desktop. Defaults to PL2.</li>
  <li><tt>desktop.manager</tt> - Which Manager class to use for the desktop. Defaults to Manager.</li>
  <li><tt>desktop.indexing.singlepass</tt> - Set to true to use the single-pass indexer.</li>
@@ -174,7 +174,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

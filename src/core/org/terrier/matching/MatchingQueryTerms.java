@@ -17,7 +17,7 @@
  *
  * The Original Code is MatchingQueryTerms.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -296,7 +296,8 @@ public class MatchingQueryTerms implements Serializable,Cloneable
 	}
 	
 	/** 
-	 * Adds a term to the query with a given weight.
+	 * Adds a term to the query with a given weight. If the term already exists,
+	 * the existing weight is overwritten.
 	 * @param term String the term to add.
 	 * @param weight double the weight of the added term.
 	 */
@@ -311,7 +312,8 @@ public class MatchingQueryTerms implements Serializable,Cloneable
 	
 	/**
 	 * Adds the given weight for an already existing term in the query.
-	 * If the term does not exist, it is added to the arraylist, with weight w
+	 * If the term does not exist, it is added to the arraylist, with weight w.
+	 * If the term does exist, the weight is added to its existing weight.
 	 * @param term String the term for which we add the weight.
 	 * @param w double the added weight.
 	 */
@@ -471,9 +473,18 @@ public class MatchingQueryTerms implements Serializable,Cloneable
 		{
 			newMQT.docScoreModifiers.add( (DocumentScoreModifier)(dsm.clone()));
 		}
-		//clone query		
-		newMQT.query = (Query)this.query.clone();
+		//clone query
+		if (this.query != null)
+			newMQT.query = (Query)this.query.clone();
 		return newMQT;
+	}
+	
+	/** Remove a term from the list of terms to be matched
+	 * @since 3.6 
+	 */
+	public void removeTerm(String term)
+	{
+		termProperties.remove(term);
 	}
 	
 	/* 
@@ -493,10 +504,10 @@ public class MatchingQueryTerms implements Serializable,Cloneable
 		if (qtp.termModels.size() != 0)
 		{
 			final ArrayList<WeightingModel> n = new ArrayList<WeightingModel>(qtp.termModels);
-			n.add(0, (WeightingModel) defaultWeightingModel.clone());
+			n.add(0, defaultWeightingModel.clone());
 			return n.toArray(tmpModels);
 		}
-		return new WeightingModel[]{(WeightingModel) defaultWeightingModel.clone()};
+		return new WeightingModel[]{defaultWeightingModel.clone()};
 	}
 
 	/** Set the default weighting model to be used for all terms */

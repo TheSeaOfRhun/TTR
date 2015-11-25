@@ -8,18 +8,18 @@
 
 <body>
 <!--!bodystart-->
-[<a href="configure_indexing.html">Previous: Configuring Indexing</a>] [<a href="index.html">Contents</a>] [<a href="querylanguage.html">Next: Terrier Query Language</a>]
+[<a href="configure_indexing.html">Previous: Configuring Indexing</a>] [<a href="index.html">Contents</a>] [<a href="learning.html">Next: Learning to Rank with Terrier</a>]
 </br></br><h1>Configuring Retrieval in Terrier</h1>
 
 <h2>Topics</h2>
 <p>After the end of the indexing process, we can proceed with retrieving from the 
-document collection. At this stage, the options for applying stemming or not, 
+document collection. At this stage, the configuration properties for applying stemming or not, 
 removing stopwords or not, and the maximum length of terms, should be exactly 
-the same as the ones used for indexing the collection.</p>
+the same properties as used for indexing the collection.</p>
 
 <p>Firstly, in the property <tt>trec.topics</tt>, we need to specify the files containing the queries to process.</p>
 
-<p>Moroever, before processing the queries,  the tags of the topics files to be processed
+<p>Moreover, before processing the queries,  the tags of the topics files to be processed
 should be specified. We can do that by setting the properties <tt>TrecQueryTags.process</tt>, 
 which denotes which tags to process, <tt>TrecQueryTags.idtag</tt>, which stands for the 
 tag containing the query identifier, and <tt>TrecQueryTags.skip</tt>, which denotes
@@ -61,13 +61,11 @@ available weighting models we will use for assigning scores to the retrieved
 documents. We do this by specifying the name of the corresponding model class in the property <tt>trec.model</tt>. E.g.
 <tt>trec.model=PL2</tt>.
 
-<p>Terrier provides implementation of many weighting models (see <a href="javadoc/org/terrier/matching/models/package-summary.html">org.terrier.matching.models</a> for the full list). In particular, some of the notable weighting models implemented include many from the <a href="dfr_description.html">Divergence from Randomness (DFR) framework</a>, among others:</p>
+<p>Terrier provides implementations of many weighting models (see <a href="javadoc/org/terrier/matching/models/package-summary.html">org.terrier.matching.models</a> for the full list). In particular, some of the notable weighting models implemented include many from the <a href="dfr_description.html">Divergence from Randomness (DFR) framework</a>, among others:</p>
 <ul>
 <li> <a href="javadoc/org/terrier/matching/models/BB2.html">BB2</a> (DFR): Bose-Einstein model for randomness, the ratio of two Bernoulli's processes for first normalisation, and Normalisation 2 for term frequency normalisation <a href="#cite1">[1]</a>. </li>
 
 <li> <a href="javadoc/org/terrier/matching/models/BM25.html">BM25</a>: The BM25 probabilistic model. </li>
-
-<li> <a href="javadoc/org/terrier/matching/models/DFI0.html">DFI0</a>: The first Divergence from Independence model <a href="#cite9">[9]</a>. </li>
 
 <li> <a href="javadoc/org/terrier/matching/models/DFR_BM25.html">DFR_BM25</a> (DFR): The DFR version of BM25 <a href="#cite1">[1]</a>. </li>
 
@@ -134,11 +132,11 @@ These generally include weights for each field, namely <tt>w.0</tt>, <tt>w.1</tt
 <pre>
 bin/trec_terrier.sh -r -Dtrec.model=PL2F -Dc.0=1.0 -Dc.1=2.3 -Dc.3=40 -Dw.0=4 -Dw.1=2 -Dw.3=25
 </pre>
-<p>For improved efficiency of field-based weighting models, it is recommended that you manually alter the <tt>data.properties</tt> file of your index, to change the DocumentIndex implementation in use, by updating it to read <tt>index.document.class=org.terrier.structures.FSAFieldDocumentIndex</tt>.	
+<p>For improved efficiency of field-based weighting models, it is recommended that you manually alter the <tt>data.properties</tt> file of your index to change the DocumentIndex implementation in use, by updating it to read <tt>index.document.class=org.terrier.structures.FSAFieldDocumentIndex</tt>.	
 
 <a name="proximity"><h2>Proximity (Dependence) Models</h2></a>
 <p>Starting with version 3.0, Terrier includes two dependence models. 
-Such models highly weight documents where the query terms in close 
+Such models highly weight documents where the query terms are in close 
 proximity. To use a term dependence model, you have to index using 
 blocks - see <a href="configure_indexing.html">Configuring Indexing</a> 
 for more details on how to configure block indexing. </p>
@@ -155,7 +153,7 @@ bin/trec_terrier.sh -r -Dmatching.dsms=DFRDependenceScoreModifier
 <p>The dependence models have various parameters to set. For more information, see the classes themselves.</p>
 
 <a name="priors"><h2>Document Prior Features</h2></a>
-<p>Terrier can easily integrate a query-independent document feature (or prior) into your retrieval model. The simplest way to do this is using <a href="javadoc/org/terrier/matching/dsms/SimpleStaticScoreModifier.html">SimpleStaticScoreModifier</a>. For instance, say you generate a feature  for all documents in the collection (e.g. using link analysis, say). You should export your file in one of the formats supported by SimpleStaticScoreModifier, e.g. feature value for each document, one per line. You can then add the feature as:</p>
+<p>Terrier can easily integrate a query-independent document feature (or prior) into your retrieval model. The simplest way to do this is using <a href="javadoc/org/terrier/matching/dsms/SimpleStaticScoreModifier.html">SimpleStaticScoreModifier</a>. For instance, say you generate a feature  for all documents in the collection (e.g. using link analysis). You should export your file in one of the formats supported by SimpleStaticScoreModifier, e.g. feature value for each document, one per line. You can then add the feature as:</p>
 <pre>
 bin/trec_terrier.sh -r -Dmatching.dsms=SimpleStaticScoreModifier -Dssa.input.file=/path/to/feature -Dssa.input.type=listofscores -Dssa.w=0.5
 </pre>
@@ -178,6 +176,9 @@ bin/trec_terrier.sh -r -q -c 1.0
 bin/trec_terrier.sh -r -q -Dqe.feedback.selector=RelevantOnlyFeedbackDocuments,RelevanceFeedbackSelector -Dqe.feedback.filename=/path/to/feedback/qrels
 </pre>
 
+<a name="ltr"><h2>Learning to Rank</h2></a>
+<p>Since version 4.0, Terrier has offered learning to rank functionality, based on the so-called Fat framework. This allows multiple features (which can be query-dependent or query-independent) to be calculated during the Matching process, and then combined using a machine learned ranking model. In particular, any weighting model in Terrier can be used as an additional query-dependent feature. For more information on these new, advanced functionalities in Terrier - including a worked example using a TREC Web track corpus - see <a href="learning.html">Learning to Rank with Terrier</a>.
+
 <h2>Other Configurables</h2>
 <p>The results are saved in the directory var/results 
 in a file named as follows:</p>
@@ -185,11 +186,11 @@ in a file named as follows:</p>
 "weighting scheme" c "value of c"_counter.res
 </pre>
 <p>For example, if we have used the weighting scheme PL2 with c=1.28 and 
-the counter was 2, then the filename of the results would be <tt>PL2c1.28_3.res</tt>. If you wish to override the filename of the generated result file, use the <tt>trec.results.file</tt> property. Alternatively, if multiple instance of Terrier are writing files at same time, the use of the counter can fail due to a race condition. Instead, set <tt>trec.querycounter.type=random</tt>. Output files by TRECQuerying are always in the TREC-format. If you desire an alternative format, you can implement another <a href="javadoc/org/terrier/applications/TRECQuerying.OutputFormat.html">OutputFormat</a>, then get TRECQuerying to use this with the property <tt>trec.querying.outputformat</tt>.</p>
+the counter was 2, then the filename of the results would be <tt>PL2c1.28_3.res</tt>. If you wish to override the filename of the generated result file, use the <tt>trec.results.file</tt> property. Alternatively, if multiple instances of Terrier are writing files at same time, the use of the counter can fail due to a race condition. Instead, set <tt>trec.querycounter.type=random</tt>. Output files by TRECQuerying are always in the TREC-format. If you desire an alternative format, you can implement another <a href="javadoc/org/terrier/structures/outputformat/OutputFormat.html">org.terrier.structures.outputformat.OutputFormat</a>, then get TRECQuerying to use this with the property <tt>trec.querying.outputformat</tt>.</p>
 
-<p>For each query, Terrier returns a maximum number of 1000 documents by default. We can change the maximum number of returned documents per query by changing <tt>matching.retrieved_set_size</tt>. For example, if we want to retrieve 10000 document for each given query, we need to set <tt>matching.retrieved_set_size</tt> to 10000. In addition, if the <tt>end</tt> control is set in the property <tt>querying.default.controls</tt>, then amend this to 9999 as well (from Terrier 3.5, this is removed from the default configuration). TRECQuerying can also limit this number, according to the <tt>trec.output.format.length</tt> property (default 1000) also.</p> 
+<p>For each query, Terrier returns a maximum number of 1000 documents by default. We can change the maximum number of returned documents per query by changing <tt>matching.retrieved_set_size</tt>. For example, if we want to retrieve 10000 documents for each given query, we need to set <tt>matching.retrieved_set_size</tt> to 10000. In addition, if the <tt>end</tt> control is set in the property <tt>querying.default.controls</tt>, then amend this to 9999 as well (from Terrier 3.5, this is removed from the default configuration). TRECQuerying can also limit this number, according to the <tt>trec.output.format.length</tt> property (default 1000) also.</p> 
 
-<p>Some of the weighting models, e.g. BM25, assume low document frequencies of query terms. For these models, it is worth ignoring query terms with high document frequency during retrieval by setting <tt>ignore.low.idf.terms</tt> to true.Moreover, it is better to set <tt>ignore.low.idf.terms</tt> to false for high precision search tasks such as named-page finding.</p>
+<p>Some of the weighting models, e.g. BM25, assume low document frequencies of query terms. For these models, it is worth ignoring query terms with high document frequency during retrieval by setting <tt>ignore.low.idf.terms</tt> to true. Moreover, it is better to set <tt>ignore.low.idf.terms</tt> to false for high precision search tasks such as named-page finding.</p>
 
 <p></p>
 
@@ -203,10 +204,9 @@ the counter was 2, then the filename of the results would be <tt>PL2c1.28_3.res<
 <li><a name="cite6"/>Incorporating Term Dependency in the DFR Framework. J. Peng, C. Macdonald, B. He, V. Plachouras and I. Ounis.</li>
 <li><a name="cite7"/>University of Glasgow at WebCLEF 2005: Experiments in per-field normalisation and language specific stemming. C. Macdonald, V. Plachouras, B. He, C. Lioma and I. Ounis. In Working notes of the CLEF 2005 Workshop, Vienna, Austria, 2005.</li>
 <li><a name="cite8"/>Multinomial Randomness Models for Retrieval with Document Fields. V. Plachouras and I. Ounis. Proceedings of the 29th European Conference on Information Retrieval (ECIR07). Rome, Italy, 2007. </li>
-<li><a name="cite9"/>IRRA at TREC 2009: Index Term Weighting Based on Divergence From Independence Model. B.T. Dincer, I. Kocaba&#353; and B. Karo&#287;lan. In Proceedings of TREC 2009.</li>
 </ol>
 
-[<a href="configure_indexing.html">Previous: Configuring Indexing</a>] [<a href="index.html">Contents</a>] [<a href="querylanguage.html">Next: Terrier Query Language</a>]
+[<a href="configure_indexing.html">Previous: Configuring Indexing</a>] [<a href="index.html">Contents</a>] [<a href="learning.html">Previous: Learning to Rank with Terrier</a>]
 <!--!bodyend-->
 <hr>
 <small>
@@ -214,7 +214,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

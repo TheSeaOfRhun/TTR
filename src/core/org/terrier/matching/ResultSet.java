@@ -17,7 +17,7 @@
  *
  * The Original Code is ResultSet.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,6 +35,7 @@ import java.util.concurrent.locks.Lock;
  * @author Vassilis Plachouras
   */
 public interface ResultSet extends Serializable {
+	
 	
 	/** Returns the names of the meta keys which this resultset has */
 	String[] getMetaKeys();
@@ -118,6 +119,16 @@ public interface ResultSet extends Serializable {
 	 * @param scs double[] the scores to initiliase the result set with.
 	 */
 	void initialise(double[] scs);
+	
+	/** Sorts all documents in this resultset by descending score */
+	void sort();
+	
+	/** Sorts the top <tt>topDocs</tt> document in this resultset be first.
+	 * The order of the remaining documents is undefined.
+	 * @param topDocs number of documents to top-rank
+	 */
+	void sort(int topDocs);
+	
 	
 	/**
 	 * Sets the exact size of the result set, that is 

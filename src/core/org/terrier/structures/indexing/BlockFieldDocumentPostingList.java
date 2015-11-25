@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockFieldDocumentPostingList.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,6 +30,9 @@ import gnu.trove.TIntHashSet;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntProcedure;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.terrier.sorting.HeapSortInt;
@@ -189,4 +192,15 @@ public class BlockFieldDocumentPostingList extends FieldDocumentPostingList {
 	{
 		return new blockFieldPostings(_terms, termIds);
 	}
+	
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void write(final DataOutput out) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+	
 }

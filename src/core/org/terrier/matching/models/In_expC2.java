@@ -17,7 +17,7 @@
  *
  * The Original Code is In_expC2.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,20 +26,24 @@
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
 /**
  * This class implements the In_expC2 weighting model.
  * @author Gianni Amati, Ben He, Vassilis Plachouras
   */
 public class In_expC2 extends WeightingModel {
+
 	private static final long serialVersionUID = 1L;
+
 	/** 
 	 * A default constructor. This must be followed 
 	 * by specifying the c value.
 	 */
 	public In_expC2() {
 		super();
-		this.c=1.0d;
+		this.c = 1.0d;
 	}
+
 	/** 
 	 * Constructs an instance of this class 
 	 * with the specified value for the parameter beta.
@@ -72,14 +76,21 @@ public class In_expC2 extends WeightingModel {
 		return TF * i.idfDFR(n_exp) * keyFrequency * NORM;
 	}
 	/**
-	* Computes the score according to the weighting models In_expC2.
-	* @param tf The term frequency in the document
-	* @param docLength the document's length
-	* @param documentFrequency The document frequency of the term
-	* @param termFrequency the term frequency in the collection
-	* @param keyFrequency the term frequency in the query
-	* @return the score returned by the implemented weighting model.
-	*/
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
+	 * @param tf The term frequency in the document
+	 * @param docLength the document's length
+	 * @param documentFrequency The document frequency of the term
+	 * @param termFrequency the term frequency in the collection
+	 * @param keyFrequency the term frequency in the query
+	 * @return the score returned by the implemented weighting model.
+	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,

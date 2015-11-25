@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockFieldORIterablePosting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -65,7 +65,15 @@ public class BlockFieldORIterablePosting extends FieldORIterablePosting
 	@Override
 	protected void firstPosting(Posting p) {
 		super.firstPosting(p);
-		positions.clear();
+		if (positions.size() > 30)
+		{
+			positions.clear();
+			positions.compact();
+		}
+		else
+		{
+			positions.clear();
+		}
 		positions.addAll(((BlockPosting)p).getPositions());
 	}
 

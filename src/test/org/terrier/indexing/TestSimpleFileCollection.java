@@ -17,7 +17,7 @@
  *
  * The Original Code is TestSimpleFileCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -40,16 +40,24 @@ public class TestSimpleFileCollection extends ApplicationSetupBasedTest {
 	static final String[] LOREM_IPSUM = ("lorem ipsum dolor sit amet consetetur sadipscing elitr sed diam nonumy eirmod tempor "
 		+"invidunt ut labore et dolore magna aliquyam erat sed diam voluptua at vero eos et accusam et justo duo "
 		+"dolores et ea rebum stet clita kasd gubergren no sea takimata sanctus est lorem ipsum dolor sit amet").split(" ");
-	static final String[] EXTS = new String[]{ "txt", "html", "pdf", "doc", "xls"
-		/*, "ppt"*/
+	static final String[] EXTS = new String[]{ "txt", "html", "pdf", "doc", /*"xls",*/ "ppt", /*"docx", "xlsx", "pptx"*/
 	};
-		 
+	
+	/* fails: 
+	 * xls contains "Sheet1"
+	 * xlsx contains "Sheet1"
+	 * docx contains text before table, rather than inline
+	 */
 	
 	@SuppressWarnings("unchecked")
 	static final Class<? extends Document>[] CLASSES = new Class[]{
 		FileDocument.class, TaggedDocument.class, PDFDocument.class, 
-		MSWordDocument.class, MSExcelDocument.class
-		/*, MSPowerpointDocument.class*/
+		POIDocument.class, //doc
+		//POIDocument.class, //xls
+		POIDocument.class, //ppt
+		//POIDocument.class, //docx	
+		//POIDocument.class, //xslx	
+		//POIDocument.class, //pptx
 	};
 	
 	
@@ -68,6 +76,7 @@ public class TestSimpleFileCollection extends ApplicationSetupBasedTest {
 			assertFalse(c.endOfCollection());
 			assertTrue(c.nextDocument());
 			Document d = c.getDocument();
+			assertNotNull("Did not get a document for extension ."+ EXTS[i], d);
 			assertTrue(d.getProperty("filename").endsWith("document."+EXTS[i]));
 			assertNotNull(d);
 			assertTrue(docClass.isInstance(d));
@@ -75,6 +84,7 @@ public class TestSimpleFileCollection extends ApplicationSetupBasedTest {
 		}
 		assertFalse(c.nextDocument());
 		assertTrue(c.endOfCollection());
+		c.close();
 	}
 	
 }

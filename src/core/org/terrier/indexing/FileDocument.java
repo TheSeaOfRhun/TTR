@@ -17,7 +17,7 @@
  *
  * The Original Code is FileDocument.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -53,7 +53,7 @@ public class FileDocument implements Document {
 	protected boolean EOD = false;
 	
 	/** The number of bytes read from the input.*/
-	public long counter = 0;
+	//public long counter = 0;
 	
 	protected Map<String,String> fileProperties;
 

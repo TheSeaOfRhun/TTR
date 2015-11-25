@@ -17,7 +17,7 @@
  *
  * The Original Code is TestCountingInputStream.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -76,6 +76,7 @@ public class TestCountingInputStream {
 		assertEquals(TEST_ARRAY.length, cis.getPos());
 		assertEquals(-1, cis.read());
 		assertEquals(TEST_ARRAY.length, cis.getPos());
+		cis.close();
 	}
 	
 	/** Test that two byte reads have the desired effect on counting */
@@ -97,6 +98,7 @@ public class TestCountingInputStream {
 		assertEquals(TEST_ARRAY.length, cis.getPos());
 		assertEquals(-1, cis.read());
 		assertEquals(TEST_ARRAY.length, cis.getPos());
+		cis.close();
 	}
 	
 	/** Test that reads using array offsets work as expected */
@@ -118,6 +120,7 @@ public class TestCountingInputStream {
 		assertEquals(TEST_ARRAY.length, cis.getPos());
 		assertEquals(-1, cis.read());
 		assertEquals(TEST_ARRAY.length, cis.getPos());
+		cis.close();
 	}
 	
 }

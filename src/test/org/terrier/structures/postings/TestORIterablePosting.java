@@ -17,7 +17,7 @@
  *
  * The Original Code is TestORIterablePosting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -40,8 +40,8 @@ public class TestORIterablePosting
 	@Test public void testSingleNoOverlap() throws Exception
 	{
 		IterablePosting[] ips = new IterablePosting[]{
-				new ArrayOfBasicIterablePosting(new int[]{0}, new int[]{1}),
-				new ArrayOfBasicIterablePosting(new int[]{1}, new int[]{2}),
+				new ArrayOfBasicIterablePosting(new int[]{0}, new int[]{1}, new int[]{3}),
+				new ArrayOfBasicIterablePosting(new int[]{1}, new int[]{2}, new int[]{4}),
 		};
 		//for(IterablePosting ip : ips)
 		//	ip.next();
@@ -49,49 +49,55 @@ public class TestORIterablePosting
 		assertEquals(0, joined.next());
 		assertEquals(0, joined.getId());
 		assertEquals(1, joined.getFrequency());
+		assertEquals(3, joined.getDocumentLength());
 		assertEquals(1, joined.next());
 		assertEquals(1, joined.getId());
 		assertEquals(2, joined.getFrequency());
+		assertEquals(4, joined.getDocumentLength());
 		assertEquals(IterablePosting.EOL, joined.next());			
 	}
 	
 	@Test public void testTwoWithOverlap() throws Exception
 	{
 		IterablePosting[] ips = new IterablePosting[]{
-				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{1,1}),
-				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{2,2}),
+				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{1,1}, new int[]{5,6}),
+				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{2,2}, new int[]{5,6}),
 		};
-//		for(IterablePosting ip : ips)
-//			ip.next();
 		IterablePosting joined = joinPostings(ips);
 		assertEquals(0, joined.next());
 		assertEquals(0, joined.getId());
 		assertEquals(3, joined.getFrequency());
+		assertEquals(5, joined.getDocumentLength());
 		assertEquals(1, joined.next());
 		assertEquals(1, joined.getId());
 		assertEquals(3, joined.getFrequency());
+		assertEquals(6, joined.getDocumentLength());
 		assertEquals(IterablePosting.EOL, joined.next());			
 	}
 	
 	@Test public void testManySomeOverlap() throws Exception
 	{
 		IterablePosting[] ips = new IterablePosting[]{
-				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{1,1}),
-				new ArrayOfBasicIterablePosting(new int[]{1,2}, new int[]{2,2}),
+				new ArrayOfBasicIterablePosting(new int[]{0,1}, new int[]{1,1}, new int[]{4,5}),
+				new ArrayOfBasicIterablePosting(new int[]{1,2}, new int[]{2,2}, new int[]{5,6}),
 		};
-//		for(IterablePosting ip : ips)
-//			ip.next();
 		IterablePosting joined = joinPostings(ips);
 		assertEquals(0, joined.next());
 		assertEquals(0, joined.getId());
 		assertEquals(1, joined.getFrequency());
+		assertEquals(4, joined.getDocumentLength());
 		assertEquals(1, joined.next());
 		assertEquals(1, joined.getId());
 		assertEquals(3, joined.getFrequency());
+		assertEquals(5, joined.getDocumentLength());
 		assertEquals(2, joined.next());
 		assertEquals(2, joined.getId());
 		assertEquals(2, joined.getFrequency());
+		assertEquals(6, joined.getDocumentLength());
 		assertEquals(IterablePosting.EOL, joined.next());			
 	}
+	
+	
+	
 	
 }

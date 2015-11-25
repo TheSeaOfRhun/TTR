@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopRunWriter.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -31,7 +31,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.OutputCollector;
 
-import org.terrier.compression.MemorySBOS;
+import org.terrier.compression.bit.MemorySBOS;
 import org.terrier.structures.indexing.singlepass.Posting;
 import org.terrier.structures.indexing.singlepass.RunWriter;
 

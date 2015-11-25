@@ -17,7 +17,7 @@
  *
  * The Original Code is BatchEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -37,9 +37,11 @@ import java.util.List;
 
 import org.terrier.applications.TrecTerrier;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.ArrayUtils;
 import org.terrier.utility.Files;
+import org.terrier.utility.io.CheckClosedStreams;
 
 public abstract class BatchEndToEndTest extends ApplicationSetupBasedTest {
 
@@ -100,8 +102,9 @@ public abstract class BatchEndToEndTest extends ApplicationSetupBasedTest {
 		
 		//check that indexing actually created an index
 		assertTrue("Index does not exist at ["+ApplicationSetup.TERRIER_INDEX_PATH+","+ApplicationSetup.TERRIER_INDEX_PREFIX+"]", Index.existsIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX));
-		Index i = Index.createIndex();
+		IndexOnDisk i = Index.createIndex();
 		assertNotNull(Index.getLastIndexLoadError(), i);
+		assertEquals(ApplicationSetup.TERRIER_VERSION,i.getIndexProperty("index.terrier.version", ""));
 		assertTrue("Index does not have an inverted structure", i.hasIndexStructure("inverted"));
 		assertTrue("Index does not have an lexicon structure", i.hasIndexStructure("lexicon"));
 		assertTrue("Index does not have an document structure", i.hasIndexStructure("document"));
@@ -111,7 +114,7 @@ public abstract class BatchEndToEndTest extends ApplicationSetupBasedTest {
 		finishIndexing();
 	}
 
-	protected abstract void addDirectStructure(Index index) throws Exception;
+	protected abstract void addDirectStructure(IndexOnDisk index) throws Exception;
 	
 	protected int doRetrieval(String[] topicSet, String[] trecTerrierArgs) throws Exception
 	{
@@ -194,6 +197,7 @@ public abstract class BatchEndToEndTest extends ApplicationSetupBasedTest {
 	protected void doTrecTerrierIndexingRunAndEvaluate(String[] indexingArgs, String[] topics, String[] retrievalArgs,
 			String qrels, float expectedMAP) throws Exception
 	{
+		CheckClosedStreams.enable();
 		for(BatchEndToEndTestEventHooks hook : this.testHooks)
 			if (! hook.validPlatform())
 			{
@@ -201,6 +205,7 @@ public abstract class BatchEndToEndTest extends ApplicationSetupBasedTest {
 				return;
 			}
 		doTrecTerrierIndexing(indexingArgs);
+		CheckClosedStreams.finished();
 		doTrecTerrierRunAndEvaluate(topics, retrievalArgs, qrels, expectedMAP);
 		 
 	}

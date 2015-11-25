@@ -17,7 +17,7 @@
  *
  * The Original Code is ArrayOfBasicIterablePosting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -31,6 +31,7 @@ package org.terrier.structures.postings;
 public class ArrayOfBasicIterablePosting extends ArrayOfIdsIterablePosting {
 	/** frequencies of all of the stored postings */
 	protected int[] frequencies;
+	protected int[] doclens = null;
 	
 	/** Make a new posting list with these ids and frequencies */
 	public ArrayOfBasicIterablePosting(int[] _ids, int[] _freqs) 
@@ -38,11 +39,25 @@ public class ArrayOfBasicIterablePosting extends ArrayOfIdsIterablePosting {
 		super(_ids);
 		this.frequencies = _freqs;
 	}
+	
+	public ArrayOfBasicIterablePosting(int[] _ids, int[] _freqs, int[] _lens) 
+	{
+		super(_ids);
+		this.frequencies = _freqs;
+		this.doclens = _lens;
+	}
 
 	/** {@inheritDoc} */
 	@Override
 	public int getFrequency() {
 		return this.frequencies[indice];
+	}
+
+	@Override
+	public int getDocumentLength() {
+		if (doclens != null)
+			return doclens[indice];
+		return 0;
 	}
 	
 	

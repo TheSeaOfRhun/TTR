@@ -9,9 +9,9 @@
 <body>
 <!--!bodystart-->
 
-[<a href="terrier_desktop.html">Previous: Desktop Search</a>] [<a href="index.html">Contents</a>] [<a href="trec_examples.html">Next: TREC Experiment Examples</a>] 
+[<a href="terrier_desktop.html">Previous: Desktop Search</a>] [<a href="index.html">Contents</a>] [<a href="website_search.html">Next: Website Search Application</a>] 
 </br><br><h1>Using Terrier for Web-based Search</h1>
-<p>Since version 3.0, Terrier supports dynamic search functionality in a Web browser environment. 
+<p>Terrier supports dynamic search functionality in a Web browser environment. 
 In particular, Terrier provides a customisable Web-based interface to facilitate retrieval of
 documents for a query and the summarisation of those documents in the form of snippets or abstracts,
 for display, in a similar way to major Web search engines. This page explains how to configure 
@@ -27,25 +27,22 @@ as <a href="http://en.wikipedia.org/wiki/JavaServer_Pages">JSPs</a> are used, th
  the JAVA_HOME environment variable points to your JDK installation. Secondly, for existing users
  of Terrier, it is important to note that normal indices cannot be used with the Web-based interface
  as by default Terrier does not store document snippets/abstracts/meta-data. Hence, the collections need to be
- indexed from scratch.</p>
+ indexed from scratch using the correct indexing configuration.</p>
 
 <h2>Indexing for a Web-based interface</h2>
 <p>As noted above, to use the Web-based interface, document snippets/abstracts/meta-data need to be stored such
 that they can be returned with each document retrieved. Normally, this will take the form of one or more
 document abstracts, e.g. the first paragraph or so of each document. 
 The Terrier <a href="javadoc/org/terrier/indexing/Document.html">Document</a> classes are responsible for 
-generating document abstracts. Since 3.5, the following Terrier <a href="javadoc/org/terrier/indexing/Document.html">Document</a> classes
-support some form of abstract generation:</p>
+generating document abstracts. Since version 3.5, the following Terrier classes implementing the 
+<a href="javadoc/org/terrier/indexing/Document.html">Document</a> interface support some form of abstract generation:</p>
 
 <ul>
 <li><a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>: First <tt>N</tt> characters of the document.</li>
-<li><a href="javadoc/org/terrier/indexing/MSExcelDocument.html">MSExcelDocument</a> (extends <a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>): First <tt>N</tt> characters of the document.</li>
-<li><a href="javadoc/org/terrier/indexing/MSPowerpointDocument.html">MSPowerpointDocument</a> (extends <a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>): First <tt>N</tt> characters of the document.</li>
-<li><a href="javadoc/org/terrier/indexing/MSWordDocument.html">MSWordDocument</a> (extends <a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>): First <tt>N</tt> characters of the document.</li>
+<li><a href="javadoc/org/terrier/indexing/POIDocument.html">POIDocument</a> (for Microsoft Office documents, extends <a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>): First <tt>N</tt> characters of the document.</li>
 <li><a href="javadoc/org/terrier/indexing/PDFDocument.html">PDFDocument</a> (extends <a href="javadoc/org/terrier/indexing/FileDocument.html">FileDocument</a>): First <tt>N</tt> characters of the document.</li>
 <li><a href="javadoc/org/terrier/indexing/TaggedDocument.html">TaggedDocument</a>: First <tt>N</tt> characters from the content of each specified tag within the document.</li>
 <li><a href="javadoc/org/terrier/indexing/TRECDocument.html">TRECDocument</a> (extends <a href="javadoc/org/terrier/indexing/TaggedDocument.html">TaggedDocument</a>): First <tt>N</tt> characters from the content of each specified tag within the document.</li>
-<li><a href="javadoc/org/terrier/indexing/HTMLDocument.html">HTMLDocument</a> (extends <a href="javadoc/org/terrier/indexing/TaggedDocument.html">TaggedDocument</a>): First <tt>N</tt> characters from the content of each specified tag within the document.</li>
 </ul>
 
 
@@ -65,10 +62,12 @@ and the abstract lengths should be added to <tt>indexer.meta.forward.keylens</tt
 
 <p>An example where we save two abstracts using a TREC Collection is shown below:<p> 
 <pre>
-#For TREC Web collections
+#For TREC collections
 trec.collection.class=TRECCollection
 #For ClueWeb09 collection
 #trec.collection.class=WARC018Collection
+#For ClueWeb12 collection
+#trec.collection.class=WARC10Collection
 
 # Do not skip any of the tags, in particular, do not skip the DOCHDR which we want to parse
 # the url and crawldate from!
@@ -98,14 +97,14 @@ indexer.meta.reverse.keys=docno
 </pre>
 
 <p> In this example, we store the first 256 characters of the title tag in one abstract called 'title' and a further
-2048 characters from the rest of the document in a second abstract called 'body'. The document class used in this
+2048 characters from the rest of the document in a second abstract called 'body'. The Document class used in this
 case is TaggedDocument.</p>
 
 <h3>TRECCollection, TRECWebCollection and Meta-Data</h3>
 <p>Beyond generating an abstract of each document, it is often useful to store other meta-data about each document, e.g.
 the URL of the document or the timestamp when the page was created, which we might also wish to display. Importantly, 
 this data may be held in the header of the document or in special tags, which would otherwise be ignored by the document 
-parser. As such, this meta-data cannot be collected by the document class. Instead, for collections which have meta-data, the
+parser. As such, this meta-data cannot be collected by the document class. Instead, for collections of Web documents that have such meta-data, the
 related collection class is responsible for storing this meta-data. Currently <a href="javadoc/org/terrier/indexing/TRECCollection.html">TRECCollection</a> and 
 <a href="javadoc/org/terrier/indexing/TRECWebCollection.html">TRECWebCollection</a> can save additional meta-data about each document as follows:</p>
 
@@ -158,8 +157,8 @@ and the meta-data lengths should be added to <tt>indexer.meta.forward.keylens</t
 
 Below are the indexing properties to set when indexing the TREC WT2G corpus such that 
 the interface example shown earlier can be generated. Note that these properties should be
-used <i>in addition to</i> the standard <a href="configuring_indexing.html">indexing</a> 
-and <a href="configuring_retrieval.html">retrieval</a> properties.
+used <i>in addition to</i> the standard <a href="configure_indexing.html">indexing</a> 
+and <a href="configure_retrieval.html">retrieval</a> properties.
 
 <pre>
 # WT2G is a TRECCollection and we want to get the crawldate and urls from the header
@@ -249,7 +248,7 @@ example interface designed to display documents from WT2G, named wt2g (<tt>src/w
 
 <p>If you wish to use another webapps folder, or start the interface on a port other than 8080, you can override both on the command line.</p>
 <pre>
-bin/http_terrier.sh 8000 src/webapps/wt2g/
+bin/http_terrier.sh 8080 src/webapps/wt2g/
 </pre>
 
 <p>The results for the same example query using the wt2g interface are shown below.</p>
@@ -325,11 +324,11 @@ ResultSet rs = srq.getResultSet();
 
 <h3>Further Details</h3>
 <p><tt>bin/http_terrier.sh</tt> invokes <a href="javadoc/org/terrier/utility/SimpleJettyHTTPServer.html">SimpleJettyHTTPServer</a>,
- which starts a <a href="http://www.mortbay.org/">Jetty</a> server on the port specified on the command line. The second
+ which starts a <a href="http://www.eclipse.org/jetty/">Jetty</a> server on the port specified on the command line. The second
   command line argument is the path to a webapps folder. <tt>share/images</tt> is also mounted as <tt>/images</tt> directory.  
 
 <p></p>
-<a href="hadoop_configuration.html">Previous: Terrier/Hadoop Configuration</a>] [<a href="index.html">Contents</a>] [<a href="properties.html">Next: Properties in Terrier</a>]
+[<a href="terrier_desktop.html">Previous: Desktop Search</a>] [<a href="index.html">Contents</a>] [<a href="website_search.html">Next: Website Search Application</a>] 
 <!--!bodyend-->
 <hr>
 <small>
@@ -337,7 +336,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 <tr><td colspan="2">&nbsp;</td></tr>
 </body>

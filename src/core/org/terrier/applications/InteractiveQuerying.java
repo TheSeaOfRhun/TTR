@@ -17,7 +17,7 @@
  *
  * The Original Code is InteractiveQuerying.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -232,9 +232,10 @@ public class InteractiveQuerying {
 		int start = 0;
 		int end = minimum;
 		for (int i = start; i < end; i++) {
+			if (scores[i] <= 0d)
+				continue;
 			sbuffer.append(i);
 			sbuffer.append(" ");
-			//sbuffer.append(docids[i]);
 			for(metaKeyId = 0; metaKeyId < metaKeyCount; metaKeyId++)
 			{
 				sbuffer.append(docNames[metaKeyId][i]);

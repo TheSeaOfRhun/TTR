@@ -17,7 +17,7 @@
  *
  * The Original Code is TermInFieldModifier.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,10 +35,9 @@ import org.terrier.utility.FieldScore;
  * a given set of fields. This class implements the TermScoreModifier interface.
  * @author Vassilis Plachouras
   */
-@SuppressWarnings("deprecation")
 public class TermInFieldModifier 
 	extends WeightingModel 
-	implements TermScoreModifier, IndexConfigurable
+	implements IndexConfigurable
 {
 	private static final long serialVersionUID = 1L;
 	protected transient Index index = null;
@@ -142,6 +141,14 @@ public class TermInFieldModifier
 			}
 			i++;
 		}
+		if (fieldIndex == -1)
+		{
+			throw new IllegalArgumentException("Field '" + this.field + "' is not a valid field; possibilities were " +  index.getIndexProperty("index.inverted.fields.names", ""));
+		}
+		//else
+		//{
+		//	System.err.println("Field '" + "' is the "+fieldIndex+"th field (0 based)");
+		//}
 	}
 	
 	//implementation assumes scores are additive
@@ -167,18 +174,10 @@ public class TermInFieldModifier
 	}
 	
 	/** 
-	 * {@inheritDoc} 
+	 * Returns the name of the class and whether the query term is required.
 	 */
 	public String getName() {
 		return "TermInFieldModifier("+field+","+requirement+")";
-	}
-	/** 
-	 * {@inheritDoc} 
-	 */
-	public Object clone()
-	{
-		//no need to clone field, as Strings are immutable
-		return (Object)new TermInFieldModifier(field, requirement);
 	}
 
 	@Override
@@ -193,16 +192,18 @@ public class TermInFieldModifier
 		return 0;
 	}
 
-	@Override
-	public double score(double tf, double docLength, double n_t, double F_t,
-			double keyFrequency) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 	/** 
 	 * {@inheritDoc} 
 	 */
 	public void setIndex(Index i) {
 		this.index = i;
+	}
+
+	@Override
+	@Deprecated
+	public double score(double tf, double docLength, double n_t, double F_t,
+			double _keyFrequency) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

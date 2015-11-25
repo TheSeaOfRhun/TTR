@@ -17,11 +17,12 @@
  *
  * The Original Code is SearchRequest.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2012 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
   *   Craig Macdonald <craigm{a.}dcs.gla.ac.uk> (original author)
+  *   Dyaa Albakour <dyaa{a.}dcs.gla.ac.uk>
  */
 package org.terrier.querying;
 import java.io.Serializable;
@@ -34,31 +35,20 @@ import org.terrier.querying.parser.Query;
   * runPostProcess and runPostFilters
   * Example usage:
   * <pre>
-  * Index index = new Index()
+  * Index index = Index.createIndex();
   * Manager manager = new Manager(index);
-  * SearchRequest srq = manager.newSearchRequest();
-  * //parse the query
-  * TerrierLexer lexer = new TerrierLexer(new StringReader(query));
-  * TerrierFloatLexer flexer = new TerrierFloatLexer(lexer.getInputState());
-
-  * TokenStreamSelector selector = new TokenStreamSelector();
-  * selector.addInputStream(lexer, "main");
-  * selector.addInputStream(flexer, "numbers");
-  * selector.select("main");
-  * TerrierQueryParser parser = new TerrierQueryParser(selector);
-  * parser.setSelector(selector);
-  *
-  * srq.setQuery(parser.query());
-  * srq.setQuery(query);
+  * SearchRequest srq = manager.newSearchRequest("my query");
   * //run the query
   * m.runPreProcessing(srq);
   * manager.runMatching(srq);
   * manager.runPostProcess(srq);
   * manager.runPostFilters(srq);
   * </pre>
-  * <P><B>NB:</B>Controls (name, value tuples ) are used to control the retrieval prcoess. You may 
+  * <P><B>NB:</B>Controls (name, value String tuples) are used to control the retrieval process. You may 
   * want to set controls in your application code. However, default controls can be set using 
   * the <tt>querying.default.controls</tt> property in the terrier.properties file.
+  * <p><b>Context Objects (name, value object tuples) are used to pass arbitrary information to classes
+  * within Terrier.
   */
 public interface SearchRequest extends Serializable
 {
@@ -137,6 +127,23 @@ public interface SearchRequest extends Serializable
 	 * @param time
 	 */
 	void setStartedProcessingTime(long time);
+	
+	
+	/**
+	 *  Set a value of a context object.
+	 * @param key the key of the context object
+	 * @param value the value of the context object
+	 * @since 3.6
+	 */
+	public void setContextObject(String key, Object value);
+	
+	/**
+	 * Returns the value of a context object.
+	 * @param key the key of the context object to get
+	 * @return the value of the context object for the given key
+	 * @since 3.6
+	 */
+	public Object getContextObject(String key);
 	
 }
 /* the following methods are implmented in the SearchRequest - ie Request.java

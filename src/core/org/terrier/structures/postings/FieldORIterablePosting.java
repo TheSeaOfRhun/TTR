@@ -17,7 +17,7 @@
  *
  * The Original Code is FieldORIterablePosting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -37,8 +37,7 @@ public class FieldORIterablePosting extends ORIterablePosting implements
 	
 	final int[] fieldFreqs;
 	final int fieldCount;
-//	int[] fieldLens;
-	FieldPosting current;
+	final int[] fieldLens;
 	/**
 	 * Constructs an instance of FieldORIterablePosting.
 	 * @param ips
@@ -48,6 +47,7 @@ public class FieldORIterablePosting extends ORIterablePosting implements
 		super(ips);
 		fieldCount = ((FieldPosting)ips[0]).getFieldFrequencies().length;
 		fieldFreqs = new int[fieldCount];
+		fieldLens = new int[fieldCount];
 	}
 
 	@Override
@@ -57,8 +57,14 @@ public class FieldORIterablePosting extends ORIterablePosting implements
 
 	@Override
 	public int[] getFieldLengths() {
-		return current.getFieldLengths();
-		//return fieldLens;
+		return fieldLens;
+	}
+	
+	/** {@inheritDoc}.
+	 * This operation is unsupported. */
+	@Override
+	public void setFieldLengths(int[] fl) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -73,11 +79,9 @@ public class FieldORIterablePosting extends ORIterablePosting implements
 	@Override
 	protected void firstPosting(Posting _p) {
 		super.firstPosting(_p);
-		FieldPosting p = current = (FieldPosting)_p;
-		//fieldLens = p.getFieldLengths();
-		final int[] thisPostingFieldFreqs = p.getFieldFrequencies();
-		for(int fi=0;fi<fieldCount;fi++)
-			fieldFreqs[fi] = thisPostingFieldFreqs[fi];
+		FieldPosting p = (FieldPosting)_p;
+		System.arraycopy(p.getFieldFrequencies(), 0, fieldFreqs, 0, fieldCount);
+		System.arraycopy(p.getFieldLengths(), 0, fieldLens, 0, fieldCount);
 	}
 
 	@Override

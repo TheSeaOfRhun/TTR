@@ -17,7 +17,7 @@
  *
  * The Original Code is FieldPostingImpl.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,7 +36,9 @@ import org.terrier.utility.ArrayUtils;
  * Implementation of a posting containing fields
  */
 public class FieldPostingImpl extends BasicPostingImpl implements FieldPosting {
+	private static final long serialVersionUID = 1L;
 	int[] fieldFrequencies;	
+	int[] fieldLengths;
 	/**
 	 * default constructor
 	 */
@@ -51,6 +53,7 @@ public class FieldPostingImpl extends BasicPostingImpl implements FieldPosting {
 	{
 		super(id,tf);
 		fieldFrequencies = new int[_fieldCount];
+		//fieldLengths = new int[_fieldCount];
 	}
 	/**
 	 * constructor
@@ -87,7 +90,12 @@ public class FieldPostingImpl extends BasicPostingImpl implements FieldPosting {
 	
 	/** {@inheritDoc} */
 	public int[] getFieldLengths() {
-		return null;
+		return fieldLengths;
+	}
+	
+	@Override
+	public void setFieldLengths(int[] fl) {
+		fieldLengths = fl;
 	}
 	
 	/** {@inheritDoc} */

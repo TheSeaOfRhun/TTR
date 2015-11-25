@@ -39,33 +39,51 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.terrier.indexing.tokenisation.EnglishTokeniser;
-import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BitPostingIndexInputStream;
-import org.terrier.structures.DirectIndex;
 import org.terrier.structures.DocumentIndex;
 import org.terrier.structures.DocumentIndexEntry;
+import org.terrier.structures.FieldDocumentIndex;
+import org.terrier.structures.FieldDocumentIndexEntry;
+import org.terrier.structures.FieldEntryStatistics;
 import org.terrier.structures.Index;
-import org.terrier.structures.InvertedIndex;
 import org.terrier.structures.Lexicon;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.MetaIndex;
-import org.terrier.structures.postings.FieldIterablePosting;
+import org.terrier.structures.Pointer;
+import org.terrier.structures.PostingIndex;
+import org.terrier.structures.PostingIndexInputStream;
+import org.terrier.structures.bit.BitPostingIndexInputStream;
+import org.terrier.structures.indexing.Indexer;
+import org.terrier.structures.indexing.classical.BasicIndexer;
+import org.terrier.structures.indexing.classical.BlockIndexer;
+import org.terrier.structures.indexing.singlepass.BasicSinglePassIndexer;
+import org.terrier.structures.indexing.singlepass.BlockSinglePassIndexer;
 import org.terrier.structures.postings.FieldPosting;
 import org.terrier.structures.postings.IterablePosting;
+import org.terrier.structures.postings.bit.BlockFieldIterablePosting;
+import org.terrier.structures.postings.bit.FieldIterablePosting;
 import org.terrier.tests.ApplicationSetupBasedTest;
 import org.terrier.utility.ApplicationSetup;
+import org.terrier.realtime.MemoryIndexer;
+import org.terrier.realtime.memory.MemoryInvertedIndex;
 
 //TODO: does not check block positions
 public class TestIndexers extends ApplicationSetupBasedTest {
 
 	@Before public void setIndexerProperties() {
 		ApplicationSetup.setProperty("indexer.meta.forward.keys", "filename");
+		ApplicationSetup.setProperty("indexer.meta.forward.keylens", "100");
 		ApplicationSetup.setProperty("indexer.meta.reverse.keys", "");
 		ApplicationSetup.setProperty("termpipelines", "");
 	}
 
-	@SuppressWarnings("unchecked")
+	
 	protected void testIndexer(Indexer indexer, boolean directExpected, boolean fieldsExpected) throws Exception {
+		testIndexer(indexer,directExpected,fieldsExpected, false);
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected void testIndexer(Indexer indexer, boolean directExpected, boolean fieldsExpected, boolean memoryIndexer) throws Exception {
 		
 		Map<String,String> doc1Props = new HashMap<String,String>();doc1Props.put("filename", "doc1");
 		Map<String,String> doc2Props = new HashMap<String,String>();doc2Props.put("filename", "doc2");
@@ -149,9 +167,16 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 		indexer.createDirectIndex(new Collection[]{col});
 		indexer.createInvertedIndex();
 		
-		Index index = !fieldsExpected ?
-				Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX)
-				: Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, "fields");
+		Index index = null;
+		
+		if (!memoryIndexer) {
+			index = !fieldsExpected ?
+					Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX)
+					: Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, "fields");
+		} else {
+			index = ((MemoryIndexer)indexer).getIndex();
+		}
+				
 		assertNotNull(index);
 		
 		MetaIndex meta = index.getMetaIndex();
@@ -160,22 +185,89 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 		assertEquals("doc2", index.getMetaIndex().getItem("filename", 1));
 		
 		IterablePosting ip = null;
-		BitPostingIndexInputStream bpiis = null;
+		PostingIndexInputStream bpiis = null;
+		
+		/** DOCUMENT INDEX */
+		DocumentIndex doi = index.getDocumentIndex();
+		assertEquals(3, doi.getDocumentLength(0));
+		assertEquals(4, doi.getDocumentLength(1));
+		if (fieldsExpected)
+		{
+			if (doi instanceof FieldDocumentIndex)
+			{
+				FieldDocumentIndex fDoi = (FieldDocumentIndex)doi;
+				assertEquals(1, fDoi.getFieldLengths(0)[0]);
+				assertEquals(2, fDoi.getFieldLengths(0)[1]);
+				
+				assertEquals(1, fDoi.getFieldLengths(1)[0]);
+				assertEquals(3, fDoi.getFieldLengths(1)[1]);
+			} else {
+				FieldDocumentIndexEntry fdie;
+				fdie = (FieldDocumentIndexEntry) doi.getDocumentEntry(0);
+				assertEquals(1, fdie.getFieldLengths()[0]);
+				assertEquals(2, fdie.getFieldLengths()[1]);
+				fdie = (FieldDocumentIndexEntry) doi.getDocumentEntry(1);
+				assertEquals(1, fdie.getFieldLengths()[0]);
+				assertEquals(3, fdie.getFieldLengths()[1]);
+			}
+		}
+		
+		/** LEXICON */
+		Lexicon<String> lexicon = index.getLexicon();
+
+		LexiconEntry le = null;
+		FieldEntryStatistics fe = null;
+		le = lexicon.getLexiconEntry("cats");
+		assertNotNull(le);
+		assertEquals(2, le.getFrequency());
+		assertEquals(2, le.getNumberOfEntries());
+		if (fieldsExpected)
+		{
+			assertTrue(le instanceof FieldEntryStatistics);
+			fe = (FieldEntryStatistics)le;
+			assertEquals(1, fe.getFieldFrequencies()[0]);
+			assertEquals(1, fe.getFieldFrequencies()[1]);
+		}
+		le = lexicon.getLexiconEntry("chicken");
+		assertNotNull(le);
+		assertEquals(3, le.getFrequency());
+		assertEquals(1, le.getNumberOfEntries());
+		if (fieldsExpected)
+		{
+			assertTrue(le instanceof FieldEntryStatistics);
+			fe = (FieldEntryStatistics)le;
+			assertEquals(1, fe.getFieldFrequencies()[0]);
+			assertEquals(2, fe.getFieldFrequencies()[1]);
+		}
+		
+		for (String t : new String[]{"dogs", "horses"})
+		{
+			le = lexicon.getLexiconEntry(t);
+			assertNotNull(le);
+			assertEquals(1, le.getFrequency());
+			assertEquals(1, le.getNumberOfEntries());
+			if (fieldsExpected)
+			{
+				assertTrue(le instanceof FieldEntryStatistics);
+				fe = (FieldEntryStatistics)le;
+				assertEquals(0, fe.getFieldFrequencies()[0]);
+				assertEquals(1, fe.getFieldFrequencies()[1]);
+			}
+		}
 		
 		/** INVERTED FILE */		
-		
-		Lexicon<String> lexicon = index.getLexicon();
 		
 		/**
 		 * Test {@link IterablePosting} entries from a {@link InvertedIndex}
 		 */
-		InvertedIndex invertedIndex = index.getInvertedIndex();
+		PostingIndex<Pointer> invertedIndex = (PostingIndex<Pointer>) index.getInvertedIndex();
 		assertNotNull(invertedIndex);
 		// for each term
 		for (int t = 0; t < termStrings.length; t++) {
-			LexiconEntry le = lexicon.getLexiconEntry(termStrings[t]);
+			le = lexicon.getLexiconEntry(termStrings[t]);
 			assertNotNull(le);
-			ip = invertedIndex.getPostings((BitIndexPointer) le);
+			if (memoryIndexer) ip = invertedIndex.getPostings(le);
+			else ip = invertedIndex.getPostings(le);
 			// for each document
 			int d = 0;
 			while (ip.next() != IterablePosting.EOL) {
@@ -185,7 +277,8 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 				if (fieldsExpected) {
 					assertEquals(2, invFfs[t][d].length);
 					for (int f = 0; f < 2; f++) {
-						assertEquals(invFfs[t][d][f], ((FieldIterablePosting) ip).getFieldFrequencies()[f]); 
+						if (ip instanceof BlockFieldIterablePosting) assertEquals(invFfs[t][d][f], ((BlockFieldIterablePosting) ip).getFieldFrequencies()[f]); 
+						else assertEquals(invFfs[t][d][f], ((FieldIterablePosting) ip).getFieldFrequencies()[f]); 
 					}
 				}
 				d++;
@@ -198,7 +291,8 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 		/**
 		 * Test {@link IterablePosting} entries from a {@link InvertedIndexInputStream}
 		 */
-		bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("inverted");
+		if (memoryIndexer) bpiis = (MemoryInvertedIndex.InvertedIterator) index.getIndexStructureInputStream("inverted");
+		else bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("inverted");
 		assertNotNull(bpiis);
 		// for each term
 		for (int t = 0; t < invIds.length; t++) {
@@ -214,7 +308,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 				if (fieldsExpected) {
 					assertEquals(2, invFfs[t][d].length);
 					for (int f = 0; f < 2; f++) {
-						assertEquals(invFfs[t][d][f], ((FieldIterablePosting) ip).getFieldFrequencies()[f]); 
+						assertEquals(invFfs[t][d][f], ((FieldPosting) ip).getFieldFrequencies()[f]); 
 					}
 				}
 				d++;
@@ -222,47 +316,9 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 		}
 		// post-check
 		assertFalse(bpiis.hasNext());
+		bpiis.close();
 
-		/**
-		 * Test posting array entries from a {@link InvertedIndex}
-		 */
-		// for each term
-		for (int t = 0; t < termStrings.length; t++) {
-			LexiconEntry le = lexicon.getLexiconEntry(termStrings[t]);
-			assertNotNull(le);
-			
-			int[][] documents = invertedIndex.getDocuments(le);
-			
-			if (!fieldsExpected) {
-				assertTrue(documents.length >= 2);
-			}
-			else {
-				// array should have length at least 4: 1 for the id, 1 for the
-				// frequency, 2 for the fields (optionally more for the blocks)
-				assertTrue(documents.length >= 4);
-			}
-			
-			// check number of terms
-			assertEquals(invIds[t].length, documents[0].length);
-			assertEquals(invTfs[t].length, documents[1].length);
-			
-			// for each document
-			for (int d = 0; d < documents[0].length; d++) {
-				// test document id
-				assertEquals(invIds[t][d], documents[0][d]);
-				// test document frequency
-				assertEquals(invTfs[t][d], documents[1][d]);
-				if (fieldsExpected) {
-					// test number of indexed fields
-					assertEquals(2, invFfs[t][d].length);
-					// test field frequency
-					for (int f = 0; f < 2; f++) {
-						assertEquals(invFfs[t][d][f], documents[2+f][d]); 
-					}
-				}
-			}
-		}		
-						
+		
 		/** DIRECT FILE */
 		
 		if (directExpected) {
@@ -271,16 +327,16 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 			/**
 			 * Test {@link IterablePosting} entries from a {@link DirectIndex}
 			 */
-			DirectIndex directIndex = index.getDirectIndex();
+			PostingIndex<Pointer> directIndex = (PostingIndex<Pointer>) index.getDirectIndex();
 			assertNotNull(directIndex);
 			// for each document
 			for (int d = 0; d < dirTfs.length; d++) {
 				DocumentIndexEntry de = documentIndex.getDocumentEntry(d);
 				assertNotNull(de);
-				ip = directIndex.getPostings((BitIndexPointer) de);
+				ip = directIndex.getPostings(de);
 				FieldPosting fp = fieldsExpected ? (FieldPosting)ip : null;
 				// for each term
-				int t = 0;
+				//int t = 0;
 				int countFoundTerms = 0;
 				while (ip.next() != IterablePosting.EOL) {
 					int termid = ip.getId();
@@ -298,7 +354,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 							assertEquals(dirFfs[d].get(term)[f], fp.getFieldFrequencies()[f]); 
 						}
 					}
-					t++;
+					//t++;
 				}
 				assertEquals(dirTfs[d].size() ,countFoundTerms);
 				ip.close();
@@ -318,7 +374,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 				assertNotNull(ip);
 				FieldPosting fp = fieldsExpected ? (FieldPosting)ip : null;
 				// for each term
-				int t = 0;
+				//int t = 0;
 				int countFoundTerms = 0;
 				while (ip.next() != IterablePosting.EOL) {
 					int termid = ip.getId();
@@ -328,7 +384,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 					countFoundTerms++;
 					assertTrue(dirTfs[d].containsKey(term));
 					assertEquals(dirTfs[d].get(term), ip.getFrequency());
-					assertEquals(doclens[d], ip.getDocumentLength());					
+					assertEquals("document length was wrong for docid " + d, doclens[d], ip.getDocumentLength());					
 					
 					if (fieldsExpected) {
 						assertEquals(2, fp.getFieldFrequencies().length);
@@ -336,51 +392,17 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 							assertEquals(dirFfs[d].get(term)[f], fp.getFieldFrequencies()[f]); 
 						}
 					}
-					t++;
+					//t++;
 				}
 				assertEquals(dirTfs[d].size() ,countFoundTerms);
 			}
 			// post-check
 			assertFalse(bpiis.hasNext());
+			bpiis.close();
 
-			/**
-			 * Test posting array entries from a {@link DirectIndex}
-			 */
-			// for each document
-			for (int d = 0; d < dirTfs.length; d++) {
-				DocumentIndexEntry de = documentIndex.getDocumentEntry(d);
-				assertNotNull(de);
-				
-				int[][] terms = directIndex.getTerms(de);
-				
-				if (!fieldsExpected) {
-					assertTrue(terms.length >= 2);
-				}
-				else {
-					// array should have length at least 4: 1 for the id, 1 for the
-					// frequency, 2 for the fields (optionally more for the blocks)
-					assertTrue(terms.length >= 4);
-				}
-				
-				// check number of terms
-				assertEquals(dirTfs[d].size(), terms[0].length);
-				assertEquals(dirTfs[d].size(), terms[1].length);
-				
-				// for each term
-				for (int t = 0; t < terms[0].length; t++) {
-					// test term id
-					String term = lexicon.getLexiconEntry(terms[0][t]).getKey();
-					assertTrue(dirTfs[d].containsKey(term));
-					assertEquals(dirTfs[d].get(term), terms[1][t]);
-					if (fieldsExpected) {
-						// test field frequency
-						for (int f = 0; f < 2; f++) {
-							assertEquals(dirFfs[d].get(term)[f], terms[2+f][t]); 
-						}
-					}
-				}
-			}
+			
 		}
+		index.close();
 	}
 	
 	@Test
@@ -407,7 +429,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 	public void testBlockFields() throws Exception
 	{
 		ApplicationSetup.setProperty("FieldTags.process", "TITLE,ELSE");
-		testIndexer(new BasicIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), true, true);
+		testIndexer(new BlockIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), true, true);
 	}
 	
 	@Test
@@ -420,7 +442,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 	public void testBasicSPFields() throws Exception
 	{
 		ApplicationSetup.setProperty("FieldTags.process", "TITLE,ELSE");
-		testIndexer(new BasicIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), false, true);
+		testIndexer(new BasicSinglePassIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), false, true);
 	}
 	
 	@Test
@@ -433,7 +455,7 @@ public class TestIndexers extends ApplicationSetupBasedTest {
 	public void testBlockSPFields() throws Exception
 	{
 		ApplicationSetup.setProperty("FieldTags.process", "TITLE,ELSE");
-		testIndexer(new BasicIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), false, true);
+		testIndexer(new BlockSinglePassIndexer(ApplicationSetup.TERRIER_INDEX_PATH, "fields"), false, true);
 	}
 
 }

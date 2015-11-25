@@ -45,10 +45,10 @@ public class SiteFilter implements PostFilter
 	}
 	
 	/** {@inheritDoc} */
-	public byte filter(Manager m, SearchRequest srq, ResultSet rs, int DocAtNumber, int DocNo)
+	public byte filter(Manager m, SearchRequest srq, ResultSet rs, int rank, int docid)
 	{
 		try{
-			URL url = new URL("http://" + rs.getMetaItem("url", DocAtNumber));
+			URL url = new URL("http://" + rs.getMetaItem("url", docid));
 			if(!url.getHost().toLowerCase().endsWith(site))
 				return FILTER_REMOVE;
 			return FILTER_OK;

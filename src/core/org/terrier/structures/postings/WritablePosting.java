@@ -17,7 +17,7 @@
  *
  * The Original Code is WritablePosting.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,10 +25,16 @@
  */
 package org.terrier.structures.postings;
 
+import java.io.Serializable;
+
 import org.apache.hadoop.io.Writable;
 
 /** Allow a {@link Posting} to be written to a DataOut
  * @since 3.0
  * @author Craig Macdonald
  */
-public interface WritablePosting extends Posting, Writable {}
+public interface WritablePosting extends Posting, Writable, Serializable {
+	
+	public void setDocumentLength(int l);
+	
+}

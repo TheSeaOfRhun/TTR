@@ -17,7 +17,7 @@
  *
  * The Original Code is FSOMapFileLexiconOutputStream.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -32,7 +32,7 @@ import org.apache.hadoop.io.Text;
 import org.terrier.structures.collections.FSOrderedMapFile;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 /** A LexiconOutputStream for FSOMapFileLexicon. Writes to a FSOrderedMapFile.
- * @author craigm
+ * @author Craig Macdonald
  * @since 3.0
  */
 public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
@@ -40,7 +40,7 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 	protected FixedSizeWriteableFactory<Text> keyFactory;
 	protected Text tempKey = null;
 	protected final FSOrderedMapFile.MapFileWriter mapFileWriter;
-	protected Index index = null;
+	protected IndexOnDisk index = null;
 	protected String leValueClassname = null;
 	protected final String structureName;
 	/**
@@ -93,7 +93,7 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 	 * @param valueFactoryClass
 	 * @throws IOException
 	 */
-	public FSOMapFileLexiconOutputStream(Index _index, String _structureName, 
+	public FSOMapFileLexiconOutputStream(IndexOnDisk _index, String _structureName, 
 			Class<? extends FixedSizeWriteableFactory<LexiconEntry>>valueFactoryClass) throws IOException
 	{
 		this(_index.getPath(), _index.getPrefix(), _structureName, getKeyFactory(_index, _structureName));
@@ -109,7 +109,7 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 	 * @param valueFactoryClass
 	 * @throws IOException
 	 */
-	public FSOMapFileLexiconOutputStream(Index _index, String _structureName, 
+	public FSOMapFileLexiconOutputStream(IndexOnDisk _index, String _structureName, 
 			FixedSizeWriteableFactory<Text> _keyFactory,
 			Class<? extends FixedSizeWriteableFactory<LexiconEntry>>valueFactoryClass) throws IOException
 	{
@@ -126,7 +126,7 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 	 * @param valueFactoryClassName
 	 * @throws IOException
 	 */
-	public FSOMapFileLexiconOutputStream(Index _index, String _structureName, 
+	public FSOMapFileLexiconOutputStream(IndexOnDisk _index, String _structureName, 
 			FixedSizeWriteableFactory<Text> _keyFactory,
 			String valueFactoryClassName) throws IOException
 	{
@@ -161,7 +161,7 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 	 * @param structureName
 	 * @param leValueClassname
 	 */
-	public static void addLexiconToIndex(Index index, String structureName, String leValueClassname)
+	public static void addLexiconToIndex(IndexOnDisk index, String structureName, String leValueClassname)
 	{
 		index.addIndexStructure(
 				structureName+"-valuefactory",
@@ -170,17 +170,17 @@ public class FSOMapFileLexiconOutputStream extends LexiconOutputStream<String>
 		index.addIndexStructure(
 				structureName, 
 				"org.terrier.structures.FSOMapFileLexicon",
-				"java.lang.String,org.terrier.structures.Index",
+				"java.lang.String,org.terrier.structures.IndexOnDisk",
 				"structureName,index");
 		index.addIndexStructureInputStream(
 				structureName, 
 				"org.terrier.structures.FSOMapFileLexicon$MapFileLexiconIterator",
-				"java.lang.String,org.terrier.structures.Index",
+				"java.lang.String,org.terrier.structures.IndexOnDisk",
 				"structureName,index");
 		index.addIndexStructureInputStream(
 				structureName+"-entry", 
 				"org.terrier.structures.FSOMapFileLexicon$MapFileLexiconEntryIterator",
-				"java.lang.String,org.terrier.structures.Index",
+				"java.lang.String,org.terrier.structures.IndexOnDisk",
 				"structureName,index");
 	}
 

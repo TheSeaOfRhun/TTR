@@ -85,7 +85,7 @@ TMPDIR=$TERRIER_HOME/tmp_classes
 #else
 #	CLASSPATH=$CLASSPATH:$TERRIER_HOME/src
 #fi
-for jar in $TERRIER_HOME/lib/*.jar; do
+for jar in $TERRIER_HOME/lib/*.jar TERRIER_LIB/hadoop/*.jar  $TERRIER_LIB/poi/*.jar $TERRIER_LIB/crawler4j/*.jar; do
 	if [ ! -n "$CLASSPATH" ]
 	then
 		CLASSPATH=$jar

@@ -17,7 +17,7 @@
  *
  * The Original Code is TaggedDocument.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -49,8 +49,7 @@ import org.terrier.utility.TagSet;
 /**
  * Models a tagged document (e.g., an HTML or TREC document). In particular,
  * {@link #getNextTerm() getNextTerm()} returns the next token in the current
- * chunk of text, according to the specified tokeniser. This class replaces
- * {@link HTMLDocument} and {@link TRECDocument}.
+ * chunk of text, according to the specified tokeniser. 
  * 
  * This class uses the following properties:
  * <ul>
@@ -139,6 +138,7 @@ public class TaggedDocument implements Document {
 	/** else field index **/
 	protected int elseAbstractSpecialTag = -1;
 	
+	
 	/**
 	 * Constructs an instance of the class from the given input stream.
 	 * @param docStream
@@ -146,6 +146,20 @@ public class TaggedDocument implements Document {
 	 * @param _tokeniser
 	 */
 	public TaggedDocument(InputStream docStream, Map<String, String> docProperties, Tokeniser _tokeniser)
+	{
+		this(docStream,docProperties,_tokeniser,null,null,null);
+	}
+	
+	/**
+	 * Constructs an instance of the class from the given input stream.
+	 * @param docStream
+	 * @param docProperties
+	 * @param _tokeniser
+	 * @param doctags
+	 * @param exactdoctags
+	 * @param fieldtags
+	 */
+	public TaggedDocument(InputStream docStream, Map<String, String> docProperties, Tokeniser _tokeniser, String doctags, String exactdoctags, String fieldtags)
 	{
 		String charset = docProperties.get("charset");
 		try{
@@ -160,10 +174,16 @@ public class TaggedDocument implements Document {
 			logger.warn("Desired encoding ("+charset+") unsupported. Resorting to platform default.", uee);
 			this.br = new BufferedReader(new InputStreamReader(docStream));
 		}
-		this.properties = docProperties;	
-		this._tags = new TagSet(TagSet.TREC_DOC_TAGS);
-		this._exact = new TagSet(TagSet.TREC_EXACT_DOC_TAGS);
-		this._fields = new TagSet(TagSet.FIELD_TAGS);
+		this.properties = docProperties;
+		
+		if (doctags!=null) this._tags = new TagSet(doctags);
+		else this._tags = new TagSet(TagSet.TREC_DOC_TAGS);
+		
+		if (exactdoctags!=null) this._exact = new TagSet(exactdoctags);
+		else this._exact = new TagSet(TagSet.TREC_EXACT_DOC_TAGS);
+		
+		if (fieldtags!=null) this._fields = new TagSet(fieldtags);
+		else  this._fields = new TagSet(TagSet.FIELD_TAGS);
 		this.tokeniser = _tokeniser;
 		this.currentTokenStream = Tokeniser.EMPTY_STREAM;
 		for(int i=0;i<abstractCount;i++)
@@ -313,14 +333,15 @@ public class TaggedDocument implements Document {
 						if (! endOfTagName && Character.isWhitespace((char)ch)) {
 							endOfTagName = true;
 							tagName = tagNameSB.toString();
-							//System.err.println("Found tag  " + tagName + (tag_open ? "open" : "close") );
+							//System.err.println("Found tag  " + tagName + (tag_open ? " open" : " close") );
+							tagNameSB.setLength(0);
 						}
 					}
 					//ch = br.read();counter++;
 					if (! endOfTagName)
 					{
 						tagName = tagNameSB.toString();
-						//System.err.println("Found tag " + tagName+ (tag_open ? "open" : "close"));
+						//System.err.println("Found tag " + tagName+ (tag_open ? " open" : " close"));
 						tagNameSB.setLength(0);
 					}
 				} else { //otherwise, if we are not in the body of a tag

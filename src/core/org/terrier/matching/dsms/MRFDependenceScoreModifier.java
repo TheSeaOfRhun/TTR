@@ -17,7 +17,7 @@
  *
  * The Original Code is MRFDependenceScoreModifier.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,10 +27,11 @@ package org.terrier.matching.dsms;
 
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.ResultSet;
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.Index;
 import org.terrier.utility.ApplicationSetup;
+
 /** Implements Markov Random Fields. See Metzler & Croft, SIGIR 2005.
  * Note that this implementation does not utilise the frequency of a
  * tuple in the collection - instead, this is assumed to be a constant,
@@ -48,26 +49,35 @@ import org.terrier.utility.ApplicationSetup;
  */
 public class MRFDependenceScoreModifier extends DependenceScoreModifier {
 
-	protected double MU = Double.parseDouble(ApplicationSetup.getProperty("mrf.mu", ApplicationSetup.getProperty("proximity.norm2.c", "4000d")));
+	protected double MU = Double.parseDouble(ApplicationSetup.getProperty("mrf.mu", "4000d"));
+		//ApplicationSetup.getProperty("proximity.norm2.c", "4000d")));
 	double defaultDf;
 	double defaultCf;
 	
-	@Override
-	public boolean modifyScores(Index index, MatchingQueryTerms terms,
+	/** 
+	 * {@inheritDoc} 
+	 */
+	@Override	public boolean modifyScores(Index index, MatchingQueryTerms terms,
 			ResultSet set)
 	{
 		MU = Double.parseDouble(ApplicationSetup.getProperty("mrf.mu", ApplicationSetup.getProperty("proximity.norm2.c", "4000d")));
 		return super.modifyScores(index, terms, set);
 	}
 
-	@Override
-	protected double scoreFDSD(int matchingNGrams, int _docLength) {		
+	/** 
+	 * {@inheritDoc} 
+	 */
+	@Override	protected double scoreFDSD(int matchingNGrams, int _docLength) {		
 		final double mu = MU;
 		double docLength = (double)_docLength;
 		double tf = (double)matchingNGrams;
-		return w_o * (Idf.log(1 + (tf/(mu * (defaultCf / super.numTokens))) ) + Idf.log(mu/(docLength+mu)));
+		return w_o * (log(1 + (tf/(mu * (defaultCf / super.numTokens)))) + log(mu/(docLength+mu)));
 	}
-	/** {@inheritDoc}*/
+
+	/** 
+	 * {@inheritDoc} 
+	 */
+	@Override
 	public void setCollectionStatistics(CollectionStatistics cs, Index _index) {
 		super.setCollectionStatistics(cs, _index);
 		w_o = Double.parseDouble(ApplicationSetup.getProperty("proximity."+super.ngramLength+".w_o", 

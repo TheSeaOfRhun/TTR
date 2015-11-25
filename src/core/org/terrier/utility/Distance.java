@@ -17,7 +17,7 @@
  *
  * The Original Code is Distance.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -88,6 +88,8 @@ public class Distance{
 		if(blocksOfTerm2 == null){
 			return 0;
 		}
+		if (blocksOfTerm1.length == 0 || blocksOfTerm2.length == 0)
+			return 0;
 		
 		int numberOfNGrams = documentLengthInTokens< windowSize ? 1 :documentLengthInTokens - windowSize + 1;
 		int count = 0;
@@ -195,56 +197,91 @@ public class Distance{
 	//window size 3:
 	//0:0-2, 1:1-3
 	
-	/** Returns the number of windows that have the both terms occurring, in the order specified.
-	 * New version, implemented 10/6/2010 by craigm. */
+//	/** Returns the number of windows that have the both terms occurring, in the order specified.
+//	 * New version, implemented 10/6/2010 by craigm. */
+//	public static final int noTimesSameOrder(final int[] term0Positions, final int[] term1Positions, final int windowSize, final int documentLengthInTokens)
+//	{
+//		if (term0Positions.length == 0 || term1Positions.length == 0)
+//			return 0;
+//		final int numberOfNGrams = documentLengthInTokens< windowSize ? 1 :documentLengthInTokens - windowSize + 1;
+//		final boolean[] matchingWindows = new boolean[numberOfNGrams];
+//		boolean any = false;
+//		int pos0 = 0;
+//		int pos1 = 0;
+//		final int term0Length = term0Positions.length;
+//		final int term1Length = term1Positions.length;
+//		OUTER: for(int ngramPosition = 0; ngramPosition < numberOfNGrams; ngramPosition++)
+//		{
+//			//System.err.println("ngramPosition=" + ngramPosition);			
+//			while(term0Positions[pos0] < ngramPosition)
+//			{
+//				pos0++;
+//				if (pos0 == term0Length)
+//					break OUTER;
+//			}
+//			
+//			while(term1Positions[pos1] < ngramPosition)
+//			{
+//				pos1++;
+//				if (pos1 == term1Length)
+//					break OUTER;
+//			}
+//			//System.err.println("pos0="+pos0 + " posi="+term0Positions[pos0]+" l1="+term0Positions.length +" pos1=" +pos1 + " posi="+term1Positions[pos1]+" l2="+term1Positions.length);
+//			//term1Positions[pos0] and term2Positions[pos1] are now no less than ngramPosition
+//			while(term0Positions[pos0] <= ngramPosition + windowSize -1 && term1Positions[pos1] <= ngramPosition + windowSize -1)
+//			{
+//				//System.err.println("positions ("+term0Positions[pos0]+","+term1Positions[pos1]+") are in window " + ngramPosition);
+//				//first and second terms are within window
+//				if (term0Positions[pos0] < term1Positions[pos1])
+//				{
+//					//ordering is correct
+//					any = true;
+//					matchingWindows[ngramPosition]= true;
+//					pos0++;
+//					if (pos0 == term0Length)
+//						break OUTER;
+//				}
+//				else
+//				{
+//					pos1++;
+//					if (pos1 == term1Length)
+//						break OUTER;
+//				}
+//			}
+//		}
+//		return any ? countTrue(matchingWindows) : 0;
+//	}
+	
 	public static final int noTimesSameOrder(final int[] term0Positions, final int[] term1Positions, final int windowSize, final int documentLengthInTokens)
 	{
-		final int numberOfNGrams = documentLengthInTokens< windowSize ? 1 :documentLengthInTokens - windowSize + 1;
-		final boolean[] matchingWindows = new boolean[numberOfNGrams];
-		int pos0 = 0;
-		int pos1 = 0;
-		final int term0Length = term0Positions.length;
-		final int term1Length = term1Positions.length;
-		OUTER: for(int ngramPosition = 0; ngramPosition < numberOfNGrams; ngramPosition++)
-		{
-			//System.err.println("ngramPosition=" + ngramPosition);			
-			while(term0Positions[pos0] < ngramPosition)
-			{
-				pos0++;
-				if (pos0 == term0Length)
-					break OUTER;
-			}
-			
-			while(term1Positions[pos1] < ngramPosition)
-			{
-				pos1++;
-				if (pos1 == term1Length)
-					break OUTER;
-			}
-			//System.err.println("pos0="+pos0 + " posi="+term0Positions[pos0]+" l1="+term0Positions.length +" pos1=" +pos1 + " posi="+term1Positions[pos1]+" l2="+term1Positions.length);
-			//term1Positions[pos0] and term2Positions[pos1] are now no less than ngramPosition
-			while(term0Positions[pos0] <= ngramPosition + windowSize -1 && term1Positions[pos1] <= ngramPosition + windowSize -1)
-			{
-				//System.err.println("positions ("+term0Positions[pos0]+","+term1Positions[pos1]+") are in window " + ngramPosition);
-				//first and second terms are within window
-				if (term0Positions[pos0] < term1Positions[pos1])
-				{
-					//ordering is correct
-					matchingWindows[ngramPosition]= true;
-					pos0++;
-					if (pos0 == term0Length)
-						break OUTER;
-				}
-				else
-				{
-					pos1++;
-					if (pos1 == term1Length)
-						break OUTER;
-				}
-			}
-		}
-		return countTrue(matchingWindows);
+		return noTimesSameOrder(term0Positions, 0, term0Positions.length, term1Positions, 0, term1Positions.length, windowSize, documentLengthInTokens);
 	}
+	
+	public static final int noTimesSameOrder(final int[] posTerm1, int start1, int end1, final int[] posTerm2, int start2, int end2, final int windowSize, final int documentLength) 
+	{
+		assert(posTerm1 != posTerm2);
+		if (posTerm1 == null || posTerm2 == null || windowSize < 2)
+			return 0;
+		
+		int count = 0;
+		int pos1 = start1, pos2 = start2;
+				
+		while (pos1 < end1 && posTerm1[pos1] + windowSize <= documentLength) {
+			while (pos2 < end2 && posTerm2[pos2] - posTerm1[pos1] < 0)
+				pos2++;
+					
+			if (pos2 == end2)
+			break;
+			
+			assert(posTerm2[pos2] != posTerm1[pos1]);
+			if (posTerm2[pos2] - posTerm1[pos1] < windowSize)
+				count++;
+					
+			pos1++;
+		}
+		return count;
+	}
+	
 	
 	/** Returns the number of windows that have the both terms occurring, in the order specified.
 	 * New version, implemented 10/6/2010 by craigm. */
@@ -298,59 +335,59 @@ public class Distance{
 	
 	
 	
-	/** Returns the number of windows that have the both terms occurring, in the order specified.
-	 * New version, implemented 10/6/2010 by craigm. */
-	public static final int noTimesSameOrder(
-			final int[] term0Positions, int pos0, final int length0, 
-			final int[] term1Positions, int pos1, final int length1, 
-			final int windowSize, final int documentLengthInTokens)
-	{
-		final int numberOfNGrams = documentLengthInTokens< windowSize ? 1 :documentLengthInTokens - windowSize + 1;
-		final boolean[] matchingWindows = new boolean[numberOfNGrams];
-		final int term0Length = pos0 + length0;
-		final int term1Length = pos1 + length1;
-		OUTER: for(int ngramPosition = 0; ngramPosition < numberOfNGrams; ngramPosition++)
-		{
-			//System.err.println("ngramPosition=" + ngramPosition);			
-			while(term0Positions[pos0] < ngramPosition)
-			{
-				pos0++;
-				if (pos0 == term0Length)
-					break OUTER;
-			}
-			
-			while(term1Positions[pos1] < ngramPosition)
-			{
-				pos1++;
-				if (pos1 == term1Length)
-					break OUTER;
-			}
-			//System.err.println("pos0="+pos0 + " posi="+term0Positions[pos0]+" l1="+term0Positions.length +" pos1=" +pos1 + " posi="+term1Positions[pos1]+" l2="+term1Positions.length);
-			//term1Positions[pos0] and term2Positions[pos1] are now no less than ngramPosition
-			while(term0Positions[pos0] <= ngramPosition + windowSize -1 && term1Positions[pos1] <= ngramPosition + windowSize -1)
-			{
-				//System.err.println("positions ("+term0Positions[pos0]+","+term1Positions[pos1]+") are in window " + ngramPosition);
-				//first and second terms are within window
-				if (term0Positions[pos0] < term1Positions[pos1])
-				{
-					//ordering is correct
-					matchingWindows[ngramPosition]= true;
-					pos0++;
-					if (pos0 == term0Length)
-						break OUTER;
-				}
-				else
-				{
-					pos1++;
-					if (pos1 == term1Length)
-						break OUTER;
-				}
-			}
-		}
-		return countTrue(matchingWindows);
-	}
+//	/** Returns the number of windows that have the both terms occurring, in the order specified.
+//	 * New version, implemented 10/6/2010 by craigm. */
+//	public static final int noTimesSameOrder(
+//			final int[] term0Positions, int pos0, final int length0, 
+//			final int[] term1Positions, int pos1, final int length1, 
+//			final int windowSize, final int documentLengthInTokens)
+//	{
+//		final int numberOfNGrams = documentLengthInTokens< windowSize ? 1 :documentLengthInTokens - windowSize + 1;
+//		final boolean[] matchingWindows = new boolean[numberOfNGrams];
+//		final int term0Length = pos0 + length0;
+//		final int term1Length = pos1 + length1;
+//		OUTER: for(int ngramPosition = 0; ngramPosition < numberOfNGrams; ngramPosition++)
+//		{
+//			//System.err.println("ngramPosition=" + ngramPosition);			
+//			while(term0Positions[pos0] < ngramPosition)
+//			{
+//				pos0++;
+//				if (pos0 == term0Length)
+//					break OUTER;
+//			}
+//			
+//			while(term1Positions[pos1] < ngramPosition)
+//			{
+//				pos1++;
+//				if (pos1 == term1Length)
+//					break OUTER;
+//			}
+//			//System.err.println("pos0="+pos0 + " posi="+term0Positions[pos0]+" l1="+term0Positions.length +" pos1=" +pos1 + " posi="+term1Positions[pos1]+" l2="+term1Positions.length);
+//			//term1Positions[pos0] and term2Positions[pos1] are now no less than ngramPosition
+//			while(term0Positions[pos0] <= ngramPosition + windowSize -1 && term1Positions[pos1] <= ngramPosition + windowSize -1)
+//			{
+//				//System.err.println("positions ("+term0Positions[pos0]+","+term1Positions[pos1]+") are in window " + ngramPosition);
+//				//first and second terms are within window
+//				if (term0Positions[pos0] < term1Positions[pos1])
+//				{
+//					//ordering is correct
+//					matchingWindows[ngramPosition]= true;
+//					pos0++;
+//					if (pos0 == term0Length)
+//						break OUTER;
+//				}
+//				else
+//				{
+//					pos1++;
+//					if (pos1 == term1Length)
+//						break OUTER;
+//				}
+//			}
+//		}
+//		return countTrue(matchingWindows);
+//	}
 	
-	protected static int countTrue(final boolean[] in) {
+	protected static final int countTrue(final boolean[] in) {
 		int count = 0;
 		for (boolean b : in)
 		{

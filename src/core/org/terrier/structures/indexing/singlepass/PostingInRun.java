@@ -17,7 +17,7 @@
  *
  * The Original Code is PostingInRun.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,8 +28,8 @@ package org.terrier.structures.indexing.singlepass;
 
 import java.io.IOException;
 
-import org.terrier.compression.BitIn;
-import org.terrier.compression.BitOut;
+import org.terrier.compression.bit.BitIn;
+import org.terrier.compression.bit.BitOut;
 import org.terrier.structures.BasicLexiconEntry;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.postings.IterablePosting;
@@ -115,7 +115,7 @@ public abstract class PostingInRun {
 	}
 
 	/**
-	 * Writes the document data of this posting to a {@link org.terrier.compression.BitOut} 
+	 * Writes the document data of this posting to a {@link org.terrier.compression.bit.BitOut} 
 	 * It encodes the data with the right compression methods.
 	 * The stream is written as <code>d1, idf(d1) , d2 - d1, idf(d2)</code> etc.
 	 * @param bos BitOut to be written.
@@ -125,7 +125,7 @@ public abstract class PostingInRun {
 	public abstract int append(BitOut bos, int last, int runShift) throws IOException;
 
 	/**
-	 * Writes the document data of this posting to a {@link org.terrier.compression.BitOut} 
+	 * Writes the document data of this posting to a {@link org.terrier.compression.bit.BitOut} 
 	 * It encodes the data with the right compression methods.
 	 * The stream is written as <code>d1, idf(d1) , d2 - d1, idf(d2)</code> etc.
 	 * @param bos BitOut to be written.

@@ -17,7 +17,7 @@
  *
  * The Original Code is TestTRECQuery.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,7 +27,10 @@ package org.terrier.structures;
 
 import org.junit.Test;
 
-import org.terrier.applications.TRECQuerying.QuerySource;
+import org.terrier.applications.batchquerying.TRECQuery;
+import org.terrier.applications.batchquerying.QuerySource;
+import org.terrier.utility.ApplicationSetup;
+
 import static org.junit.Assert.*;
 /** Test TRECQuery behaves as expected */
 public class TestTRECQuery extends TestQuerySource {
@@ -37,7 +40,7 @@ public class TestTRECQuery extends TestQuerySource {
 	{
 		return new TRECQuery(filename);
 	}
-	
+		
 	@Test public void testOneNoClosing() throws Exception {
 		QuerySource source = processString("<top>\n<num> Number: 4\n<title> defination Gravitational\n</top>");
 		assertTrue(source.hasNext());
@@ -114,4 +117,36 @@ public class TestTRECQuery extends TestQuerySource {
 		
 		assertFalse(source.hasNext());
 	}
+	
+	@Test public void testOneLongQID() throws Exception {
+		QuerySource source = processString("<top>\n<num> Number: 4444\n<title> defination Gravitational\n</top>");
+		assertTrue(source.hasNext());
+		String query = source.next();
+		assertEquals("defination gravitational", query);
+		assertEquals("4444", source.getQueryId());
+		assertFalse(source.hasNext());
+	}
+	
+	@Test public void testNumericDocno() throws Exception {
+		
+		ApplicationSetup.setProperty("TrecQueryTags.doctag","topic");
+		ApplicationSetup.setProperty("TrecQueryTags.idtag","num");
+		ApplicationSetup.setProperty("TrecQueryTags.process","title,desc");
+		ApplicationSetup.setProperty("TrecQueryTags.skip","narr");
+		
+		QuerySource source = processString("<topic>"+'\n'+
+				"<num>1122</num>"+'\n'+
+				"<title>MRSA and wound infection</title>" +'\n'+
+				"<desc>What is MRSA infection and is it dangerous?</desc>"+'\n'+
+				"<narr>Documents should contain information about sternal wound infection by MRSA. They should describe the causes and the complications."+'\n'+
+				"</narr>"+'\n'+ 
+				"</topic> ");
+		assertTrue(source.hasNext());
+		String query = source.next();
+		assertEquals("mrsa and wound infection what is mrsa infection and is it dangerous", query);
+		assertEquals("1122", source.getQueryId());
+		assertFalse(source.hasNext());
+	}
+	
+	
 }

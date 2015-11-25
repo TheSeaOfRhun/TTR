@@ -17,7 +17,7 @@
  *
  * The Original Code is ShakespeareEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,13 +26,19 @@
 package org.terrier.tests;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import gnu.trove.TIntHashSet;
 import gnu.trove.TIntIntHashMap;
+import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntHashMap;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -47,17 +53,18 @@ import org.terrier.structures.FieldDocumentIndexEntry;
 import org.terrier.structures.FieldLexiconEntry;
 import org.terrier.structures.Index;
 import org.terrier.structures.IndexUtil;
-import org.terrier.structures.InvertedIndexInputStream;
 import org.terrier.structures.Lexicon;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.MetaIndex;
+import org.terrier.structures.Pointer;
+import org.terrier.structures.PostingIndex;
 import org.terrier.structures.PostingIndexInputStream;
 import org.terrier.structures.CompressingMetaIndex.InputStream;
 import org.terrier.structures.postings.IterablePosting;
+import org.terrier.structures.postings.PostingUtil;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 import org.terrier.utility.FieldScore;
 import org.terrier.utility.StaTools;
-import static org.junit.Assert.*;
 
 public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest 
 {
@@ -153,12 +160,25 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 	};
 	
 	
+	static TIntObjectHashMap<TObjectIntHashMap<String>> doc2term2freqs = new TIntObjectHashMap<TObjectIntHashMap<String>>();
+	static
+	{
+		TObjectIntHashMap<String> termsInDoc0 = new TObjectIntHashMap<String>();
+		termsInDoc0.put("nerissa", 1);
+		termsInDoc0.put("balthasar", 1);
+		termsInDoc0.put("stephano", 1);
+		termsInDoc0.put("clown", 1);
+			
+		doc2term2freqs.put(0, termsInDoc0);		
+	}
 	
-	@SuppressWarnings("unchecked")
+	
+	@SuppressWarnings({ "unchecked" })
 	public void checkMetaIndex(Index index, String[] docnos) throws Exception {
 		int docid = -1;
 		//check as a stream
 		Iterator<String[]> iMi = (Iterator<String[]>) index.getIndexStructureInputStream("meta");
+		//not a close problem, because its the same object
 		CompressingMetaIndex.InputStream cmiis = (InputStream) iMi;
 		assertNotNull("Failed to get a meta input stream", iMi);
 		while(iMi.hasNext())
@@ -213,7 +233,7 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 	{
 		final int numDocs = index.getCollectionStatistics().getNumberOfDocuments();
 		TIntIntHashMap calculatedDocLengths = new TIntIntHashMap();
-		InvertedIndexInputStream iiis = (InvertedIndexInputStream) index.getIndexStructureInputStream("inverted");
+		PostingIndexInputStream iiis = (PostingIndexInputStream) index.getIndexStructureInputStream("inverted");
 		assertNotNull(iiis);
 		int ithTerm = -1;
 		while(iiis.hasNext())
@@ -226,11 +246,13 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 			{
 				//System.err.println("Got id " + ip.getId());
 				assertTrue("Got too big a docid ("+ip.getId()+") from inverted index input stream for term at index " + ithTerm, ip.getId() < numDocs);
+				assertEquals(DOCUMENT_LENGTHS[ip.getId()], ip.getDocumentLength());
 				count++;
 				calculatedDocLengths.adjustOrPutValue(ip.getId(), ip.getFrequency(), ip.getFrequency());
 			}
 			assertEquals(expected, count);
 		}
+		iiis.close();
 		assertEquals("Number of documents is unexpected,", documentLengths.length - countZero(documentLengths), calculatedDocLengths.size());
 		long tokens = 0;
 		for(int docid : calculatedDocLengths.keys())
@@ -307,12 +329,20 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 	}
 	
 	
+	@SuppressWarnings("unchecked")
 	public void checkDirectIndex(Index index, int maxTermId, int numberOfTerms, int documentLengths[], int[] documentPointers) throws Exception {
+		boolean D_DEBUG = false;
+		
 		TIntHashSet termIds = new TIntHashSet();
 		
 		long tokens = 0;
 		long pointers = 0;
 		int docid = 0;
+		
+		/*for (Object o : index.getProperties().keySet()) {
+			System.err.println(((String)o+"="+index.getProperties().getProperty((String)o)));
+		}*/
+		
 		final PostingIndexInputStream piis = (PostingIndexInputStream) index.getIndexStructureInputStream("direct");
 		assertNotNull("No direct index input stream found", piis);
 		while(piis.hasNext())
@@ -320,24 +350,28 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 			IterablePosting ip = piis.next();
 			int doclen = 0;	int docpointers = 0;		
 			docid += piis.getEntriesSkipped();
-			//System.err.println("getEntriesSkipped=" + piis.getEntriesSkipped());
-			//System.err.println("docid=" + docid);
+			if (D_DEBUG) System.err.println("getEntriesSkipped=" + piis.getEntriesSkipped());
+			if (D_DEBUG) System.err.println("docid=" + docid);
+			//we shouldnt be in the postings for an empty document
+			assert documentLengths[docid] > 0;
 			while(ip.next() != IterablePosting.EOL)
 			{
-				//System.err.println("termid" +ip.getId() + " f=" + ip.getFrequency());
+				if (D_DEBUG) System.err.println("termid" +ip.getId() + " f=" + ip.getFrequency()+" dlength="+ip.getDocumentLength()+" docid="+docid);
 				termIds.add(ip.getId());
 				tokens += ip.getFrequency();
 				doclen += ip.getFrequency();
 				pointers++; docpointers++;
+				assertEquals("Document length for docid = "+docid+" on termid "+ip.getId()+" is wrong",DOCUMENT_LENGTHS[docid], ip.getDocumentLength());
 				if (numberOfTerms > 0)
 					assertTrue("Got too big a termid ("+ip.getId()+") from direct index input stream, numTerms=" + numberOfTerms, ip.getId() < maxTermId);
+				
 			}
 			if (documentPointers.length > 0)
 				assertEquals("Numebr of pointers for docid " + docid + " is incorrect", documentPointers[docid], docpointers);
 			assertEquals("Document length for docid "+docid+" is incorrect", documentLengths[docid], doclen);
 			docid++;
 		}
-		
+		piis.close();
 		CollectionStatistics cs = index.getCollectionStatistics();
 		assertEquals("Number of documents is incorrect", cs.getNumberOfDocuments(), docid);
 		assertEquals("Number of pointers is incorrect", cs.getNumberOfPointers(), pointers);
@@ -346,6 +380,47 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 		{
 			assertEquals("Not all termIds found in direct index", termIds.size(), numberOfTerms);
 		}
+		
+		
+		//now check the direct index for specific terms we know it should contain
+		Lexicon<String> lex = index.getLexicon();
+		PostingIndex<Pointer> direct = (PostingIndex<Pointer>) index.getDirectIndex();
+		DocumentIndex doi = index.getDocumentIndex();
+		for(int docid2 : doc2term2freqs.keys())
+		{
+			Pointer p = doi.getDocumentEntry(docid2);
+			TObjectIntHashMap<String> terms = doc2term2freqs.get(docid2);
+			
+			assertTrue(p.getNumberOfEntries() > 0);
+			IterablePosting ip = direct.getPostings(p);
+			
+			int[][] postings = PostingUtil.getAllPostings(ip);
+			
+			for(Object o : terms.keys())
+			{
+				String term = (String) o;
+				LexiconEntry le = lex.getLexiconEntry(term);
+				assertNotNull("LexiconEntry for term " + term + " not found", le);
+				int termid = le.getTermId();
+				int find = Arrays.binarySearch(postings[0], termid);
+				assertTrue("term " + term + " not found in document "+ docid2, find >= 0);
+				assertEquals("term " + term + " had incorrect frequency in document "+ docid2, terms.get(term), postings[1][find]);
+			}
+			
+			ip = direct.getPostings(p);
+			while(ip.next() != IterablePosting.EOL)
+			{
+				if (D_DEBUG) System.err.println("termid" +ip.getId() + " f=" + ip.getFrequency());
+				termIds.add(ip.getId());
+				assertEquals(DOCUMENT_LENGTHS[docid2], ip.getDocumentLength());
+				if (numberOfTerms > 0)
+					assertTrue("Got too big a termid ("+ip.getId()+") from direct index input stream, numTerms=" + numberOfTerms, ip.getId() < maxTermId);
+			}
+			
+			
+		}
+			
+		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -450,6 +525,7 @@ public abstract class ShakespeareEndToEndTest extends BatchEndToEndTest
 		p.setProperty("ignore.low.idf.terms","false");
 	}
 	
+	@Override
 	protected int countNumberOfTopics(String filename) throws Exception
 	{
 		//TODO: add a line count cache to reduce disk IO

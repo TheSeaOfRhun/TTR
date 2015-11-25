@@ -17,7 +17,7 @@
  *
  * The Original Code is TestBitPostingIndexInputFormat.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -42,14 +42,15 @@ import org.apache.hadoop.mapred.Counters.Counter;
 import org.junit.Test;
 import org.terrier.structures.BasicDocumentIndexEntry;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.DirectInvertedDocidOnlyOuptutStream;
 import org.terrier.structures.DocumentIndex;
 import org.terrier.structures.DocumentIndexEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.bit.DirectInvertedDocidOnlyOuptutStream;
 import org.terrier.structures.indexing.DocumentIndexBuilder;
 import org.terrier.structures.postings.ArrayOfIdsIterablePosting;
-import org.terrier.structures.postings.BasicIterablePostingDocidOnly;
 import org.terrier.structures.postings.IterablePosting;
+import org.terrier.structures.postings.bit.BasicIterablePostingDocidOnly;
 import org.terrier.tests.ApplicationSetupBasedTest;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.ArrayUtils;
@@ -100,7 +101,7 @@ public class TestBitPostingIndexInputFormat extends ApplicationSetupBasedTest {
 		String path = ApplicationSetup.TERRIER_INDEX_PATH;
 		String prefix = ApplicationSetup.TERRIER_INDEX_PREFIX;
 
-		Index index = Index.createNewIndex(path, prefix);
+		IndexOnDisk index = Index.createNewIndex(path, prefix);
 		DirectInvertedDocidOnlyOuptutStream dios = new DirectInvertedDocidOnlyOuptutStream(path + '/'+ prefix + ".direct.bf");
 		//FSArrayFile<BitIndexPointer> 
 		DocumentIndexBuilder dib = new DocumentIndexBuilder(index, "document");
@@ -116,14 +117,14 @@ public class TestBitPostingIndexInputFormat extends ApplicationSetupBasedTest {
 		dib.finishedCollections();
 		index.addIndexStructure(
 				"direct", 
-				"org.terrier.structures.DirectIndex", 
-				"org.terrier.structures.Index,java.lang.String,java.lang.Class", 
+				"org.terrier.structures.bit.BitPostingIndex", 
+				"org.terrier.structures.IndexOnDisk,java.lang.String,java.lang.Class", 
 				"index,structureName,"+ BasicIterablePostingDocidOnly.class.getName());
 		index.addIndexStructureInputStream(
 				"direct",
-				"org.terrier.structures.DirectIndexInputStream", 
-				"org.terrier.structures.Index,java.lang.String,java.lang.Class",
-				"index,structureName,"+ BasicIterablePostingDocidOnly.class.getName());
+				"org.terrier.structures.bit.BitPostingIndexInputStream", 
+				"org.terrier.structures.IndexOnDisk,java.lang.String,java.util.Iterator,java.lang.Class",
+				"index,structureName,document-inputstream,"+ BasicIterablePostingDocidOnly.class.getName());
 		index.setIndexProperty("index.direct.fields.count", ""+FieldScore.FIELDS_COUNT );
 		index.setIndexProperty("index.direct.fields.names", ArrayUtils.join(FieldScore.FIELD_NAMES, ","));
 		index.addIndexStructure("document-factory", BasicDocumentIndexEntry.Factory.class.getName(), "", "");

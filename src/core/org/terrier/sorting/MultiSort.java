@@ -17,7 +17,7 @@
  *
  * The Original Code is MultiSort.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -131,7 +131,7 @@ public class MultiSort {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void maxHeapify(Comparable[] A, int[] B, int i,
+	private static void maxHeapify(@SuppressWarnings("rawtypes") Comparable[] A, int[] B, int i,
 			int heapSize) {
 		final int l = 2 * i;
 		final int r = 2 * i + 1;

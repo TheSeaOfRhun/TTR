@@ -17,7 +17,7 @@
  *
  * The Original Code is FileFind.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,7 +36,7 @@ import java.util.List;
  * (on Windows) as Windows doesn't have a find file 
  * equivalent like find in Unix.<br/>
  * <pre>java org.terrier.applications.FileFind c:\</pre>
- * @author Craigm Macdonald
+ * @author Craig Macdonald
  */
 public class FileFind {
 		

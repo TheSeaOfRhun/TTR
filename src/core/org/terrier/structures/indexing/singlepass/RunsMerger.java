@@ -17,7 +17,7 @@
  *
  * The Original Code is RunsMerger.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -33,8 +33,8 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-import org.terrier.compression.BitOut;
-import org.terrier.compression.BitOutputStream;
+import org.terrier.compression.bit.BitOut;
+import org.terrier.compression.bit.BitOutputStream;
 import org.terrier.structures.BasicLexiconEntry;
 import org.terrier.structures.BitFilePosition;
 import org.terrier.structures.FilePosition;
@@ -45,7 +45,7 @@ import org.terrier.structures.LexiconOutputStream;
  * Merges a set of N runs using a priority queue. Each element of the queue is a {@link org.terrier.structures.indexing.singlepass.RunIterator}
  * each one pointing at a different run in disk. Each run is sorted, so we only need to compare the heads of the 
  * element in the queue in each merging step.
- * As the runs are being merged, they are written (to disk) using a {@link org.terrier.compression.BitOut}. 
+ * As the runs are being merged, they are written (to disk) using a {@link org.terrier.compression.bit.BitOut}. 
  * @author Roi Blanco and Craig Macdonald
  * @since 2.0
   */

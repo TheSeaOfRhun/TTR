@@ -17,7 +17,7 @@
  *
  * The Original Code is Bo2.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,7 +26,7 @@
  */
 package org.terrier.matching.models.queryexpansion;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /** 
  * This class implements the Bo2 model for query expansion. 
@@ -54,7 +54,7 @@ public class Bo2 extends QueryExpansionModel {
      */
 	public final double parameterFreeNormaliser(){
 		double f =  (maxTermFrequency) * totalDocumentLength/collectionLength;
-		return  ((maxTermFrequency)*  Idf.log((1d +f)/ f) +  Idf.log(1d +f));
+		return  ((maxTermFrequency)*  log((1d +f)/ f) +  log(1d +f));
 	}
 	/**
      * This method computes the normaliser of parameter-free query expansion.
@@ -65,7 +65,7 @@ public class Bo2 extends QueryExpansionModel {
      */
 	public final double parameterFreeNormaliser(double maxTermFrequency, double collectionLength, double totalDocumentLength){
 		double f =  (maxTermFrequency) * totalDocumentLength/collectionLength;
-		return  ((maxTermFrequency)*  Idf.log((1d +f)/ f) +  Idf.log(1d +f));
+		return  ((maxTermFrequency)*  log((1d +f)/ f) +  log(1d +f));
 	}
 	/** This method implements the query expansion model.
 	 *  @param withinDocumentFrequency double The term frequency 
@@ -81,8 +81,7 @@ public class Bo2 extends QueryExpansionModel {
 			withinDocumentFrequency
 				* totalDocumentLength
 				/ collectionLength;
-		return withinDocumentFrequency * Idf.log((1d + f) / f)
-			+ Idf.log(1d + f);
+		return withinDocumentFrequency * log((1d + f) / f) + log(1d + f);
 	}
 	/**
 	 * This method implements the query expansion model.
@@ -106,7 +105,6 @@ public class Bo2 extends QueryExpansionModel {
 			withinDocumentFrequency
 				* totalDocumentLength
 				/ collectionLength;
-		return withinDocumentFrequency * Idf.log((1d + f) / f)
-			+ Idf.log(1d + f);
+		return withinDocumentFrequency * log((1d + f) / f) + log(1d + f);
 	}
 }

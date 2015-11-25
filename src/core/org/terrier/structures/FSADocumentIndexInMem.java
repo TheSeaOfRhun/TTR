@@ -17,7 +17,7 @@
  *
  * The Original Code is FSADocumentIndexInMem.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -38,7 +38,7 @@ class FSADocumentIndexInMem extends FSArrayFileInMem<DocumentIndexEntry> impleme
 	protected DocumentIndexEntry lastEntry = null;
 	protected int[] docLengths;
 	@SuppressWarnings("unchecked")
-	public FSADocumentIndexInMem(Index index, String structureName) throws IOException
+	public FSADocumentIndexInMem(IndexOnDisk index, String structureName) throws IOException
 	{
 		super(	index.getPath() + "/" + index.getPrefix() + "."+ structureName + FSArrayFile.USUAL_EXTENSION,
 				false,

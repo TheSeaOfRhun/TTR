@@ -17,7 +17,7 @@
  *
  * The Original Code is LocalFileSystem.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -45,6 +45,12 @@ import org.terrier.utility.Files.FSCapability;
  */
 public class LocalFileSystem implements FileSystem, FSCapability
 {
+	
+	/**
+	 * A file that supports random access
+	 * @author Richard McCreadie
+	 *
+	 */
 	protected static class LocalRandomAccessFile 
 		extends RandomAccessFile 
 		implements RandomDataOutput

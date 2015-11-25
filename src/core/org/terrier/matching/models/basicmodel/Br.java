@@ -17,7 +17,7 @@
  *
  * The Original Code is P.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,26 +25,18 @@
  */
 package org.terrier.matching.models.basicmodel;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.*;
 
 /**
  * This class implements the Bernoulli model of randomness
  * @author Gianni Amati, Ben He, Vassilis Plachouras, modified by Craig Macdonald for Bernoulli
   */
 public class Br extends BasicModel{
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 	/** The name of the model. */
 	protected String modelName = "Br";
 	
-	/** 
-	 * A default constructor.
-	 */
-	public Br(){
-		super();
-	}
 	/**
 	 * Returns the name of the model.
 	 * @return the name of the model
@@ -52,6 +44,7 @@ public class Br extends BasicModel{
 	public String getInfo(){
 		return this.modelName;
 	}
+
 	/**
 	 * This method computes the score for the implemented weighting model.
 	 * @param tf The term frequency in the document
@@ -68,10 +61,10 @@ public class Br extends BasicModel{
 		double keyFrequency,
 		double documentLength){
 		
-		double f = (1.0D * documentLength) / (1.0D * numberOfTokens);
-		return keyFrequency * (tf * Idf.log(1.0D / f)
-				+ f * Idf.REC_LOG_2_OF_E
-				+ 0.5d * Idf.log(2 * Math.PI * tf)
-				+ tf * (Idf.log(tf) - Idf.REC_LOG_2_OF_E));
+		final double f = (1.0D * documentLength) / (1.0D * numberOfTokens);
+		return keyFrequency * (tf * log(1.0D / f)
+				+ f * LOG_2_OF_E
+				+ 0.5d * log(2 * Math.PI * tf)
+				+ tf * (log(tf) - LOG_2_OF_E));
 	}
 }

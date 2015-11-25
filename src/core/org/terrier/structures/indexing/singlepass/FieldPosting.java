@@ -17,7 +17,7 @@
  *
  * The Original Code is FieldPosting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,7 +30,7 @@ import java.io.IOException;
 
 /** Class holding the information for a posting list read
  * from a previously written run at disk. Used in the merging phase of the Single pass inversion method.
- * This class knows how to append itself to a {@link org.terrier.compression.BitOutputStream} and it
+ * This class knows how to append itself to a {@link org.terrier.compression.bit.BitOutputStream} and it
  * represents a posting with field information <code>(tf, df, [docid, idf, field_f, field_f, field_f])</code>
  * @author Roi Blanco and Craig Macdonald
  *

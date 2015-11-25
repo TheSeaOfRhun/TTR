@@ -17,16 +17,18 @@
  *
  * The Original Code is StaTools.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Ben He <ben{a.}dcs.gla.ac.uk>
  */
 package org.terrier.utility;
+
 import java.util.Arrays;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
+
 /**
  * This class implements a series of basic statistical functions.
  */
@@ -39,7 +41,7 @@ public class StaTools {
     */
     public static double stirlingPower(double n, double m) {
         double dif = n - m;
-        return (m + 0.5d) * Idf.log(n / m) + dif * Idf.log(n);
+        return (m + 0.5d) * log(n / m) + dif * log(n);
     }
     
     /**
@@ -313,5 +315,50 @@ public class StaTools {
 		return data;
 	}
 
+	/** Normalises the data in the specified array to be in range [0,1], with
+	 * 0 as the minimum, and 1 as the maximum. RETURNS THE SAME ARRAY OBJECT
+	 *  - i.e. changes are made in place.
+	 * @param data
+	 */
+	public static float[] standardNormalisation(final float[] data)
+	{
+		final int l = data.length;
+		if (l==0)
+			return data;
+		final float min = min(data);
+		final float max = max(data);
+		if (max == 0 && min == 0)
+			return data;
+		final float product =  (max != min) ? 1.0f/ ( max - min) : 1.f/max;
+		for(int i=0;i<l;i++)
+		{
+			data[i] = (data[i] - min) * product;
+		}
+		return data;
+	}
+	
+	 /** Return the min of the specified array
+     * @param a the array
+     * @return the minimum value in the arrays */
+    public static final float min(final float[] a)
+    {
+    	float min = a[0];
+    	for(float i : a)
+    		if (i < min)
+    			min = i;
+    	return min;
+    }
+	
+    /** Return the max of the specified array
+     * @param a the array
+     * @return the maximum value in the arrays */
+    public static final float max(final float[] a)
+    {
+    	float max = a[0];
+    	for(float i : a)
+    		if (i > max)
+    			max = i;
+    	return max;
+    }
 
 }

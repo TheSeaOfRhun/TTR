@@ -17,7 +17,7 @@
  *
  * The Original Code is SimpleDocumentIndexEntry.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -74,10 +74,12 @@ public class SimpleDocumentIndexEntry extends DocumentIndexEntry
 
 	/** 
 	 * {@inheritDoc} 
+	 * Does nothing in this implementation
 	 */
 	public void setOffset(BitFilePosition pos) {}
 	/** 
-	 * {@inheritDoc} 
+	 * {@inheritDoc}
+	 * Does nothing in this implementation
 	 */
 	public void setBitIndexPointer(BitIndexPointer pointer) {}
 	/** 
@@ -102,6 +104,7 @@ public class SimpleDocumentIndexEntry extends DocumentIndexEntry
 	}
 	/** 
 	 * {@inheritDoc} 
+	 * Does nothing in this implementation
 	 */
 	public void setPointer(Pointer p) {
 		return;
@@ -114,6 +117,7 @@ public class SimpleDocumentIndexEntry extends DocumentIndexEntry
 	}
 	/** 
 	 * {@inheritDoc} 
+	 * Does nothing in this implementation
 	 */
 	public void setFileNumber(byte fileId)
 	{

@@ -17,7 +17,7 @@
  *
  * The Original Code is RequiredTermModifier.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,8 +34,7 @@ import org.terrier.structures.postings.Posting;
  * implements the TermScoreModifier interface.
  * @author Vassilis Plachouras
   */
-@SuppressWarnings("deprecation")
-public class RequiredTermModifier extends WeightingModel implements TermScoreModifier,Serializable {
+public class RequiredTermModifier extends WeightingModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	/**
 	 * Indicates whether a query term is required, not required,
@@ -80,7 +79,7 @@ public class RequiredTermModifier extends WeightingModel implements TermScoreMod
 		return numOfModifiedDocs;
 	}
 	/** 
-	 * {@inheritDoc} 
+	 * Returns the name of the class and whether the query term is required.
 	 */
 	public String getName() {
 		return "RequiredTermModifier("+required+")";
@@ -91,13 +90,6 @@ public class RequiredTermModifier extends WeightingModel implements TermScoreMod
 	public int hashCode()
 	{
 		return getName().hashCode();
-	}
-	/** 
-	 * {@inheritDoc} 
-	 */
-	public Object clone()
-	{
-		return (Object)new RequiredTermModifier(required);
 	}
 
 	@Override
@@ -116,13 +108,15 @@ public class RequiredTermModifier extends WeightingModel implements TermScoreMod
 	
 	@Override
 	public double score(double tf, double docLength) {
-		// TODO Auto-generated method stub
+		if (! required)
+			return Double.NEGATIVE_INFINITY;
 		return 0;
 	}
 
 	@Override
+	@Deprecated
 	public double score(double tf, double docLength, double n_t, double F_t,
-			double keyFrequency) {
+			double _keyFrequency) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

@@ -17,7 +17,7 @@
  *
  * The Original Code is CompressingMetaIndexBuilder.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -33,6 +33,7 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.Flushable;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.Deflater;
@@ -53,6 +54,7 @@ import org.apache.log4j.Logger;
 
 import org.terrier.structures.Index;
 import org.terrier.structures.CompressingMetaIndex.CompressingMetaIndexInputFormat;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.collections.FSOrderedMapFile;
 import org.terrier.structures.collections.FSOrderedMapFile.MapFileWriter;
 import org.terrier.structures.collections.FSOrderedMapFile.MultiFSOMapWriter;
@@ -68,14 +70,27 @@ import org.terrier.utility.Wrapper;
 import org.terrier.utility.io.HadoopPlugin;
 import org.terrier.utility.io.HadoopUtility;
 /** Creates a metaindex structure that compresses all values using Deflator. 
+ * <b>Properties:</b>
+ * <ul>
+ * <li><tt>metaindex.compressed.max.data.in-mem.mb</tt> - maximum size that a meta index .zdata file will be kept in memory. Defaults to 400(mb). </li>
+ * <li><tt>metaindex.compressed.max.index.in-mem.mb</tt> - maximum size that a meta index .zdata file will be kept in memory. Defaults to 100(mb).</li>
+ * <li><tt>metaindex.compressed.reverse.allow.duplicates</tt> - set this property to true to suppress errors when a reverse meta value is not unique. Default false.</li>
+ * <li><tt>metaindex.compressed.crop.long</tt> - set this property to suppress errors with overlong Document metadata, while will instead be cropped.</li>
  * @since 3.0
  * @author Craig Macdonald &amp; Vassilis Plachouras 
  */
 @SuppressWarnings("deprecation")
 public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flushable {
 	protected static final Logger logger = Logger.getLogger(CompressingMetaIndexBuilder.class);
-	protected static final int MAX_MB_IN_MEM_RETRIEVAL = Integer.parseInt(ApplicationSetup.getProperty("metaindex.compressed.max.data.in-mem.mb", "400"));
-	protected static final int MAX_INDEX_MB_IN_MEM_RETRIEVAL = Integer.parseInt(ApplicationSetup.getProperty("metaindex.compressed.max.index.in-mem.mb", "100"));
+	protected static final int MAX_MB_IN_MEM_RETRIEVAL = 
+			Integer.parseInt(ApplicationSetup.getProperty("metaindex.compressed.max.data.in-mem.mb", "400"));
+	protected static final int MAX_INDEX_MB_IN_MEM_RETRIEVAL = 
+			Integer.parseInt(ApplicationSetup.getProperty("metaindex.compressed.max.index.in-mem.mb", "100"));
+	protected static final boolean REVERSE_ALLOW_DUPS = 
+			Boolean.parseBoolean(ApplicationSetup.getProperty("metaindex.compressed.reverse.allow.duplicates", "false"));
+	protected static final boolean CROP_LONG = 
+			Boolean.parseBoolean(ApplicationSetup.getProperty("metaindex.compressed.crop.long", "false"));
+	
 	protected static final int REVERSE_KEY_LOOKUP_WRITING_BUFFER_SIZE = 20000;
 	protected static final int DOCS_PER_CHECK = ApplicationSetup.DOCS_CHECK_SINGLEPASS;
 	protected static final int ZIP_COMPRESSION_LEVEL = 5;//TODO (auto)configure? 
@@ -88,7 +103,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	protected ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	protected DataOutputStream indexOutput = null;
 	protected byte[] compressedBuffer = new byte[1024];
-	protected Index index;
+	protected IndexOnDisk index;
 	protected int[] valueLensChars;
 	protected int[] valueLensBytes;
 	
@@ -107,6 +122,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	protected MemoryChecker memCheck = new RuntimeMemoryChecker();
 	protected FixedSizeWriteableFactory<Text>[] keyFactories;
 	protected String structureName;
+	
 	/**
 	 * constructor
 	 * @param _index
@@ -114,7 +130,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	 * @param _valueLens
 	 * @param _forwardKeys
 	 */
-	public CompressingMetaIndexBuilder(Index _index, String[] _keyNames, int[] _valueLens, String[] _forwardKeys)
+	public CompressingMetaIndexBuilder(IndexOnDisk _index, String[] _keyNames, int[] _valueLens, String[] _forwardKeys)
 	{
 		this(_index, "meta", _keyNames, _valueLens, _forwardKeys);
 	}
@@ -127,14 +143,14 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	 * @param _forwardKeys
 	 */
 	@SuppressWarnings("unchecked")
-	public CompressingMetaIndexBuilder(Index _index, String _structureName, String[] _keyNames, int[] _valueLens, String[] _forwardKeys)
+	public CompressingMetaIndexBuilder(IndexOnDisk _index, String _structureName, String[] _keyNames, int[] _valueLens, String[] _forwardKeys)
 	{
 		this.index = _index;
 		this.structureName = _structureName;
 		this.keyNames = _keyNames;
 		this.valueLensChars = _valueLens;
 		if (this.keyNames.length != this.valueLensChars.length)
-			throw new IllegalArgumentException("CompressingMetaIndexBuilder configuration incorrect: number of keys and number of value lengths are unequal.");
+			throw new IllegalArgumentException("CompressingMetaIndexBuilder configuration incorrect: number of keys and number of value lengths are unequal: "+ Arrays.toString(keyNames) + " vs " + Arrays.toString(_valueLens));
 		this.key2Index = new TObjectIntHashMap<String>(keyNames.length);
 		this.keyCount = keyNames.length;
 		for(int i=0;i<keyCount;i++)
@@ -169,10 +185,10 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 		for(i=0;i<forwardKeys.length;i++)
 		{
 			forwardWriters[i] = new MultiFSOMapWriter(
-				_index.getPath() + "/" + _index.getPrefix() + "."+structureName+"-"+i+FSOrderedMapFile.USUAL_EXTENSION, 
+					_index.getPath() + "/" + _index.getPrefix() + "."+structureName+"-"+i+FSOrderedMapFile.USUAL_EXTENSION, 
 				REVERSE_KEY_LOOKUP_WRITING_BUFFER_SIZE, 
 				keyFactories[i] = new FixedSizeTextFactory(valueLensChars[forwardKeys[i]]), 
-				new FixedSizeIntWritableFactory()
+				new FixedSizeIntWritableFactory(), REVERSE_ALLOW_DUPS
 				);
 			forwardKeyValuesSorted[i] = true;
 		}
@@ -209,12 +225,19 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 			if (value == null)
 				value = "";
 			else if (value.length() > valueLensChars[i])
-				throw new IllegalArgumentException("Data for key "+keyNames[i]+" exceeds max string length of " + valueLensChars[i] +"(byte length of " + valueLensBytes[i] + "). Crop in the Document, or increase indexer.meta.forward.keylens");
-			
+				if (CROP_LONG)
+					value = value.substring(0,valueLensChars[i]-1);
+				else
+					throw new IllegalArgumentException("Data ("+value+") of string length "+value.length()+" for key "
+						+keyNames[i]+" exceeds max string length of " + valueLensChars[i] +"(byte length of " + valueLensBytes[i] + 
+						"). Crop in the Document, increase indexer.meta.forward.keylens, or set metaindex.compressed.crop.long");
+				
 			final byte[] b = Text.encode(value).array();
 			final int numberOfBytesToWrite = b.length;
 			if (numberOfBytesToWrite > valueLensBytes[i])
-				throw new IllegalArgumentException("Data for key "+keyNames[i]+" exceeds max byte length of " + valueLensBytes[i] +"(string length of " + valueLensChars[i] + "). Crop in the Document, or increase indexer.meta.forward.keylens");
+				throw new IllegalArgumentException("Data ("+value+") of byte length "+numberOfBytesToWrite+" for key "
+						+keyNames[i]+" exceeds max byte length of " + valueLensBytes[i] +"(string length of " 
+						+ valueLensChars[i] + "). Crop in the Document, or increase indexer.meta.forward.keylens");
 			baos.write(b);
 			if (numberOfBytesToWrite < valueLensBytes[i]) 
 				baos.write(spaces, 0, valueLensBytes[i]-numberOfBytesToWrite);
@@ -270,8 +293,8 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	{
 		dataOutput.close();
 		indexOutput.close();
-		index.addIndexStructure(structureName, "org.terrier.structures.CompressingMetaIndex", "org.terrier.structures.Index,java.lang.String", "index,structureName");
-		index.addIndexStructureInputStream(structureName, "org.terrier.structures.CompressingMetaIndex$InputStream", "org.terrier.structures.Index,java.lang.String", "index,structureName");
+		index.addIndexStructure(structureName, "org.terrier.structures.CompressingMetaIndex", "org.terrier.structures.IndexOnDisk,java.lang.String", "index,structureName");
+		index.addIndexStructureInputStream(structureName, "org.terrier.structures.CompressingMetaIndex$InputStream", "org.terrier.structures.IndexOnDisk,java.lang.String", "index,structureName");
 		index.setIndexProperty("index."+structureName+".entries", ""+entryCount);
 		index.setIndexProperty("index."+structureName+".compression-level", ""+ZIP_COMPRESSION_LEVEL);
 		index.setIndexProperty("index."+structureName+".key-names", ArrayUtils.join(keyNames, ","));
@@ -304,6 +327,18 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 		
 	}
 
+	public static void main(String[] args) throws Exception
+	{
+		if (args.length == 0)
+		{
+			System.err.println("Usage: -Dterrier.index.path=hdfs://path/to/index " + CompressingMetaIndexBuilder.class.getName() + " docno");
+			return;
+		}
+		Index.setIndexLoadingProfileAsRetrieval(false);
+		IndexOnDisk index = Index.createIndex();
+		reverseAsMapReduceJob(index, "meta", args);
+	}
+	
 	/**
 	 * reverseAsMapReduceJob
 	 * @param index
@@ -311,7 +346,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	 * @param keys
 	 * @throws Exception
 	 */
-	public static void reverseAsMapReduceJob(Index index, String structureName, String[] keys) throws Exception
+	public static void reverseAsMapReduceJob(IndexOnDisk index, String structureName, String[] keys) throws Exception
 	{
 		final HadoopPlugin.JobFactory jf = HadoopPlugin.getJobFactory("TerrierIndexingMeta");
 		if (jf == null)
@@ -328,7 +363,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 	 * @throws Exception
 	 */
 	//@SuppressWarnings("deprecation")
-	public static void reverseAsMapReduceJob(Index index, String structureName, String[] keys, HadoopPlugin.JobFactory jf) throws Exception
+	public static void reverseAsMapReduceJob(IndexOnDisk index, String structureName, String[] keys, HadoopPlugin.JobFactory jf) throws Exception
 	{		
 		long time =System.currentTimeMillis();
 		final JobConf conf = jf.newJob();
@@ -488,7 +523,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 
 		String currentReducingKey = null;
 		MapFileWriter currentReducingOutput;
-		Index index;
+		IndexOnDisk index;
 		Path reduceTaskFileDestinations;
 		TObjectIntHashMap<String> key2reverseOffset = null;
 		TObjectIntHashMap<String> key2valuelength = null;
@@ -590,7 +625,7 @@ public class CompressingMetaIndexBuilder extends MetaIndexBuilder implements Flu
 			keyFactory = new FixedSizeTextFactory(valueLength);
 			logger.info("Opening MapFileWriter for key "+ keyName + " - index " + metaKeyIndex);
 			return FSOrderedMapFile.mapFileWrite(reduceTaskFileDestinations.toString() /*index.getPath()*/ 
-						+ "/" + index.getPrefix() + "."
+						+ "/" + ((IndexOnDisk) index).getPrefix() + "."
 						+ jc.get("MetaIndexInputStreamRecordReader.structureName")
 						+ "-"+metaKeyIndex+FSOrderedMapFile.USUAL_EXTENSION
 					);

@@ -17,7 +17,7 @@
  *
  * The Original Code is FSArrayFile.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,7 +34,7 @@ import java.util.NoSuchElementException;
 
 import org.apache.hadoop.io.Writable;
 
-import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.Skipable;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 import org.terrier.utility.Files;
@@ -69,7 +69,7 @@ public class FSArrayFile<V extends Writable> extends AbstractList<V> implements 
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	public FSArrayFile(Index index, String structureName) throws IOException
+	public FSArrayFile(IndexOnDisk index, String structureName) throws IOException
 	{
 		this(
 				index.getPath() + "/" + index.getPrefix() + "." + structureName + FSArrayFile.USUAL_EXTENSION,
@@ -176,7 +176,7 @@ public class FSArrayFile<V extends Writable> extends AbstractList<V> implements 
 		 * @throws IOException
 		 */
 		@SuppressWarnings("unchecked")
-		public ArrayFileIterator(Index index, String structureName) throws IOException
+		public ArrayFileIterator(IndexOnDisk index, String structureName) throws IOException
 		{
 			this(
 					index.getPath() + "/" + index.getPrefix() + "." + structureName + FSArrayFile.USUAL_EXTENSION,

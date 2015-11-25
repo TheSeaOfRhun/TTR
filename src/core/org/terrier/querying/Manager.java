@@ -17,7 +17,7 @@
  *
  * The Original Code is Manager.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -51,6 +51,7 @@ import org.terrier.querying.parser.Query;
 import org.terrier.querying.parser.QueryParser;
 import org.terrier.querying.parser.QueryParserException;
 import org.terrier.querying.parser.RequirementQuery;
+import org.terrier.querying.parser.SingleTermQuery;
 import org.terrier.structures.Index;
 import org.terrier.terms.BaseTermPipelineAccessor;
 import org.terrier.terms.TermPipelineAccessor;
@@ -643,14 +644,33 @@ public class Manager
 			
 			/* now propagate fields into requirements, and apply boolean matching
 			   for the decorated terms. */
-			ArrayList<Query> requirement_list = new ArrayList<Query>();
+			ArrayList<Query> requirement_list_all = new ArrayList<Query>();
+			ArrayList<Query> requirement_list_positive = new ArrayList<Query>();
+			ArrayList<Query> requirement_list_negative = new ArrayList<Query>();
 			ArrayList<Query> field_list = new ArrayList<Query>();
 			
-			q.getTermsOf(RequirementQuery.class, requirement_list, true);
+			// Issue TREC-370
+			q.getTermsOf(RequirementQuery.class, requirement_list_all, true);
+			for (Query query : requirement_list_all ) {
+				if (((SingleTermQuery)query).required>=0) {
+					//System.err.println(query.toString()+" was a positive requirement "+((SingleTermQuery)query).required);
+					requirement_list_positive.add(query);
+				}
+				else {
+					//System.err.println(query.toString()+" was a negative requirement"+((SingleTermQuery)query).required);
+					requirement_list_negative.add(query);
+				}
+			}
+			for (Query negativeQuery : requirement_list_negative) {
+				//System.err.println(negativeQuery.toString()+" was a negative requirement");
+				mqt.setTermProperty(negativeQuery.toString(), Double.NEGATIVE_INFINITY);
+			}
+			
+			
 			q.getTermsOf(FieldQuery.class, field_list, true);
 			for (int i=0; i<field_list.size(); i++) 
-				if (!requirement_list.contains(field_list.get(i)))
-					requirement_list.add(field_list.get(i));
+				if (!requirement_list_positive.contains(field_list.get(i)))
+					requirement_list_positive.add(field_list.get(i));
 
 			/*if (logger.isDebugEnabled())
 			{
@@ -666,16 +686,25 @@ public class Manager
 				}
 			}*/
 		
-			if (requirement_list.size()>0) {
-				mqt.addDocumentScoreModifier(new BooleanScoreModifier(requirement_list));
+			if (requirement_list_positive.size()>0) {
+				mqt.addDocumentScoreModifier(new BooleanScoreModifier(requirement_list_positive));
 			}
 
 			mqt.setQuery(q);
 			mqt.normaliseTermWeights();
 			try{
 				ResultSet outRs = matching.match(rq.getQueryID(), mqt);
+				
+				//check to see if we have any negative infinity scores that should be removed
+				int badDocuments = 0;
+				for (int i = 0; i < outRs.getResultSize(); i++) {
+					if (outRs.getScores()[i] == Double.NEGATIVE_INFINITY)
+						badDocuments++;
+				}
+				logger.debug("Found "+badDocuments+" documents with a score of negative infinity in the result set returned, they will be removed.");
+				
 				//now crop the collectionresultset down to a query result set.
-				rq.setResultSet(outRs.getResultSet(0, outRs.getResultSize()));
+				rq.setResultSet(outRs.getResultSet(0, outRs.getResultSize()-badDocuments));
 			} catch (IOException ioe) {
 				logger.error("Problem running Matching, returning empty result set as query"+rq.getQueryID(), ioe);
 				rq.setResultSet(new QueryResultSet(0));
@@ -762,7 +791,8 @@ public class Manager
 		//we've got no filters set, so just give the results ASAP
 		if (filters_length == 0)
 		{
-			rq.setResultSet( results.getResultSet(Start, length) );
+			if (Start != 0 && length != ResultsSize)
+				rq.setResultSet( results.getResultSet(Start, length) );
 			if (logger.isDebugEnabled()) { 
 				logger.debug("No filters, just Crop: "+Start+", length"+length);
 				logger.debug("Resultset is now "+results.getScores().length + " long");
@@ -916,7 +946,7 @@ public class Manager
 				{
 					//load the class
 					if (ModelNames[i].equals("org.terrier.matching.Matching"))
-						ModelNames[i] = "org.terrier.matching.taat.Full";
+						ModelNames[i] = "org.terrier.matching.daat.Full";
 					Class<? extends Matching> formatter = Class.forName(ModelNames[i], false, this.getClass().getClassLoader()).asSubclass(Matching.class);
 					//get the correct constructor - an Index class in this case
 					

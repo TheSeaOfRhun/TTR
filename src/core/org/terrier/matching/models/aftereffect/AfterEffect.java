@@ -17,7 +17,7 @@
  *
  * The Original Code is AfterEffect.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,7 +34,7 @@ import java.io.Serializable;
  * @author Ben He
   * @see org.terrier.matching.models.DFRWeightingModel
  */
-public abstract class AfterEffect implements Serializable{
+public abstract class AfterEffect implements Serializable, Cloneable{
 	/**
 	 * 
 	 */
@@ -49,6 +49,16 @@ public abstract class AfterEffect implements Serializable{
 	public AfterEffect() {/* An empty constructor */
 		
 	}
+	/** Clone this weighting model */
+	@Override
+	public AfterEffect clone() {
+		try{
+			return (AfterEffect) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(e.getMessage());
+		}
+	}
+	
 	/**
 	 * Set the average document length, which is used for computing the
 	 * prior for the first normalisation.

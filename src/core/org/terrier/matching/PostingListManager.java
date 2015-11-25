@@ -17,7 +17,7 @@
  *
  * The Original Code is PostingListManager.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,6 +27,8 @@
  */
 package org.terrier.matching;
 
+import gnu.trove.TDoubleArrayList;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,16 +36,16 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.models.WeightingModel;
 import org.terrier.structures.BitIndexPointer;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
 import org.terrier.structures.Index;
 import org.terrier.structures.IndexUtil;
-import org.terrier.structures.InvertedIndex;
 import org.terrier.structures.Lexicon;
 import org.terrier.structures.LexiconEntry;
+import org.terrier.structures.Pointer;
+import org.terrier.structures.PostingIndex;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.structures.postings.ORIterablePosting;
 import org.terrier.utility.ApplicationSetup;
@@ -124,6 +126,9 @@ public class PostingListManager implements Closeable
 	/** String form for each term */
 	protected final List<String> termStrings = new ArrayList<String>();
 	
+	/** String form for each term */
+	protected final TDoubleArrayList termKeyFreqs = new TDoubleArrayList();
+	
 	/** number of terms */
 	protected int numTerms = 0;
 	/** underlying index */
@@ -131,16 +136,17 @@ public class PostingListManager implements Closeable
 	/** lexicon for the index */
 	protected Lexicon<String> lexicon;
 	/** inverted index of the index */
-	protected InvertedIndex invertedIndex;
+	protected PostingIndex<Pointer> invertedIndex;
 	/** statistics of the collection */
 	protected CollectionStatistics collectionStatistics;
 	
 	/** Create a posting list manager for the given index and statistics */
+	@SuppressWarnings("unchecked")
 	protected PostingListManager(Index _index, CollectionStatistics cs) throws IOException
 	{
 		index = _index;
 		lexicon = index.getLexicon();
-		invertedIndex = index.getInvertedIndex();
+		invertedIndex = (PostingIndex<Pointer>) index.getInvertedIndex();
 		collectionStatistics = cs;
 	}
 	
@@ -151,12 +157,24 @@ public class PostingListManager implements Closeable
 	 * @param _cs - collection statistics to obtain 
 	 * @param mqt - MatchingQueryTerms object calculated for the query
 	 */
-	public PostingListManager(Index _index, CollectionStatistics _cs, MatchingQueryTerms mqt) throws IOException
+	public PostingListManager(Index _index, CollectionStatistics _cs, MatchingQueryTerms mqt) throws IOException 
+	{
+		this(_index, _cs, mqt, true);
+	}
+	
+	/** Create a posting list manager for the given index and statistics, and populated using the specified
+	 * MatchingQueryTerms.
+	 * @param _index - index to obtain postings from
+	 * @param _cs - collection statistics to obtain 
+	 * @param mqt - MatchingQueryTerms object calculated for the query
+	 * @param splitSynonyms - allows the splitting of synonym groups (i.e. singleTermAlternatives) to be disabled
+	 */
+	public PostingListManager(Index _index, CollectionStatistics _cs, MatchingQueryTerms mqt, boolean splitSynonyms) throws IOException
 	{
 		this(_index, _cs);
 		for(String queryTerm : mqt.getTerms())
 		{
-			if (queryTerm.contains("|"))
+			if (splitSynonyms && queryTerm.contains("|"))
 			{
 				String[] alternatives = queryTerm.split("\\|");
 				addSingleTermAlternatives(alternatives, queryTerm,
@@ -204,12 +222,13 @@ public class PostingListManager implements Closeable
 			//previousTerm = false;
 		} else {
 			termStrings.add(queryTerm);
-			termPostings.add(invertedIndex.getPostings((BitIndexPointer) t));
+			termPostings.add(invertedIndex.getPostings((Pointer) t));
 			if (entryStats == null)
 				entryStats = t;
 			if (logger.isDebugEnabled())
 				logger.debug("Term " + queryTerm + " stats" + entryStats.toString());
 			termStatistics.add(entryStats);
+			termKeyFreqs.add(weight);
 			for (WeightingModel w : wmodels)
 			{
 				w.setEntryStatistics(entryStats);				
@@ -265,7 +284,7 @@ public class PostingListManager implements Closeable
 		{
 			LexiconEntry t = lexicon.getLexiconEntry(alternative);
 			if (t == null) {
-				logger.debug("Term Not Found: " + alternative);
+				logger.debug("Alternative term Not Found: " + alternative);
 				//previousTerm = false;			
 			} else if (IGNORE_LOW_IDF_TERMS && collectionStatistics.getNumberOfDocuments() < t.getFrequency()) {
 				logger.warn("query term " + alternative + " has low idf - ignored from scoring.");
@@ -278,12 +297,18 @@ public class PostingListManager implements Closeable
 				_joinedPostings.add(invertedIndex.getPostings((BitIndexPointer) t));
 			}
 		}
+		if (_le.size() == 0)
+		{
+			logger.warn("No alternatives matched in " + Arrays.toString(terms));
+			return;
+		}
 		if (entryStats == null)
 			entryStats = mergeStatistics(_le.toArray(new LexiconEntry[_le.size()]));
 		if (logger.isDebugEnabled())
 			logger.debug("Dijunctive term " + Arrays.toString(terms) + " stats" + entryStats.toString());
 		termStrings.add(stringForm);
 		termStatistics.add(entryStats);
+		termKeyFreqs.add(weight);
 		//System.err.println(entryStats.toString());
 		IterablePosting[] joinedPostings = _joinedPostings.toArray(new IterablePosting[_joinedPostings.size()]);
 		termPostings.add(ORIterablePosting.mergePostings(joinedPostings));
@@ -377,4 +402,7 @@ public class PostingListManager implements Closeable
 		return termStrings.get(i);
 	}
 	
+	public double getKeyFrequency(int i) {
+		return termKeyFreqs.get(i);
+	}
 }

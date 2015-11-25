@@ -17,7 +17,7 @@
  *
  * The Original Code is AccumulatorResultSet.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,9 +35,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
-
-import org.terrier.matching.QueryResultSet;
-import org.terrier.matching.ResultSet;
 import org.terrier.utility.HeapSort;
 
 
@@ -180,6 +177,19 @@ public class AccumulatorResultSet implements ResultSet, Serializable
 	{
 		exactResultSize = newExactResultSize;
 	}
+	
+	@Override
+	public void sort() {
+		sort(this.docids.length);
+	}
+
+	@Override
+	public void sort(int topDocs) {
+		if (! arraysInitialised)
+			throw new UnsupportedOperationException("");
+		HeapSort.descendingHeapSort(getScores(), getDocids(), getOccurrences(), topDocs);
+	}
+	
 	
 	/** Unsupported */
 	public void addMetaItem(String name, int docid, String value) {}

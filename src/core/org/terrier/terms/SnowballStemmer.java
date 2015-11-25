@@ -17,7 +17,7 @@
  *
  * The Original Code is SnowballStemmer.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,7 +29,7 @@ package org.terrier.terms;
 import org.tartarus.snowball.SnowballProgram;
 import java.lang.reflect.Method;
 
-/** 
+  /** Classic Snowball stemmer implmented by Snowball.
   * @author Craig Macdonald <craigm{a.}dcs.gla.ac.uk>
     */
 abstract public class SnowballStemmer extends StemmerTermPipeline {

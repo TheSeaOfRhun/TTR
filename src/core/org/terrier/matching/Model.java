@@ -17,7 +17,7 @@
  *
  * The Original Code is Model.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -44,31 +44,7 @@ public interface Model
 	  * corpus and the model, so should be set for each Terrier instance. 
 	  * @param param double the parameter value. */
 	void setParameter(double param);
-	/**
-	 * Set the number of unique terms in the collection.
-	 * @param n double The number of unique terms in the collection.
-	 */
-	void setNumberOfUniqueTerms (double n);
-	/**
-	 * Set the number of tokens in the whole collection.
-	 * @param n The number of tokens in the whole collection.
-	 */
-	void setNumberOfTokens (double n);
-	/**
-	 * Set the average document length in the collection.
-	 * @param n The average document length in the collection.
-	 */
-	void setAverageDocumentLength (double n);
-	/**
-	 * Set the number of documents in the collection.
-	 * @param n The number of documents in the collection.
-	 */
-	void setNumberOfDocuments(double n);
-	/**
-	 * Set the number of pointers in the collection.
-	 * @param n The number of pointers in the collection.
-	 */
-	void setNumberOfPointers(double n);
+	
 	/** Returns the current value of the parameter set using setParameter() method. */
 	double getParameter();
 }

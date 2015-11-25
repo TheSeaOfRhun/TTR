@@ -17,7 +17,7 @@
  *
  * The Original Code is BM25F.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -41,15 +41,15 @@ import org.terrier.matching.models.normalisation.NormalisationB;
  * @author Craig Macdonald
  * @since 3.0
  */
-public class BM25F extends PerFieldNormWeightingModel
-{
+public class BM25F extends PerFieldNormWeightingModel {
 	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Constructs an instance of the BM25F
 	 * @throws Exception
 	 */
 	public BM25F() throws Exception {
-		super(new String[]{
+		super(new String[] {
 			BM.class.getName(),
 			NormalisationB.class.getName()
 		});		
@@ -59,6 +59,4 @@ public class BM25F extends PerFieldNormWeightingModel
 	public String getInfo() {
 		return "BM25F";
 	}
-	
-
 }

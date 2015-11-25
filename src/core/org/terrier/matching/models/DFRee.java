@@ -17,13 +17,15 @@
  *
  * The Original Code is DFRee.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Gianni Amati <gba{a.}fub.it> (Original author)
  */
 package org.terrier.matching.models;
+
+
 /**
  * This class implements the DFRee weighting model. DFRee stands for DFR free from parameters.
  * In particular, the DFRee model computes an average number of extra bits (as information 
@@ -71,30 +73,37 @@ public class DFRee extends WeightingModel {
         		//double alpha = 1d/docLength; //0 <= alpha <= posterior
         					
         					
-        		double norm = tf*Idf.log(posterior/prior)  ; 
+        		double norm = tf*WeightingModelLibrary.log(posterior/prior)  ; 
         		 
         		return keyFrequency * norm *(
         					     tf *( 
-        			   - Idf.log (prior *InvPriorCollection) 
+        			   - WeightingModelLibrary.log (prior *InvPriorCollection) 
         					     )
         				      +
         					     (tf+1d) *  ( 
-        			   + Idf.log ( posterior*InvPriorCollection) 
+        			   + WeightingModelLibrary.log ( posterior*InvPriorCollection) 
         					     )
-        					     + 0.5*Idf.log(posterior/prior)
+        					     + 0.5*WeightingModelLibrary.log(posterior/prior)
         			    );
  	}
 
 	
-	/**
-	 * Uses DFRee to compute a weight for a term in a document.
-	 * @param tf The term frequency of the term in the document
-	 * @param docLength the document's length
-	 * @param documentFrequency The document frequency of the term (ignored)
-	 * @param termFrequency the term frequency in the collection (ignored)
-	 * @param keyFrequency the term frequency in the query (ignored).
-	 * @return the score assigned by the weighting model DFRee.
-	 */
+		/**
+		 * This method provides the contract for implementing weighting models.
+		 * 
+		 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+		 * since it is not used. The two parameter score method should be used
+		 * instead. Tagged for removal in a later version.
+		 * 
+		 * @param tf The term frequency in the document
+		 * @param docLength the document's length
+		 * @param documentFrequency The document frequency of the term
+		 * @param termFrequency the term frequency in the collection
+		 * @param keyFrequency the term frequency in the query
+		 * @return the score returned by the implemented weighting model.
+		 */
+		@Deprecated
+		@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -111,17 +120,17 @@ public class DFRee extends WeightingModel {
     		//double alpha = 1d/docLength; //0 <= alpha <= posterior
     					
     					
-    		double norm = tf*Idf.log(posterior/prior)  ; 
+    		double norm = tf*WeightingModelLibrary.log(posterior/prior)  ; 
     		 
     		return keyFrequency * norm *(
     					     tf *( 
-    			   - Idf.log (prior *InvPriorCollection) 
+    			   - WeightingModelLibrary.log (prior *InvPriorCollection) 
     					     )
     				      +
     					     (tf+1d) *  ( 
-    			   + Idf.log ( posterior*InvPriorCollection) 
+    			   + WeightingModelLibrary.log ( posterior*InvPriorCollection) 
     					     )
-    					     + 0.5*Idf.log(posterior/prior)
+    					     + 0.5*WeightingModelLibrary.log(posterior/prior)
     			    );
 	}
 }

@@ -27,6 +27,7 @@
 package org.terrier.matching.models;
 
 import org.terrier.matching.models.normalisation.Normalisation;
+import org.terrier.matching.models.normalisation.Normalisation2;
 import org.terrier.statistics.GammaFunction;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
@@ -48,8 +49,7 @@ import org.terrier.utility.ApplicationSetup;
  * @author Vassilis Plachouras and Craig Macdonald
  * @since 3.0
  */
-public class ML2 extends WeightingModel
-{
+public class ML2 extends WeightingModel {
 	static final double LOG2 = Math.log(2.0d);
 	
 	Class<? extends Normalisation> normClass;
@@ -74,6 +74,11 @@ public class ML2 extends WeightingModel
 		this.normClass = Class.forName(parameters[0]).asSubclass(Normalisation.class);
 	}
 	
+	public ML2() 
+	{
+		this.normClass = Normalisation2.class;
+	}
+	
 	@Override
 	public String getInfo() {
 		return this.getClass().getSimpleName();
@@ -91,6 +96,7 @@ public class ML2 extends WeightingModel
 		super.setCollectionStatistics(_cs);
 		fieldCount = _cs.getNumberOfFields();
 		p = new double[fieldCount];
+		fieldWeights = new double[fieldCount];
 		this.fieldNormalisations = new Normalisation[fieldCount];
 		try{
 			for(int fi=0;fi<fieldCount;fi++)
@@ -104,8 +110,10 @@ public class ML2 extends WeightingModel
 				final long tokensf = _cs.getFieldTokens()[fi];
 				nf.setNumberOfTokens(tokensf);
 				nf.setAverageDocumentLength(_cs.getAverageFieldLengths()[fi]);
-				p[fi] = 1.0d / ((double)fieldCount * super.numberOfDocuments);
+				p[fi] = 1.0d / ((double)fieldCount * (double)_cs.getNumberOfDocuments());
+				//System.err.println("p["+fi+"]="+ p[fi]);
 				p[fi] = p[fi] / Double.parseDouble( ApplicationSetup.getProperty("p." + fi, "1.0d"));
+				//System.err.println("p["+fi+"]="+ p[fi]);
 			}
 		
 		} catch (Exception e) {
@@ -113,31 +121,44 @@ public class ML2 extends WeightingModel
 		}
 	}
 
+	/** 
+	 * {@inheritDoc} 
+	 */
 	@Override
 	public void setEntryStatistics(EntryStatistics _es) {
 		super.setEntryStatistics(_es);
 		fieldTermFrequencies = ((FieldEntryStatistics)_es).getFieldFrequencies();
 	}
 
+	/** 
+	 * {@inheritDoc} 
+	 */
 	@Override
 	public double score(Posting _p) {
 		FieldPosting fp = (FieldPosting)_p;
 		double q = 1.0d;
 		double score = initialScore;
+		
 		double tf_q = super.termFrequency;
+		double denom = 0.0d;
 		final int[] tff = fp.getFieldFrequencies();
 		final int[] fieldLengths = fp.getFieldLengths();
+		//System.err.println("initial score=" + score);
 		for(int fi = 0; fi < fieldCount; fi++)
 		{
 			if (tff[fi] == 0)
 				continue;
 			final double tfn_i = this.fieldNormalisations[fi].normalise(tff[fi], fieldLengths[fi], fieldTermFrequencies[fi]);
 			score += (gF.compute_log(tfn_i+1) - tfn_i * Math.log(p[fi]) )/LOG2;
+			//System.err.println("field " + fi + " lhs="+gF.compute_log(tfn_i+1) + " rhs=" + tfn_i * Math.log(p[fi]));
+			denom += tfn_i;
 			tf_q -= tfn_i;
 			q -= p[fi];
+			//System.err.println("field " + fi + " score=" + score);
 		}
 		score += (gF.compute_log(tf_q + 1.0d) - tf_q * Math.log(q))/ LOG2;
-		score = score / (1.0d + super.termFrequency - tf_q);
+		//System.err.println("After score=" + score + " denom=" + denom);
+		score = score / (denom + 1.0d);
 		return keyFrequency * score;
 	}
 	
@@ -146,6 +167,21 @@ public class ML2 extends WeightingModel
 		return 0;
 	}
 
+	/**
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
+	 * @param tf The term frequency in the document
+	 * @param docLength the document's length
+	 * @param n_t The document frequency of the term
+	 * @param F_t the term frequency in the collection
+	 * @param keyFrequency the term frequency in the query
+	 * @return the score returned by the implemented weighting model.
+	 */
+	@Deprecated
 	@Override
 	public double score(double tf, double docLength, double n_t, double F_t,
 			double keyFrequency) {

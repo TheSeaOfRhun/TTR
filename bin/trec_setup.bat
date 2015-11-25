@@ -73,7 +73,7 @@ FOR %%i IN ("%TERRIER_LIB%\*.jar") DO call "%BIN%\lcp.bat" "%%i"
 REM ------------------------
 REM -- Run TRECSetup
 REM ------------------------
-java -Dterrier.home="%TERRIER_HOME%" -Dterrier.setup="%TERRIER_ETC%\terrier.properties" -cp %LOCALCLASSPATH% org.terrier.applications.TRECSetup "%TERRIER_HOME%"
+java -Dterrier.home="%TERRIER_HOME%" -Dterrier.setup="%TERRIER_ETC%\terrier.properties" -cp %LOCALCLASSPATH% org.terrier.applications.batchquerying.TRECSetup "%TERRIER_HOME%"
 
 
 

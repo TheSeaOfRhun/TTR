@@ -17,7 +17,7 @@
  *
  * The Original Code is TestCompressedBitFiles.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -46,19 +46,28 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
+import org.terrier.compression.bit.BitByteOutputStream;
+import org.terrier.compression.bit.BitFile;
+import org.terrier.compression.bit.BitFileBuffered;
+import org.terrier.compression.bit.BitFileInMemory;
+import org.terrier.compression.bit.BitFileInMemoryLarge;
+import org.terrier.compression.bit.BitIn;
+import org.terrier.compression.bit.BitInputStream;
+import org.terrier.compression.bit.BitOut;
+import org.terrier.compression.bit.BitOutputStream;
+import org.terrier.compression.bit.DebuggingBitIn;
 import org.terrier.structures.BitFilePosition;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.DirectInvertedDocidOnlyOuptutStream;
 import org.terrier.structures.FilePosition;
-import org.terrier.structures.postings.BasicPostingImpl;
+import org.terrier.structures.bit.DirectInvertedDocidOnlyOuptutStream;
+import org.terrier.structures.postings.ArrayOfIdsIterablePosting;
 import org.terrier.structures.postings.IterablePosting;
-import org.terrier.structures.postings.IterablePostingImpl;
 import org.terrier.structures.postings.Posting;
-import org.terrier.structures.postings.WritablePosting;
 import org.terrier.utility.Files;
 import org.terrier.utility.io.RandomDataInputMemory;
 
 
+@SuppressWarnings("deprecation")
 @RunWith(Suite.class)
 @SuiteClasses({
 	TestCompressedBitFiles.TestCompressedBitFiles_Streams.class,
@@ -78,45 +87,6 @@ import org.terrier.utility.io.RandomDataInputMemory;
 public class TestCompressedBitFiles  {
 
 
-	/** An instance of IterablePostings that works with a passed array of ids 
-	 * @author Craig Macdonald */
-	static class ArrayOfIdsIterablePosting extends IterablePostingImpl {
-
-		int[] node_links;
-		int indice = -1;
-		
-		public ArrayOfIdsIterablePosting(int[] _ids)
-		{
-			node_links = _ids;
-		}
-		
-		public int next() throws IOException {
-			if (indice == node_links.length -1)
-				return EOL;
-			return node_links[++indice];
-		}
-		
-		/** {@inheritDoc} */
-		public boolean endOfPostings() {
-			return (indice == node_links.length -1);
-		}
-
-		public WritablePosting asWritablePosting() {
-			return new BasicPostingImpl(node_links[indice], 0);
-		}
-		
-		public int getId()
-		{
-			return node_links[indice];
-		}
-
-		
-		public int getDocumentLength() {return 0;}
-		public int getFrequency() {return 0;}
-		public void setId(int id) {}
-		public void close() throws IOException {}
-
-	}
 	
 	/** Tests come specific cases */
 	public static class TestCompressedBitFiles_Specific2
@@ -141,7 +111,7 @@ public class TestCompressedBitFiles  {
 			BitOutputStream bo = new BitOutputStream(baos);
 			if (initial_bitoffset > 0)
 				bo.writeBinary(initial_bitoffset, 0);
-			int docid = 0;
+			//int docid = 0;
 			while((line = br.readLine())!= null)
 			{
 				String[] parts = line.split("\\s+");
@@ -177,7 +147,7 @@ public class TestCompressedBitFiles  {
 				
 				//System.err.println("startoffset="+ bp.toString() + " dios_pointer="+ diosPointer.toString());
 				
-				docid++;
+				//docid++;
 			}		
 			bo.close();
 			bytes = baos.toByteArray();
@@ -304,27 +274,59 @@ public class TestCompressedBitFiles  {
 				assertEquals(startOffsets[i].getOffset(), in.getByteOffset());
 				assertEquals(startOffsets[i].getOffsetBits(), in.getBitOffset());
 				int number = (i %2 == 0) ? in.readGamma() : in.readUnary();
-				assertEquals(testNumbers[i], number);
+				assertEquals( ( (i %2 == 0) ? "readGamma()" : "readUnary()") + " at position "+i, testNumbers[i], number);
 				//System.err.println("i="+ i + " end offset is " + in.getByteOffset() + "," + in.getBitOffset());
 			}
 			in.close();
 			//System.err.println("compressed form has size " + baos.size() + " bytes");
-			in = getBitIn();
 			
-			in.skipBytes(startOffsets[2].getOffset());
-			in.skipBits(startOffsets[2].getOffsetBits());
-			assertEquals(startOffsets[2].getOffset(), in.getByteOffset());
-			assertEquals(startOffsets[2].getOffsetBits(), in.getBitOffset());
-			for(int i=2;i<testNumbers.length;i++)
+			//now check the skipping (bytes & bits) works as expected
+			//for each number, open the file, skip forward to the start offset
+			//that the number was written at
+			for(int j=0;j<testNumbers.length;j++)
 			{
-				//System.err.println("i="+i + " start offset is " + in.getByteOffset() + "," + in.getBitOffset());
-				assertEquals(startOffsets[i].getOffset(), in.getByteOffset());
-				assertEquals(startOffsets[i].getOffsetBits(), in.getBitOffset());
-				int number = (i %2 == 0) ? in.readGamma() : in.readUnary();
-				assertEquals(testNumbers[i], number);
-				//System.err.println("i="+ i + " end offset is " + in.getByteOffset() + "," + in.getBitOffset());
+				in = new DebuggingBitIn( getBitIn() );
+				System.err.println(j);
+				in.skipBytes(startOffsets[j].getOffset());
+				//skipping bytes resets the bitoffset
+				assertEquals((byte)0, in.getBitOffset());
+				in.skipBits(startOffsets[j].getOffsetBits());
+				assertEquals(startOffsets[j].getOffset(), in.getByteOffset());
+				assertEquals(startOffsets[j].getOffsetBits(), in.getBitOffset());
+				for(int i=j;i<testNumbers.length;i++)
+				{
+					//System.err.println("i="+i + " start offset is " + in.getByteOffset() + "," + in.getBitOffset());
+					assertEquals(startOffsets[i].getOffset(), in.getByteOffset());
+					assertEquals(startOffsets[i].getOffsetBits(), in.getBitOffset());
+					int number = (i %2 == 0) ? in.readGamma() : in.readUnary();
+					assertEquals(testNumbers[i], number);
+					//System.err.println("i="+ i + " end offset is " + in.getByteOffset() + "," + in.getBitOffset());
+				}
+				in.close();
 			}
-			in.close();
+			
+			//now check the skipping (bits) works as expected
+			//for each number, open the file, skip forward to the start offset
+			//that the number was written at
+			for(int j=0;j<testNumbers.length;j++)
+			{
+				in = getBitIn();
+				System.err.println(j);
+				
+				in.skipBits((int)startOffsets[j].getOffset() * 8 + startOffsets[j].getOffsetBits());
+				assertEquals(startOffsets[j].getOffset(), in.getByteOffset());
+				assertEquals(startOffsets[j].getOffsetBits(), in.getBitOffset());
+				for(int i=j;i<testNumbers.length;i++)
+				{
+					//System.err.println("i="+i + " start offset is " + in.getByteOffset() + "," + in.getBitOffset());
+					assertEquals(startOffsets[i].getOffset(), in.getByteOffset());
+					assertEquals(startOffsets[i].getOffsetBits(), in.getBitOffset());
+					int number = (i %2 == 0) ? in.readGamma() : in.readUnary();
+					assertEquals(testNumbers[i], number);
+					//System.err.println("i="+ i + " end offset is " + in.getByteOffset() + "," + in.getBitOffset());
+				}
+				in.close();
+			}
 		}
 	}
 	
@@ -384,7 +386,6 @@ public class TestCompressedBitFiles  {
 			return new BitOutputStream(filename = tmpfolder.newFile("test.bf").toString());
 		}
 		
-		@SuppressWarnings("deprecation")
 		protected BitIn getBitIn() throws Exception
 		{
 			return new BitFile(filename, "r").readReset((long)0, (byte)0, new File(filename).length()-1, (byte)7);
@@ -445,7 +446,6 @@ public class TestCompressedBitFiles  {
 	{
 		public TestCompressedBitFiles_BitFile_RandomDataInputMemory(){}
 				
-		@SuppressWarnings("deprecation")
 		protected BitIn getBitIn() throws Exception
 		{
 			return new BitFile(new RandomDataInputMemory(filename)).readReset((long)0, (byte)0, new File(filename).length()-1, (byte)7);

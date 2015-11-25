@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockLexiconEntry.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,8 +28,11 @@ package org.terrier.structures;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.log4j.Logger;
 /** 
  * Blocks lexicon entry. A basic lexicon entry with block statistics.
+ * @deprecated
  */
 public class BlockLexiconEntry extends BasicLexiconEntry implements BlockEntryStatistics {
 	private static final long serialVersionUID = 1L;
@@ -39,6 +42,11 @@ public class BlockLexiconEntry extends BasicLexiconEntry implements BlockEntrySt
 	 */
 	public static class Factory extends BasicLexiconEntry.Factory
 	{
+		public Factory()
+		{
+			Logger.getRootLogger().warn(BlockLexiconEntry.class.getSimpleName() + " has now been deprecated and will be removed in a future release");
+		}
+		
 		/** 
 		 * {@inheritDoc} 
 		 */

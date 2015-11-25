@@ -17,7 +17,7 @@
  *
  * The Original Code is Inv2DirectMultiReduce.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -52,35 +52,37 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.log4j.Logger;
-import org.terrier.compression.BitIn;
+import org.terrier.compression.bit.BitIn;
 import org.terrier.structures.BasicDocumentIndexEntry;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BlockDirectIndex;
-import org.terrier.structures.BlockDirectIndexInputStream;
-import org.terrier.structures.BlockDirectInvertedOutputStream;
-import org.terrier.structures.BlockFieldDirectInvertedOutputStream;
-import org.terrier.structures.DirectIndex;
-import org.terrier.structures.DirectIndexInputStream;
-import org.terrier.structures.DirectInvertedOutputStream;
 import org.terrier.structures.DocumentIndexEntry;
-import org.terrier.structures.FieldDirectInvertedOutputStream;
 import org.terrier.structures.FieldDocumentIndexEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.SimpleBitIndexPointer;
+import org.terrier.structures.bit.BlockDirectIndex;
+import org.terrier.structures.bit.BlockDirectIndexInputStream;
+import org.terrier.structures.bit.BlockDirectInvertedOutputStream;
+import org.terrier.structures.bit.BlockFieldDirectInvertedOutputStream;
+import org.terrier.structures.bit.DirectIndex;
+import org.terrier.structures.bit.DirectIndexInputStream;
+import org.terrier.structures.bit.DirectInvertedOutputStream;
+import org.terrier.structures.bit.FieldDirectInvertedOutputStream;
 import org.terrier.structures.indexing.DocumentIndexBuilder;
-import org.terrier.structures.postings.BasicIterablePosting;
+import org.terrier.structures.indexing.LexiconBuilder;
 import org.terrier.structures.postings.BasicPostingImpl;
-import org.terrier.structures.postings.BlockFieldIterablePosting;
 import org.terrier.structures.postings.BlockFieldPostingImpl;
-import org.terrier.structures.postings.BlockIterablePosting;
 import org.terrier.structures.postings.BlockPostingImpl;
-import org.terrier.structures.postings.FieldIterablePosting;
 import org.terrier.structures.postings.FieldPostingImpl;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.structures.postings.Posting;
 import org.terrier.structures.postings.PostingIdComparator;
 import org.terrier.structures.postings.WritablePosting;
+import org.terrier.structures.postings.bit.BasicIterablePosting;
+import org.terrier.structures.postings.bit.BlockFieldIterablePosting;
+import org.terrier.structures.postings.bit.BlockIterablePosting;
+import org.terrier.structures.postings.bit.FieldIterablePosting;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.Files;
 import org.terrier.utility.Wrapper;
@@ -135,7 +137,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 	 */
 	public static class Inv2DirectMultiReduceJob
 	{
-		Index index;
+		IndexOnDisk index;
 		JobFactory jf;
 		Class<?> mapOutputClass;
 		Class<? extends DirectInvertedOutputStream> bitOutputClass;
@@ -152,7 +154,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 		 * @param _index
 		 * @param _jf
 		 */
-		public Inv2DirectMultiReduceJob(Index _index, JobFactory _jf)
+		public Inv2DirectMultiReduceJob(IndexOnDisk _index, JobFactory _jf)
 		{
 			this.index = _index;
 			this.jf = _jf;
@@ -344,12 +346,13 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 			return;
 		}
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index index = Index.createIndex();
+		IndexOnDisk index = Index.createIndex();
 		if (index == null)
 		{
 			System.err.println(Index.getLastIndexLoadError());
 			return;
 		}
+		
 		if (args.length > 1 && args[1].equals("--finish"))
 			finish(
 					index, 
@@ -357,10 +360,13 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 					"inverted", "direct", hasBlocksFields(index, "inverted", null), 
 					Integer.parseInt(args[0]), BitIndexPointer.MAX_FILE_ID);
 		else
+		{
+			LexiconBuilder.reAssignTermIds(index, "lexicon", index.getCollectionStatistics().getNumberOfUniqueTerms());
 			invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), Integer.parseInt(args[0]));
+		}
 	}
 	
-	static boolean[] hasBlocksFields(Index index, String sourceStructureName, Inv2DirectMultiReduceJob invJob)
+	static boolean[] hasBlocksFields(IndexOnDisk index, String sourceStructureName, Inv2DirectMultiReduceJob invJob)
 	{
 		boolean blocks = false;
 		boolean fields = false;
@@ -403,7 +409,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 	 * @param jf - MapReduce job factory
 	 * @param numberOfReduceTasks - as it says. More is better.
 	 */
-	public static void invertStructure(Index index, JobFactory jf, int numberOfReduceTasks) throws Exception
+	public static void invertStructure(IndexOnDisk index, JobFactory jf, int numberOfReduceTasks) throws Exception
 	{
 		String sourceStructureName = "inverted";
 		String targetStructureName = "direct";
@@ -422,7 +428,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void finish(Index index, Configuration conf,
+	private static void finish(IndexOnDisk index, Configuration conf,
 			String sourceStructureName, String targetStructureName,
 			boolean[] blocksfields, final int numberOfReducers, final int numberOfReduceTaskLimits)
 			throws IOException, Exception 
@@ -437,7 +443,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 		if (numberOfReducers == 1)
 		{
 			String outputPrefix = "-0";
-			DataInputStream currentStream = new DataInputStream(Files.openFileStream(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
+			DataInputStream currentStream = new DataInputStream(Files.openFileStream(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
 			logger.info("Adding pointers to the document index");
 			while(diis.hasNext())
 			{
@@ -450,13 +456,14 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 				newDIentry.setNumberOfEntries(pointer.getNumberOfEntries());
 				dios.addEntryToBuffer(newDIentry);
 			}
+			IndexUtil.close(diis);
 			logger.info("Renaming reducer output as direct file");
-			Files.delete(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
+			Files.delete(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
 			Files.rename(
-					index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION, 
-					index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
+					((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION, 
+					((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
 			currentStream.close();
-			Files.delete(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
+			Files.delete(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
 		}
 		else if (numberOfReducers <= numberOfReduceTaskLimits)
 		{
@@ -466,7 +473,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 			{
 				logger.info("Merging in pointers from reduce task " + reduce);
 				String outputPrefix = "-" + reduce;
-				DataInputStream currentStream = new DataInputStream(Files.openFileStream(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
+				DataInputStream currentStream = new DataInputStream(Files.openFileStream(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
 				for(int docOffset = 0; docOffset < partitionSize && diis.hasNext(); docOffset++)
 				{
 					DocumentIndexEntry die =  diis.next();
@@ -480,10 +487,10 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 					dios.addEntryToBuffer(newDIentry);
 				}
 				currentStream.close();
-				Files.delete(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
+				Files.delete(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
 				logger.info("Renaming direct file part for reduce task " + reduce);
-				String sourcePartDFfilename = index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION;
-				String destPartDFfilename = index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION + reduce;				
+				String sourcePartDFfilename = ((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION;
+				String destPartDFfilename = ((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION + reduce;				
 				Files.rename(sourcePartDFfilename, destPartDFfilename);
 			}
 			index.setIndexProperty("index."+targetStructureName+".data-files", ""+numberOfReducers);
@@ -495,14 +502,14 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 			logger.info("Merging direct index output from "+ numberOfReducers + " reducers");
 			
 			final int partitionSize = (int)Math.ceil( (double)(index.getCollectionStatistics().getNumberOfDocuments()) / (double)numberOfReducers);
-			final OutputStream DFout = Files.writeFileStream(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
+			final OutputStream DFout = Files.writeFileStream(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+ BitIn.USUAL_EXTENSION);
 			long finalFileOffset = 0;
 			
 			for(int reduce = 0; reduce < numberOfReducers; reduce++)
 			{
 				logger.info("Copying document index part for reduce task " + reduce);
 				String outputPrefix = "-" + reduce;
-				DataInputStream currentStream = new DataInputStream(Files.openFileStream(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
+				DataInputStream currentStream = new DataInputStream(Files.openFileStream(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers"));
 				for(int docOffset = 0; docOffset < partitionSize && diis.hasNext(); docOffset++)
 				{
 					DocumentIndexEntry die =  diis.next();
@@ -515,9 +522,9 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 					dios.addEntryToBuffer(newDIentry);
 				}
 				currentStream.close();
-				Files.delete(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
+				Files.delete(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName +outputPrefix+ ".pointers");
 				logger.info("Copying direct file part for reduce task " + reduce);
-				String partDFfilename = index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION;
+				String partDFfilename = ((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + targetStructureName+outputPrefix + BitIn.USUAL_EXTENSION;
 				InputStream partDF = Files.openFileStream(partDFfilename);
 				finalFileOffset += Files.length(partDFfilename);
 				IOUtils.copyBytes(partDF, DFout, conf, false);
@@ -529,7 +536,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 			
 		}
 		dios.close();
-		Files.copyFile(index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + "document.fsarrayfile", index.getPath() + ApplicationSetup.FILE_SEPARATOR + index.getPrefix() + "." + "document-backup.fsarrayfile");
+		Files.copyFile(((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + "document.fsarrayfile", ((IndexOnDisk) index).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) index).getPrefix() + "." + "document-backup.fsarrayfile");
 		IndexUtil.renameIndexStructure(index, "document-df", "document");
 		if (fields)
 		{
@@ -560,12 +567,12 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 		index.addIndexStructure(
 				targetStructureName, 
 				directIndexClass,
-				"org.terrier.structures.Index,java.lang.String,java.lang.Class", 
+				"org.terrier.structures.IndexOnDisk,java.lang.String,java.lang.Class", 
 				"index,structureName,"+ postingIterator);
 		index.addIndexStructureInputStream(
 				targetStructureName, 
 				directIndexInputStreamClass,
-				"org.terrier.structures.Index,java.lang.String,java.lang.Class",
+				"org.terrier.structures.IndexOnDisk,java.lang.String,java.lang.Class",
 				"index,structureName,"+ postingIterator);
 		index.flush();
 	}
@@ -616,13 +623,13 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 		final String outputPrefix = "-" + reduceId;
 		try{
 			Class<DirectInvertedOutputStream> c = (Class<DirectInvertedOutputStream>)jc.getClass("Inv2Direct.DirectInvertedOutputStream", DirectInvertedOutputStream.class);
-			postingOutputStream = c.getConstructor(String.class).newInstance(currentIndex.getPath() + ApplicationSetup.FILE_SEPARATOR + currentIndex.getPrefix() + "." + jc.get("Inv2Direct.TargetStructure")+outputPrefix + BitIn.USUAL_EXTENSION);
+			postingOutputStream = c.getConstructor(String.class).newInstance(((IndexOnDisk) currentIndex).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) currentIndex).getPrefix() + "." + jc.get("Inv2Direct.TargetStructure")+outputPrefix + BitIn.USUAL_EXTENSION);
 		} catch (Exception e) {
 			throw new WrappedIOException(e);
 		}
 		
-		logger.info("Writing pointers to" + currentIndex.getPath() + ApplicationSetup.FILE_SEPARATOR + currentIndex.getPrefix() + "." + jc.get("Inv2Direct.TargetStructure") +outputPrefix+ ".pointers");
-		pointerOutputStream = new DataOutputStream(Files.writeFileStream(currentIndex.getPath() + ApplicationSetup.FILE_SEPARATOR + currentIndex.getPrefix() + "." + jc.get("Inv2Direct.TargetStructure") +outputPrefix+ ".pointers"));
+		logger.info("Writing pointers to" + ((IndexOnDisk) currentIndex).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) currentIndex).getPrefix() + "." + jc.get("Inv2Direct.TargetStructure") +outputPrefix+ ".pointers");
+		pointerOutputStream = new DataOutputStream(Files.writeFileStream(((IndexOnDisk) currentIndex).getPath() + ApplicationSetup.FILE_SEPARATOR + ((IndexOnDisk) currentIndex).getPrefix() + "." + jc.get("Inv2Direct.TargetStructure") +outputPrefix+ ".pointers"));
 		final int numberOfDocuments = jc.getInt("Inv2Direct.numDocuments", -1);
 		final int numberOfReducers = jc.getNumReduceTasks();
 		final int partitionSize = (int)Math.ceil( (double)numberOfDocuments / (double)numberOfReducers);
@@ -665,7 +672,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 		 * they can fit in memory */
 		
 		List<Posting> postingList = new ArrayList<Posting>();
-		int doclen = 0;
+		//int doclen = 0;
 		TIntHashSet foundIds = new TIntHashSet();
 		while(documentPostings.hasNext())
 		{
@@ -674,7 +681,7 @@ public class Inv2DirectMultiReduce extends HadoopUtility.MapReduceBase<IntWritab
 			if (! foundIds.contains(p.getId()) )
 			{
 				postingList.add(p);
-				doclen += p.getFrequency();
+				//doclen += p.getFrequency();
 				reporter.progress();
 				foundIds.add(p.getId());
 			}

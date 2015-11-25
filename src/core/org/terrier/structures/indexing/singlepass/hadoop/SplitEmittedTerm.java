@@ -17,7 +17,7 @@
  *
  * The Original Code is SplitEmittedTerm.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -46,7 +46,7 @@ import org.apache.hadoop.mapred.Partitioner;
  * Represents a Term key used during MapReduce Indexing. Term keys are emitted from
  * each map task, and are used for sorting and partitioning the output. Paritioning
  * is done by splitno. Two options for sorting (a) term only, (b) term, split, flush
- * @author richardm
+ * @author Richard McCreadie
  * @since 3.0
  */
 @SuppressWarnings("deprecation")

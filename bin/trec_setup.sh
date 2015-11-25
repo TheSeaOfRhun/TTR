@@ -96,7 +96,7 @@ $JAVA_HOME/bin/java $JAVA_OPTIONS -cp $CLASSPATH \
 	 -Dterrier.etc=$TERRIER_ETC \
 	 -Dterrier.home=$TERRIER_HOME \
 	 -Dterrier.setup=$TERRIER_ETC/terrier.properties \
-	 org.terrier.applications.TRECSetup $TERRIER_HOME
+	 org.terrier.applications.batchquerying.TRECSetup $TERRIER_HOME
 
 #updating the address_collection file
 find $1 -type f | sort >> $TERRIER_ETC/collection.spec

@@ -17,7 +17,7 @@
  *
  * The Original Code is BitPostingIndexInputFormat.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -47,8 +47,12 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BitPostingIndexInputStream;
+import org.terrier.structures.DocumentIndex;
+import org.terrier.structures.DocumentIndexEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.IndexUtil;
+import org.terrier.structures.bit.BitPostingIndexInputStream;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.utility.ArrayUtils;
 import org.terrier.utility.Wrapper.IntObjectWrapper;
@@ -72,7 +76,33 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 	final static String BITPOSTING_STRUCTURE_KEY = "mapred.bitpostingindex.structure";
 	final static String BITPOSTING_LOOKUP_STRUCTURE_KEY = "mapred.bitpostingindex.lookup.structure";
 	
+	final static boolean REPLACE_DOCUMENT_INDEX = true;
+	
+	static class NullDocumentIndex implements DocumentIndex
+	{
+		int docs;
+		public NullDocumentIndex(int numDocs)
+		{
+			this.docs = numDocs;
+		}
 		
+		@Override
+		public DocumentIndexEntry getDocumentEntry(int docid)
+				throws IOException {
+			return null;
+		}
+
+		@Override
+		public int getDocumentLength(int docid) throws IOException {
+			return 0;
+		}
+
+		@Override
+		public int getNumberOfDocuments() {
+			return docs;
+		}
+		
+	}
 	
 	static class BitPostingIndexInputSplit extends FileSplit
 	{
@@ -211,10 +241,11 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 		HadoopUtility.loadTerrierJob(job);
 		final BitPostingIndexInputSplit split = (BitPostingIndexInputSplit)_split;
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		final Index index = HadoopUtility.fromHConfiguration(job);
+		final IndexOnDisk index = HadoopUtility.fromHConfiguration(job);
 		if (index == null)
 			throw new IOException("Index not found in JobConf:" + Index.getLastIndexLoadError());
-		
+		if (REPLACE_DOCUMENT_INDEX)
+			IndexUtil.forceStructure(index, "document", new NullDocumentIndex(index.getCollectionStatistics().getNumberOfDocuments()));
 		final String bitPostingStructureName = job.get(BITPOSTING_STRUCTURE_KEY);
 		
 		final BitPostingIndexInputStream postingStream = (BitPostingIndexInputStream)index.getIndexStructureInputStream(bitPostingStructureName);
@@ -239,7 +270,7 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 		final String lookupStructureName = job.get(BITPOSTING_LOOKUP_STRUCTURE_KEY);
 		final String bitPostingStructureName = job.get(BITPOSTING_STRUCTURE_KEY);
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		final Index index = HadoopUtility.fromHConfiguration(job);		
+		final IndexOnDisk index = HadoopUtility.fromHConfiguration(job);		
 		
 		final byte fileCount = Byte.parseByte(index.getIndexProperty("index." + bitPostingStructureName + ".data-files", "1"));
 		final Path bitPostingStructureFiles[] = new Path[fileCount];
@@ -337,6 +368,7 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 			//ids always increment
 			currentId++;
 		}
+		IndexUtil.close(offsetIterator);
 		//find any files which have trailing blocks
 		for(byte fileId=0;fileId<fileCount;fileId++)
 		{
@@ -407,7 +439,7 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 	public static void main(String[] args) throws Exception
 	{
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index index = Index.createIndex(args[1], args[2]);
+		IndexOnDisk index = Index.createIndex(args[1], args[2]);
 		if (args[0].equals("--splits"))
 		{
 			JobConf job = HadoopPlugin.getJobFactory(BitPostingIndexInputFormat.class.getSimpleName()).newJob();
@@ -427,10 +459,10 @@ public class BitPostingIndexInputFormat extends FileInputFormat<IntWritable, Int
 					new String[0], Integer.parseInt(args[6]), Integer.parseInt(args[7]));
 			RecordReader<IntWritable, IntObjectWrapper<IterablePosting>> rr = new BitPostingIndexInputFormat().getRecordReader(s, job, new Reporter(){
 				public InputSplit getInputSplit() throws UnsupportedOperationException {return null;}
-				@SuppressWarnings("unchecked")
+				@SuppressWarnings({ "rawtypes" })
 				public void incrCounter(Enum arg0, long arg1) {}
 				public void incrCounter(String arg0, String arg1, long arg2) {}
-				@SuppressWarnings("unchecked")
+				@SuppressWarnings({ "rawtypes" })
 				public org.apache.hadoop.mapred.Counters.Counter getCounter(Enum arg0) {return null;}
 				public org.apache.hadoop.mapred.Counters.Counter getCounter(String arg0, String arg1) {return null;}
 				public void setStatus(String arg0) {}

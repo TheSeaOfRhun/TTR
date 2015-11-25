@@ -18,7 +18,7 @@
  *
  * The Original Code is BlockDocumentPostingList.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -31,8 +31,13 @@ import gnu.trove.TIntHashSet;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntProcedure;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.terrier.sorting.HeapSortInt;
 import org.terrier.structures.postings.BlockPosting;
 import org.terrier.structures.postings.BlockPostingImpl;
@@ -151,4 +156,64 @@ public class BlockDocumentPostingList extends DocumentPostingList
 			return fbp;
 		}		
 	}
+	
+	@Override
+	public void clear() {
+		super.clear();
+		blockCount = 0;
+		term_blocks.clear();
+	}
+	
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		clear();
+		final int termCount = WritableUtils.readVInt(in);
+		for(int i=0;i<termCount;i++)
+		{
+			final String term = Text.readString(in);
+			final int freq = WritableUtils.readVInt(in);
+			final int bf = WritableUtils.readVInt(in);
+			insert(freq, term);
+			if (bf == 0)
+				continue;
+			final int[] blocks = new int[bf];
+			blocks[0] = WritableUtils.readVInt(in)-1;
+			for(int j=1;j<bf;j++)
+				blocks[j] = WritableUtils.readVInt(in) - blocks[j-1];
+			term_blocks.put(term, new TIntHashSet(blocks));
+		}
+	}
+
+	@Override
+	public void write(final DataOutput out) throws IOException {
+		WritableUtils.writeVInt(out, getNumberOfPointers());
+		try
+		{
+			this.forEachTerm(new TObjectIntProcedure<String>()
+			{
+				public boolean execute(String term, int freq) {
+					try{
+						Text.writeString(out, term);
+						WritableUtils.writeVInt(out, freq);
+						final int[] blocks = term_blocks.get(term).toArray();
+						Arrays.sort(blocks);
+						final int bf = blocks.length;
+						WritableUtils.writeVInt(out, bf);
+						if (bf == 0)
+							return true;
+						WritableUtils.writeVInt(out, blocks[0]+1);
+						for(int i=1;i<bf;i++)
+							WritableUtils.writeVInt(out, blocks[i] - blocks[i-1]); 
+						
+					} catch (IOException e) {
+						throw new Error(e);
+					}
+					return true;
+				}
+			});
+		} catch (Error e) {
+			throw (IOException)e.getCause();
+		}
+	}
+	
 }

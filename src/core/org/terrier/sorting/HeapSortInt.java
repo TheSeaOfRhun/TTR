@@ -17,7 +17,7 @@
  *
  * The Original Code is HeapSortInt.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -160,7 +160,7 @@ public class HeapSortInt {
 
 	/**
 	 * Sorts the given arrays in ascending order, using heap-sort.
-	 * @param A double[] the first array to be sorted.
+	 * @param A int[] the first array to be sorted.
 	 * @param B int[] the second array to be sorted, according to the
 	 *		values of the first array.
 	 */
@@ -186,6 +186,18 @@ public class HeapSortInt {
 			maxHeapify(A, B, 1, heapSize);
 		}
 	}
+	
+	/**
+	 * Sorts the given arrays in descending order, using heap-sort.
+	 * @param A int[] the first array to be sorted.
+	 * @param B int[] the second array to be sorted, according to the
+	 *		values of the first array.
+	 */
+	public static void descendingHeapSort(int[] A, int[] B) {
+		ascendingHeapSort(A, B);
+		reverse(A, B, A.length);
+	}
+	
 	/** ascendingHeapSort
 	 * 
 	 * @param A
@@ -305,6 +317,40 @@ public class HeapSortInt {
 			tmpDouble = A[i]; A[i] = A[j]; A[j] = tmpDouble;
 			tmpInt = B[i]; B[i] = B[j]; B[j] = tmpInt;
 			tmpShort = C[i]; C[i] = C[j]; C[j] = tmpShort;
+		}
+	}
+	
+	/**
+	 * Reverses the elements of the two arrays, after they have
+	 * been sorted.
+	 * @param A double[] the first array.
+	 * @param B int[] an additional array to sort by A.
+	 * @param C int[] an additional array to sort by A.
+	 * @param topElements int the number of elements to be reversed.
+	 */
+	private static void reverse(final int[] A, final int[] B, final int topElements) {
+		//reversing the top elements
+		final int length = A.length;
+		final int elems = //topElements
+			topElements > length/2 
+			? length/2 
+			: topElements;
+		//if (elems > A.length/2)
+		//	elems = A.length/2;
+
+
+		int j;
+		//temporary swap variables
+		int tmpDouble;
+		int tmpInt;
+		//int tmpShort;
+
+		for (int i=0; i<elems; i++) {
+			j = length - i - 1;
+			//swap elements in i with those in j
+			tmpDouble = A[i]; A[i] = A[j]; A[j] = tmpDouble;
+			tmpInt = B[i]; B[i] = B[j]; B[j] = tmpInt;
+			//tmpShort = C[i]; C[i] = C[j]; C[j] = tmpShort;
 		}
 	}
 

@@ -17,7 +17,7 @@
  *
  * The Original Code is In_expB2.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,7 +27,9 @@
  */
 package org.terrier.matching.models;
 /**
- * This class implements the PL2 weighting model.
+ * This class implements the In_expB2 weighting model, namely Inverse Expected Document Frequency model with 
+ * Bernoulli after-effect and normalisation 2. The logarithms are base 2. This model can be 
+ * used for classic ad-hoc tasks.
  * @author Gianni Amati, Ben He, Vassilis Plachouras
   */
 public class In_expB2 extends WeightingModel {
@@ -65,21 +67,28 @@ public class In_expB2 extends WeightingModel {
 	*/
 	public final double score(double tf, double docLength) {
 		double TF =
-			tf * Idf.log(1.0d + (c * averageDocumentLength) / docLength);
+			tf * WeightingModelLibrary.log(1.0d + (c * averageDocumentLength) / docLength);
 		double NORM = (termFrequency + 1d) / (documentFrequency * (TF + 1d));
 		double f = this.termFrequency / numberOfDocuments;
 		double n_exp = numberOfDocuments * (1 - Math.exp(-f));
 		return TF * i.idfDFR(n_exp) * keyFrequency * NORM;
 	}
 	/**
-	*This method provides the contract for implementing weighting models.
-	* @param tf The term frequency in the document
-	* @param docLength the document's length
-	* @param documentFrequency The document frequency of the term
-	* @param termFrequency the term frequency in the collection
-	* @param keyFrequency the term frequency in the query
-	* @return the score returned by the implemented weighting model.
-	*/
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
+	 * @param tf The term frequency in the document
+	 * @param docLength the document's length
+	 * @param documentFrequency The document frequency of the term
+	 * @param termFrequency the term frequency in the collection
+	 * @param keyFrequency the term frequency in the query
+	 * @return the score returned by the implemented weighting model.
+	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -88,7 +97,7 @@ public class In_expB2 extends WeightingModel {
 		double keyFrequency) {
 		//double TF = tf * beta * averageDocumentLength / docLength;
 		double TF =
-			tf * Idf.log(1.0d + (c * averageDocumentLength) / docLength);
+			tf * WeightingModelLibrary.log(1.0d + (c * averageDocumentLength) / docLength);
 		double NORM = (termFrequency + 1d) / (documentFrequency * (TF + 1d));
 		double f = termFrequency / numberOfDocuments;
 		double n_exp =

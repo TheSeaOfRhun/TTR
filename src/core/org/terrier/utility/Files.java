@@ -17,7 +17,7 @@
  *
  * The Original Code is Files.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -47,6 +47,9 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import net.sf.samtools.util.BlockCompressedInputStream;
+import net.sf.samtools.util.BlockCompressedOutputStream;
 
 import org.apache.hadoop.io.compress.BZip2Codec;
 import org.terrier.utility.io.FileSystem;
@@ -207,6 +210,11 @@ public class Files
 
 		addFilterInputStreamMapping(".+\\.bz2", BZip2InputStream.class, BZip2OutputStream.class);
 		addFilterInputStreamMapping(".+\\.BZ2$", BZip2InputStream.class, BZip2OutputStream.class);
+		
+		addFilterInputStreamMapping(".+\\.bgz", BlockCompressedInputStream.class, BlockCompressedOutputStream.class);
+		addFilterInputStreamMapping(".+\\.BGZ$", BlockCompressedInputStream.class, BlockCompressedOutputStream.class);
+		
+		// new BlockCompressedInputStream(new File(filename));
 	}
 	
 	/** Cache to the temporary directory specified by <tt>java.io.tmpdir</tt> System property. */
@@ -331,9 +339,12 @@ public class Files
 		{
 			if (regex.matcher(filename).matches())
 			{
-				Class<? extends OutputStream> filterClass = outputStreamMap.get(regex);
+				Class<? extends OutputStream> filterClass = outputStreamMap.get(regex);				
 				try{
-					rtr = filterClass.getConstructor(OutputStream.class).newInstance(rtr);
+					//System.err.println(filterClass.getName());
+					if (filterClass.getName().endsWith("BlockCompressedOutputStream")) {
+						rtr = filterClass.getConstructor(OutputStream.class, File.class).newInstance(rtr, null);
+					} else rtr = filterClass.getConstructor(OutputStream.class).newInstance(rtr);
 				} catch (Exception e) {
 					throw new WrappedIOException(e);
 				}
@@ -514,14 +525,14 @@ public class Files
 		try{
 			if (destFS == sourceFS)//yes, that's object equals
 			{
-				sourceFS.rename(sourceFilename, destFilename);
+				return sourceFS.rename(sourceFilename, destFilename);
 			}
 			else
 			{
 				copyFile(sourceFS.openFileStream(sourceFilename), destFS.writeFileStream(destFilename));
 				sourceFS.delete(sourceFilename);
+				return true;
 			}
-			return true;
 		} catch (IOException ioe) {
 			return false;
 		}

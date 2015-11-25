@@ -17,7 +17,7 @@
  *
  * The Original Code is TRECIndexing.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,12 +29,12 @@
 package org.terrier.applications;
 import org.apache.log4j.Logger;
 
-import org.terrier.indexing.BasicSinglePassIndexer;
-import org.terrier.indexing.BlockSinglePassIndexer;
 import org.terrier.indexing.Collection;
 import org.terrier.indexing.CollectionFactory;
-import org.terrier.indexing.Indexer;
 import org.terrier.structures.Index;
+import org.terrier.structures.indexing.Indexer;
+import org.terrier.structures.indexing.singlepass.BasicSinglePassIndexer;
+import org.terrier.structures.indexing.singlepass.BlockSinglePassIndexer;
 import org.terrier.utility.ApplicationSetup;
 /**
  * This class creates the indices for a test collection.
@@ -80,7 +80,7 @@ public class TRECIndexing {
 				? "BlockIndexer"
 				: "BasicIndexer");
 		if (indexerName.indexOf('.') == -1)
-			indexerName = "org.terrier.indexing."+indexerName;
+			indexerName = "org.terrier.structures.indexing.classical."+indexerName;
 		else if (indexerName.startsWith("uk.ac.gla.terrier"))
 			indexerName = indexerName.replaceAll("uk.ac.gla.terrier", "org.terrier");
 		try{

@@ -17,7 +17,7 @@
  *
  * The Original Code is FSOMapFileLexicon.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -171,7 +171,7 @@ public class FSOMapFileLexicon extends MapLexicon
     		if (dataSource.startsWith("uk.ac.gla.terrier"))
     			dataSource = dataSource.replaceAll("uk.ac.gla.terrier", "org.terrier");				
 			
-    		Class mapClass = Class.forName(dataSource).asSubclass(FSOrderedMapFile.class);
+    		Class<?> mapClass = Class.forName(dataSource).asSubclass(FSOrderedMapFile.class);
 			rtr = (FSOrderedMapFile<Text, LexiconEntry>) mapClass
 				.getConstructor(String.class, Boolean.TYPE, FixedSizeWriteableFactory.class, FixedSizeWriteableFactory.class)
 				.newInstance(filename, false, keyFactory, valueFactory);
@@ -185,7 +185,7 @@ public class FSOMapFileLexicon extends MapLexicon
     
     /** Construct a new FSOMapFileLexicon */
     @SuppressWarnings("unchecked")
-	public FSOMapFileLexicon(String structureName, Index index) throws IOException
+	public FSOMapFileLexicon(String structureName, IndexOnDisk index) throws IOException
     {
     	this(
     		structureName, 
@@ -279,11 +279,11 @@ public class FSOMapFileLexicon extends MapLexicon
 		 * @throws IOException
 		 */
 		@SuppressWarnings("unchecked")
-		public MapFileLexiconEntryIterator(String structureName, Index index) throws IOException
+		public MapFileLexiconEntryIterator(String structureName, IndexOnDisk index) throws IOException
 		{
 			this(	structureName.replaceFirst("-entry", ""), 
-		    		index.getPath(), 
-		    		index.getPrefix(), 
+					index.getPath(), 
+					index.getPrefix(), 
 		    		(FixedSizeWriteableFactory<Text>)index.getIndexStructure(structureName.replaceFirst("-entry", "")+"-keyfactory"),
 		    		(FixedSizeWriteableFactory<LexiconEntry>)index.getIndexStructure(structureName.replaceFirst("-entry", "")+"-valuefactory"));
 		}
@@ -373,12 +373,12 @@ public class FSOMapFileLexicon extends MapLexicon
 		 * @throws IOException
 		 */
 		@SuppressWarnings("unchecked")
-		public MapFileLexiconIterator(String structureName, Index index) throws IOException
+		public MapFileLexiconIterator(String structureName, IndexOnDisk index) throws IOException
 		{
 			this(
 				structureName, 
-	    		index.getPath(), 
-	    		index.getPrefix(), 
+				index.getPath(), 
+				index.getPrefix(), 
 	    		(FixedSizeWriteableFactory<Text>)index.getIndexStructure(structureName+"-keyfactory"),
 	    		(FixedSizeWriteableFactory<LexiconEntry>)index.getIndexStructure(structureName+"-valuefactory"));
 		}
@@ -460,7 +460,7 @@ public class FSOMapFileLexicon extends MapLexicon
 	@SuppressWarnings("unchecked")
 	public static void optimise(
 			String structureName, 
-			Index index, 
+			IndexOnDisk index, 
 			LexiconBuilder.CollectionStatisticsCounter statsCounter) 
 		throws IOException
 	{
@@ -483,7 +483,7 @@ public class FSOMapFileLexicon extends MapLexicon
 	@SuppressWarnings("unchecked")
 	public static void optimise(
 			String structureName, 
-			Index index,
+			IndexOnDisk index,
 			LexiconBuilder.CollectionStatisticsCounter statsCounter,
 			int numEntries) 
 		throws IOException
@@ -494,7 +494,7 @@ public class FSOMapFileLexicon extends MapLexicon
 			(FixedSizeWriteableFactory<Text>)index.getIndexStructure(structureName+"-keyfactory");
 		final FixedSizeWriteableFactory<LexiconEntry> valueFactory = 
 			(FixedSizeWriteableFactory<LexiconEntry>)index.getIndexStructure(structureName+"-valuefactory");
-		logger.info("Optimsing lexicon with "+ numEntries + " entries");
+		logger.info("Optimising lexicon with "+ numEntries + " entries");
 		//term id lookups
 		boolean termIdsAligned = true;
 		int[] termid2index = new int[numEntries];
@@ -512,6 +512,7 @@ public class FSOMapFileLexicon extends MapLexicon
 		{
 			Map.Entry<Text,LexiconEntry> lee = iterator.next();
 			//System.err.println(lee.toString());
+			//System.err.println(lee.toString() +" "+lee.getValue().getTermId()+" "+lee.getValue().getFrequency());
 			
 			//term id
 			int termId = lee.getValue().getTermId();
@@ -550,7 +551,7 @@ public class FSOMapFileLexicon extends MapLexicon
 		else
 		{
 			DataOutputStream dos = new DataOutputStream(Files.writeFileStream(
-					constructFilename(structureName, index.getPath(), index.getPrefix(), ID_EXT)));
+					constructFilename(structureName, ((IndexOnDisk) index).getPath(), ((IndexOnDisk) index).getPrefix(), ID_EXT)));
 			for(int indexof : termid2index)
 				dos.writeInt(indexof);
 			dos.close();
@@ -574,7 +575,7 @@ public class FSOMapFileLexicon extends MapLexicon
 		map.put(mapKeys[mapKeysSize-1], currentBoundaries);
 		
 		final ObjectOutputStream oos = new ObjectOutputStream(Files.writeFileStream(
-				constructFilename(structureName, index.getPath(), index.getPrefix(), HASH_EXT)));
+				constructFilename(structureName, ((IndexOnDisk) index).getPath(), ((IndexOnDisk) index).getPrefix(), HASH_EXT)));
 		oos.writeObject(map);
 		oos.close();
 		index.setIndexProperty("index."+structureName+".bsearchshortcut", "charmap");

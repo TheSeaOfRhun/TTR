@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopShakespeareEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.RecordReader;
 
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.indexing.singlepass.hadoop.BitPostingIndexInputFormat;
 import org.terrier.structures.indexing.singlepass.hadoop.Inv2DirectMultiReduce;
 import org.terrier.structures.merging.StructureMerger;
@@ -110,6 +111,7 @@ public class HadoopShakespeareEndToEndTest
 						assertEquals("Number of pointers for docid " + docid + " is incorrect", documentPointers[docid], docpointers);
 					assertEquals("Document length for docid "+docid+" is incorrect", documentLengths[docid], doclen);
 				}
+				rr.close();
 			}
 			CollectionStatistics cs = index.getCollectionStatistics();
 			assertEquals("Number of documents is incorrect", cs.getNumberOfDocuments(), docid + 1);
@@ -132,7 +134,7 @@ public class HadoopShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			Inv2DirectMultiReduce.invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), 1);
 		}
 	}
@@ -147,15 +149,15 @@ public class HadoopShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			Inv2DirectMultiReduce.invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), 1);
 		}
 
 		@Override
 		protected void finishIndexing() throws Exception {
-			Index i1 = Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX + "-0");
-			Index i2 = Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX + "-0");
-			Index dest = Index.createNewIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX);
+			IndexOnDisk i1 = Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX + "-0");
+			IndexOnDisk i2 = Index.createIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX + "-0");
+			IndexOnDisk dest = Index.createNewIndex(ApplicationSetup.TERRIER_INDEX_PATH, ApplicationSetup.TERRIER_INDEX_PREFIX);
 			new StructureMerger(i1, i2, dest).mergeStructures();
 		}		
 	}
@@ -172,7 +174,7 @@ public class HadoopShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			Inv2DirectMultiReduce.invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), 1);
 		}
 	}
@@ -188,7 +190,7 @@ public class HadoopShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			Inv2DirectMultiReduce.invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), 1);
 		}
 	}
@@ -205,7 +207,7 @@ public class HadoopShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			Inv2DirectMultiReduce.invertStructure(index, HadoopPlugin.getJobFactory("inv2direct"), 1);
 		}
 	}

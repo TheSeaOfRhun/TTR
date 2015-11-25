@@ -17,7 +17,7 @@
  *
  * The Original Code is CandidateResult.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -39,12 +39,12 @@ public class CandidateResult implements Comparable<CandidateResult>
 	private short occurrence;
 
 	/** Make a new CandidateResult for a ResultSet based on the
-	 * specificed docid.
-	 * @param id of the document
+	 * specified docid.
+	 * @param docid of the document
 	 */
-	public CandidateResult(int id)
+	public CandidateResult(int docid)
 	{
-		docid = id;
+		this.docid = docid;
 		score = 0.0;
 		occurrence = 0;
 	}
@@ -75,12 +75,15 @@ public class CandidateResult implements Comparable<CandidateResult>
 		return getDocId();
     }
 
-	/** Returns the docids of this result */
+	/** Returns the docid of this result */
 	public int    getDocId() 	  { return docid;      }
+	
 	/** Returns the score of this result */
 	public double getScore() 	  { return score; 	   }
+	
 	/** Returns the occurrence value of this result */
 	public short  getOccurrence() { return occurrence; }
+	
 	/** Increase the score by the specified amount.
 	 * @param update Amount to increase document score by.
 	 */

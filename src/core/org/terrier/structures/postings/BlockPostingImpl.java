@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockPostingImpl.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,6 +34,8 @@ import org.apache.hadoop.io.WritableUtils;
 import org.terrier.utility.ArrayUtils;
 /** BlockPostingImpl class */
 public class BlockPostingImpl extends BasicPostingImpl implements BlockPosting {
+	
+	private static final long serialVersionUID = 1L;
 	/** positions of occurrence in document */
 	int[] positions;
 	

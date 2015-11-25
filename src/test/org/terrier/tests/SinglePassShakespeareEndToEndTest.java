@@ -17,7 +17,7 @@
  *
  * The Original Code is SinglePassShakespeareEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,7 +25,7 @@
  */
 package org.terrier.tests;
 
-import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.indexing.singlepass.BlockInverted2DirectIndexBuilder;
 import org.terrier.structures.indexing.singlepass.Inverted2DirectIndexBuilder;
 
@@ -39,7 +39,7 @@ public class SinglePassShakespeareEndToEndTest
 		}
 
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			new Inverted2DirectIndexBuilder(index).createDirectIndex();
 		}
 		
@@ -54,7 +54,7 @@ public class SinglePassShakespeareEndToEndTest
 		}
 		
 		@Override
-		protected void addDirectStructure(Index index) throws Exception {
+		protected void addDirectStructure(IndexOnDisk index) throws Exception {
 			new BlockInverted2DirectIndexBuilder(index).createDirectIndex();
 		}
 		

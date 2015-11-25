@@ -17,7 +17,7 @@
  *
  * The Original Code is SimpleFileCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,6 +36,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.terrier.indexing.tokenisation.Tokeniser;
+import org.terrier.structures.indexing.Indexer;
+import org.terrier.structures.indexing.classical.BasicIndexer;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.Files;
 /** 
@@ -162,7 +164,10 @@ public class SimpleFileCollection implements Collection/*, DocumentExtractor*/
 		String staticMappings = ApplicationSetup.getProperty("indexing.simplefilecollection.extensionsparsers",
 			"txt:FileDocument,text:FileDocument,tex:FileDocument,bib:FileDocument," +
 			"pdf:PDFDocument,html:TaggedDocument,htm:TaggedDocument,xhtml:TaggedDocument,xml:TaggedDocument,"+
-			"doc:MSWordDocument,ppt:MSPowerpointDocument,xls:MSExcelDocument");
+			"doc:POIDocument,ppt:POIDocument,xls:POIDocument,"+
+			"docx:POIDocument,pptx:POIDocument,xlsx:POIDocument,"+
+			"pub:POIDocument,vsd:POIDocument"
+			);
 		String defaultMapping = ApplicationSetup.getProperty("indexing.simplefilecollection.defaultparser","");
 		if (staticMappings.length() > 0)
 		{
@@ -341,6 +346,7 @@ public class SimpleFileCollection implements Collection/*, DocumentExtractor*/
 			//and instantiate
 			rtr = reader.getConstructor(InputStream.class, Map.class, Tokeniser.class).newInstance(in, docProperties, tokeniser);
 			indexedFiles.add(thisFilename);
+			rtr.getAllProperties().put("docno", this.getDocid());
 		}catch (OutOfMemoryError e){
 			logger.warn("Problem instantiating a document class; Out of memory error occured: ",e);			
 			System.gc();
@@ -349,7 +355,6 @@ public class SimpleFileCollection implements Collection/*, DocumentExtractor*/
 		}catch (Exception e){
 			logger.warn("Problem instantiating a document class: ",e);			
 		}
-		rtr.getAllProperties().put("docno", this.getDocid());
 		return rtr;
 	}
 

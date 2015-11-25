@@ -17,7 +17,7 @@
  *
  * The Original Code is WeightingModel.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,6 +26,7 @@
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
 import java.io.Serializable;
 
 import org.terrier.matching.Model;
@@ -33,13 +34,16 @@ import org.terrier.querying.Request;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
 import org.terrier.structures.postings.Posting;
+
 /**
  * This class should be extended by the classes used
  * for weighting terms and documents.
  * @author Gianni Amati, Ben He, Vassilis Plachouras
   */
-public abstract class WeightingModel implements Model, Serializable,Cloneable {
+public abstract class WeightingModel implements Model, Serializable, Cloneable {
+
 	private static final long serialVersionUID = 1L;
+
 	/** The class used for computing the idf values.*/
 	protected Idf i;
 	/** The average length of documents in the collection.*/
@@ -59,10 +63,10 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	protected double c = 1.0d;
 	/** Number of unique terms in the collection */
 	protected double numberOfUniqueTerms;	
-
 	/** The number of distinct entries in the inverted file. This figure can be calculated
 	  * as the sum of all Nt over all terms */
 	protected double numberOfPointers;
+
 	/**
 	 * A default constructor that initialises the idf i attribute
 	 */
@@ -71,7 +75,8 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	}
 
 	/** Clone this weighting model */
-	public Object clone() {
+	@Override
+	public WeightingModel clone() {
 		try{
 			WeightingModel newModel = (WeightingModel)super.clone();
 			newModel.i = (Idf)this.i.clone();
@@ -86,11 +91,11 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	 * @return java.lang.String
 	 */
 	public abstract String getInfo();
+
 	/**
 	 * prepare
 	 */
-	public void prepare()
-	{
+	public void prepare() {
 		averageDocumentLength = cs.getAverageDocumentLength();
 		numberOfDocuments = (double)cs.getNumberOfDocuments();
 		i.setNumberOfDocuments(numberOfDocuments);
@@ -100,55 +105,52 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 		documentFrequency = (double)getOverflowed(es.getDocumentFrequency());
 		termFrequency = (double)getOverflowed(es.getFrequency());		
 	}
+
 	/**
 	 * Returns overflow
 	 * @param o
 	 * @return overflow
 	 */
-	public static long getOverflowed(int o)
-	{		
+	public static long getOverflowed(int o) {		
 		return o < 0 ? (o - Integer.MIN_VALUE) + (long)Integer.MAX_VALUE + 1l : (long)o;
 	}
+
 	/**
 	 * Returns score
 	 * @param p
 	 * @return score
 	 */
-	public double score(Posting p)
-	{
+	public double score(Posting p) {
 		return this.score(p.getFrequency(), p.getDocumentLength());
 	}
 	
-	CollectionStatistics cs;
+	protected CollectionStatistics cs;
 	/**
 	 * Sets collection statistics
 	 * @param _cs
 	 */
-	public void setCollectionStatistics(CollectionStatistics _cs)
-	{
+	public void setCollectionStatistics(CollectionStatistics _cs) {
 		cs = _cs;
 	}
-	EntryStatistics es;
+
+	protected EntryStatistics es;
 	/**
 	 * Sets entry statistics.
 	 * @param _es
 	 */
-	public void setEntryStatistics(EntryStatistics _es)
-	{
+	public void setEntryStatistics(EntryStatistics _es) {
 		es = _es;
 	}
 	
-	Request rq;
+	protected Request rq;
 	/**
 	 * Sets request
 	 * @param _rq
 	 */
-	public void setRequest(Request _rq)
-	{
+	public void setRequest(Request _rq) {
 		rq = _rq;
 	}
-	
-	
+
 	/**
 	 * This method provides the contract for implementing weighting models.
 	 * @param tf The term frequency in the document
@@ -159,6 +161,11 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	public abstract double score(double tf, double docLength);
 	/**
 	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since is is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param n_t The document frequency of the term
@@ -166,20 +173,14 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	 * @param _keyFrequency the term frequency in the query
 	 * @return the score returned by the implemented weighting model.
 	 */
+	@Deprecated
 	public abstract double score(
 		double tf,
 		double docLength,
 		double n_t,
 		double F_t,
 		double _keyFrequency);
-	/**
-	 * Sets the average length of documents in the collection.
-	 * @param avgDocLength The documents' average length.
-	 * @deprecated Use setCollectionStatistics(CollectionStatistics)
-	 */
-	public void setAverageDocumentLength(double avgDocLength) {
-		averageDocumentLength = avgDocLength;
-	}
+
 	/**
 	 * Sets the c value
 	 * @param _c the term frequency normalisation parameter value.
@@ -187,7 +188,6 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	public void setParameter(double _c) {
 		this.c = _c;
 	}
-
 
 	/**
 	 * Returns the parameter as set by setParameter()
@@ -197,71 +197,12 @@ public abstract class WeightingModel implements Model, Serializable,Cloneable {
 	}
 
 	/**
-	 * Sets the document frequency of the term in the collection.
-	 * @param docFreq the document frequency of the term in the collection.
-	 * @deprecated Use setEntryStatistics(EntryStatistics)
-	 */
-	public void setDocumentFrequency(double docFreq) {
-		documentFrequency = docFreq;
-	}
-	/**
 	 * Sets the term's frequency in the query.
 	 * @param keyFreq the term's frequency in the query.
 	 */
 	public void setKeyFrequency(double keyFreq) {
 		keyFrequency = keyFreq;
 	}
-	
-	
-	
-	/**
-	 * Set the number of tokens in the collection.
-	 * @param value The number of tokens in the collection.
-	 * @deprecated Use setCollectionStatistics(CollectionStatistics)
-	 */
-	public void setNumberOfTokens(double value){
-		this.numberOfTokens = value;
-	}
-	/**
-	 * Sets the number of documents in the collection.
-	 * @param numOfDocs the number of documents in the collection.
-	 * @deprecated Use setCollectionStatistics(CollectionStatistics)
-	 */
-	public void setNumberOfDocuments(double numOfDocs) {
-		numberOfDocuments = numOfDocs;
-		i.setNumberOfDocuments(numOfDocs);
-	}
-	/**
-	 * Sets the term's frequency in the collection.
-	 * @param termFreq the term's frequency in the collection.
-	 * @deprecated Use setEntryStatistics(EntryStatistics)
-	 */
-	public void setTermFrequency(double termFreq) {
-		termFrequency = termFreq;
-	}
-	/**
-	 * Set the number of unique terms in the collection.
-	 * @deprecated Use setCollectionStatistics(CollectionStatistics)
-	 */
-	public void setNumberOfUniqueTerms(double number) {
-		numberOfUniqueTerms = number;
-	}
-	/**
-	 * Set the number of pointers in the collection.
-	 * @deprecated Use setCollectionStatistics(CollectionStatistics)
-	 */
-	public void setNumberOfPointers(double number) {
-		numberOfPointers = number;
-	}
-	/**
-	* This method provides the contract for implementing the 
-	* Stirling formula for the power series.
-	* @param n The parameter of the Stirling formula.
-	* @param m The parameter of the Stirling formula.
-	* @return the approximation of the power series
-	*/
-	public double stirlingPower(double n, double m) {
-		double dif = n - m;
-		return (m + 0.5d) * Idf.log(n / m) + dif * Idf.log(n);
-	}
+
+
 }

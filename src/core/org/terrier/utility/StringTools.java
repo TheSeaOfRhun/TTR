@@ -160,6 +160,10 @@ public class StringTools {
         {
             encodingName = encodingName.replaceFirst("^WIN(-|_)?","WINDOWS-");
         }
+        else if (encodingName.equals("UTF-8LIAS"))
+        {
+        		encodingName = "UTF-8";
+        }
 		return encodingName;
 	}
 }

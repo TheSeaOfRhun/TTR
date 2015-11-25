@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockFieldLexiconEntry.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,6 +29,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 
 /** A LexiconEntry with field support */
@@ -49,6 +50,8 @@ public class BlockFieldLexiconEntry extends BasicLexiconEntry implements
 		public Factory(int _fieldCount)
 		{
 			this.fieldCount = _fieldCount;
+			Logger.getRootLogger().warn(BlockFieldLexiconEntry.class.getSimpleName() + " has now been deprecated and will be removed in a future release");
+			
 		}
 		/**
 		 * Constructs an instance of the class with

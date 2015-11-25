@@ -15,7 +15,13 @@
 
 <h2>Configuring Overview</h2>
 <p>
-Terrier is configured overall by a few files, all in the <tt>etc/</tt> directory. Some of these contain information specific to various applications, such as <tt>collection.spec</tt> (indexing). However, the most central two files are <tt>terrier.properties</tt> and <tt>terrier-log.xml</tt>. In <tt>terrier.properties</tt>, you can specify any of the various properties that are defined in Terrier. The <a href="properties.html">Properties</a> documentation page lists a great number of the properties, while the <a href="javadoc/">javadoc</a> for any class lists the properties that directly affect the class. The default <tt>terrier.properties</tt> file is given below:
+</br></br><h1>Configuring Terrier</h1>
+
+<p>
+
+<h2>Configuring Overview</h2>
+<p>
+Terrier is configured overall by a few files, all in the <tt>etc/</tt> directory. The most central files are <tt>terrier.properties</tt> and <tt>terrier-log.xml</tt>. In <tt>terrier.properties</tt>, you can specify any of the various properties that are defined in Terrier. The <a href="properties.html">Properties</a> documentation page lists the most used properties that you need to configure Terrier, while the <a href="javadoc/">javadoc</a> for any class lists the properties that directly affect the class. The default <tt>terrier.properties</tt> file is given below:
 </p>
 
 <pre>
@@ -49,14 +55,14 @@ termpipelines=Stopwords,PorterStemmer
 </pre>
 
 <p>
-In the terrier.properties file, properties are specified in the format <tt>name=value</tt>. Comments are lines starting with <tt>#</tt>.
+In the terrier.properties file, properties are specified in the format <tt>name=value</tt> (the default Java Properties format). Comments are lines starting with <tt>#</tt>.
 </p>
 
 <p></p>
 
 <h3>Scripting Properties</h3>
 <p>
-TrecTerrier supports properties specified on the command line. This allows the easy over-riding of properties, even if they are specified in the <tt>etc/terrier.properties</tt> file. For example, to create an index without using a stemmer, you could use the command line:
+TrecTerrier supports specifying properties on the command line. This allows the easy over-riding of properties, even if they are specified in the <tt>etc/terrier.properties</tt> file. For example, to create an index without using a stemmer, you could use the command line:
 </p>
 <pre>
 [user@machine]$ bin/trec_terrier.sh -i -Dtermpipelines=Stopwords
@@ -75,7 +81,7 @@ done
 
 <h3>Configuring Logging</h3>
 <p>
-Terrier uses <a href="http://logging.apache.org/log4j/">Log4j</a> for logging. You can control the amount of logging information that Terrier outputs by altering the log4j config in <tt>etc/terrier-log.xml</tt>. For more information about configuring Log4j, see the <a href="http://logging.apache.org/log4j/docs/">Log4j documentation</a>.
+Terrier uses <a href="http://logging.apache.org/log4j/1.2/">Log4j</a> for logging. You can control the amount of logging information (the logging level) that Terrier outputs by altering the log4j config in <tt>etc/terrier-log.xml</tt>. For more information about configuring Log4j, see the <a href="http://logging.apache.org/log4j/1.2/manual.html">Log4j documentation</a>.
 
 <p></p>
 
@@ -88,7 +94,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

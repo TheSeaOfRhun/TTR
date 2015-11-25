@@ -17,7 +17,7 @@
  *
  * The Original Code is LexiconBuilder.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -32,14 +32,18 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import org.terrier.sorting.HeapSortInt;
 import org.terrier.structures.FSOMapFileLexicon;
 import org.terrier.structures.FSOMapFileLexiconOutputStream;
 import org.terrier.structures.FieldLexiconEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.IndexUtil;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.LexiconOutputStream;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
@@ -53,7 +57,7 @@ public class LexiconBuilder
 {
 
 	/** class to be used as a lexiconoutpustream. set by this and child classes */
-	@SuppressWarnings("unchecked") //TODO : this is complicated to fix
+	@SuppressWarnings({ "rawtypes" }) //TODO : this is complicated to fix
 	protected Class<? extends LexiconOutputStream> lexiconOutputStream = null;
 
 	//protected Class<? extends LexiconMap> LexiconMapClass = null;
@@ -87,7 +91,7 @@ public class LexiconBuilder
 	/** The filename of the lexicons. */
 	protected String indexPrefix = null;
 	
-	protected Index index = null;
+	protected IndexOnDisk index = null;
 	
 	/** How many temporary lexicons have been generated so far */
 	protected int TempLexCount = 0;
@@ -115,11 +119,11 @@ public class LexiconBuilder
 		long numberOfTokens = 0;
 		int numberOfTerms = 0;
 		long numberOfPointers = 0;
-		final Index index;
+		final IndexOnDisk index;
 		int numFields;
 		final long[] tokensF;
 		
-		public FieldLexiconCollectionStaticticsCounter(Index _index, int _numFields)
+		public FieldLexiconCollectionStaticticsCounter(IndexOnDisk _index, int _numFields)
 		{
 			index = _index;
 			numFields = _numFields;
@@ -232,7 +236,7 @@ public class LexiconBuilder
 	 * @param i
 	 * @param _structureName
 	 */
-	public LexiconBuilder(Index i, String _structureName) {
+	public LexiconBuilder(IndexOnDisk i, String _structureName) {
 		this(i, _structureName, 
 				instantiate(LexiconMap.class), "org.terrier.structures.BasicLexiconEntry");
 	}
@@ -243,7 +247,7 @@ public class LexiconBuilder
 	 * @param _LexiconMapClass
 	 * @param _lexiconEntryClass
 	 */
-	public LexiconBuilder(Index i, String _structureName, 
+	public LexiconBuilder(IndexOnDisk i, String _structureName, 
 			Class <? extends LexiconMap> _LexiconMapClass,
 			String _lexiconEntryClass)
 	{
@@ -257,7 +261,7 @@ public class LexiconBuilder
 	 * @param _lexiconEntryClass
 	 */
 	@SuppressWarnings("unchecked")
-	public LexiconBuilder(Index i, String _structureName, 
+	public LexiconBuilder(IndexOnDisk i, String _structureName, 
 				LexiconMap lexiconMap,
 				String _lexiconEntryClass)
 	{
@@ -520,7 +524,7 @@ public class LexiconBuilder
 				mergeNLexicons(lis, los);
 				for(String inputLexiconFileName : inputLexiconFileNames)
 				{
-					FSOMapFileLexicon.deleteMapFileLexicon(inputLexiconFileName, index.getPath(), index.getPrefix());
+					FSOMapFileLexicon.deleteMapFileLexicon(inputLexiconFileName, ((IndexOnDisk) index).getPath(), ((IndexOnDisk) index).getPrefix());
 				}
 				filesToMerge.addLast(newMergedFile);
 			}
@@ -546,7 +550,7 @@ public class LexiconBuilder
 			mergeNLexicons(lis, los);
 			for(int i=0;i<StartFileCount;i++)
 			{
-				FSOMapFileLexicon.deleteMapFileLexicon(inputLexiconFileNames[i], index.getPath(), index.getPrefix());
+				FSOMapFileLexicon.deleteMapFileLexicon(inputLexiconFileNames[i], ((IndexOnDisk) index).getPath(), ((IndexOnDisk) index).getPrefix());
 			}
 			long endTime = System.currentTimeMillis();
 			if (logger.isDebugEnabled())
@@ -640,8 +644,7 @@ public class LexiconBuilder
 		los.close();
 		for(int i=0;i<numLexicons;i++)
 		{
-			if (lis[i] instanceof Closeable)
-				((Closeable)lis[i]).close();
+			IndexUtil.close(lis[i]);
 		}
 	}
 		
@@ -735,10 +738,7 @@ public class LexiconBuilder
 			}
 		}
 		if (hasMore1) {
-			if (lis2 instanceof Closeable) {
-				((Closeable)lis2).close();
-			}
-
+			
 			while (hasMore1) {
 				los.writeNextEntry(sTerm1, lee1.getValue());
 				hasMore1 = lis1.hasNext();
@@ -749,16 +749,8 @@ public class LexiconBuilder
 				}
 			}
 
-			//close input file 1 stream
-			if (lis2 instanceof Closeable) {
-				((Closeable)lis2).close();
-			}
-
 		} else if (hasMore2) {
-			if (lis1 instanceof Closeable) {
-				((Closeable)lis1).close();
-			}
-
+			
 			while (hasMore2) {
 				los.writeNextEntry(sTerm2, lee2.getValue());
 				hasMore2 = lis2.hasNext();
@@ -768,21 +760,20 @@ public class LexiconBuilder
 					sTerm2 = lee2.getKey();
 				}
 			}
-			//close input file 2 stream
-			if (lis2 instanceof Closeable) {
-				((Closeable)lis2).close();
-			}
+			
 		}
+		IndexUtil.close(lis1);
+		IndexUtil.close(lis2);
 		//close output file streams
 		los.close();
 	}
 	
 	
 	/** Creates a lexicon index for the specified index
-	  * @param index Index to make the lexicon index for
+	  * @param index IndexOnDisk to make the lexicon index for
 	  * @deprecated use optimise instead
 	  */	
-	public static void createLexiconIndex(Index index) throws IOException
+	public static void createLexiconIndex(IndexOnDisk index) throws IOException
 	{
 		optimise(index, "lexicon");
 	}
@@ -790,10 +781,10 @@ public class LexiconBuilder
 
 	
 	/** Creates a lexicon hash for the specified index
-	 * @param index Index to make the LexiconHash the lexicoin
+	 * @param index IndexOnDisk to make the LexiconHash the lexicoin
 	 * @deprecated use optimise instead
 	 */
-	public static void createLexiconHash(final Index index) throws IOException
+	public static void createLexiconHash(final IndexOnDisk index) throws IOException
 	{
 		optimise(index, "lexicon");
 	}
@@ -804,7 +795,7 @@ public class LexiconBuilder
 	}
 	
 	/** Optimises the lexicon, eg lexid file */
-	public static void optimise(final Index index, final String structureName)
+	public static void optimise(final IndexOnDisk index, final String structureName)
 	{
 		try {
 			logger.info("Optimising structure "+structureName);
@@ -836,16 +827,65 @@ public class LexiconBuilder
 	}
 
 
+	/** Re-assigned the termids within the named lexicon structure to be ascending with 
+	 * descending term frequency, i.e. the terms with termid 0 will have the highest frequency.
+	 * @param index
+	 * @param structureName
+	 * @param numEntries
+	 * @throws IOException
+	 */
+	public static void reAssignTermIds(IndexOnDisk index, String structureName, int numEntries) throws IOException
+	{
+		int[] entryIndex = new int[numEntries];
+		int[] TF = new int[numEntries];
+		Iterator<Map.Entry<String,LexiconEntry>> le = getLexInputStream(index, structureName);
+		int i=0;
+		while(le.hasNext())
+		{
+			entryIndex[i] = i;
+			TF[i] = le.next().getValue().getFrequency();
+			i++;
+		}
+		HeapSortInt.descendingHeapSort(TF, entryIndex);
+		int[] newTermId = new int[numEntries];
+		for(i=0;i<numEntries;i++)
+		{
+			newTermId[entryIndex[i]] = i;
+		}
+		i=0;
+		
+		IndexUtil.renameIndexStructure(index, structureName, structureName+ "-old");
+		le = getLexInputStream(index, structureName + "-old");
+		LexiconOutputStream<String> leOut = getLexOutputStream(index, structureName);
+		while(le.hasNext())
+		{
+			Entry<String, LexiconEntry> lee = le.next();
+			lee.getValue().setTermId(newTermId[i]);
+			leOut.writeNextEntry(lee.getKey(), lee.getValue());
+			i++;
+		}
+		leOut.close();
+		optimise(index, structureName);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static Iterator<Entry<String, LexiconEntry>> getLexInputStream(
+			IndexOnDisk index, String structureName)  throws IOException
+	{
+		return new FSOMapFileLexicon.MapFileLexiconIterator(structureName, index.getPath(), index.getPrefix(), 
+				(FixedSizeWriteableFactory<Text>)index.getIndexStructure(structureName+"-keyfactory"), 
+				(FixedSizeWriteableFactory<LexiconEntry>)index.getIndexStructure(structureName+"-valuefactory"));
+	}
 	/** return the lexicon input stream for the current index at the specified filename */	
 	@SuppressWarnings("unchecked")
 	protected Iterator<Map.Entry<String,LexiconEntry>> getLexInputStream(String structureName) throws IOException
 	{
-		return new FSOMapFileLexicon.MapFileLexiconIterator(structureName, index.getPath(), index.getPrefix(), 
+		return new FSOMapFileLexicon.MapFileLexiconIterator(structureName, ((IndexOnDisk) index).getPath(), ((IndexOnDisk) index).getPrefix(), 
 				(FixedSizeWriteableFactory<Text>)index.getIndexStructure(defaultStructureName+"-keyfactory"), 
 				(FixedSizeWriteableFactory<LexiconEntry>)index.getIndexStructure(defaultStructureName+"-valuefactory"));
 	}
 
-	/** return the lexicon outputstream or the current index at the specified filename */
+	/** return the lexicon outputstream for the current index at the specified filename */
 	@SuppressWarnings("unchecked")
 	protected LexiconOutputStream<String> getLexOutputStream(String structureName) throws IOException
 	{
@@ -853,6 +893,16 @@ public class LexiconBuilder
 				index.getPath(), index.getPrefix(), 
 				structureName, 
 				(FixedSizeWriteableFactory<Text>)index.getIndexStructure(defaultStructureName+"-keyfactory"));
+	}
+	
+	/** return the lexicon outputstream for the specified index at the specified filename */
+	@SuppressWarnings("unchecked")
+	private static LexiconOutputStream<String> getLexOutputStream(IndexOnDisk index, String structureName) throws IOException
+	{
+		return new FSOMapFileLexiconOutputStream(
+				index.getPath(), index.getPrefix(), 
+				structureName, 
+				(FixedSizeWriteableFactory<Text>)index.getIndexStructure(structureName+"-keyfactory"));
 	}
 
 }

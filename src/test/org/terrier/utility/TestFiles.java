@@ -17,7 +17,7 @@
  *
  * The Original Code is TestFiles.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -63,6 +63,18 @@ public class TestFiles extends ApplicationSetupBasedTest {
 			assertEquals("hello world", readFirstLineReader(ApplicationSetup.TERRIER_SHARE + "/tests/files/helloworld.txt" + suffix));
 			assertEquals("hello world", readFirstLineStream(ApplicationSetup.TERRIER_SHARE + "/tests/files/helloworld.txt" + suffix));
 		}
+	}
+	
+	@Test public void testReadBGZ() throws Exception
+	{
+		
+		/*BufferedReader br = Files.openFileReader(ApplicationSetup.TERRIER_SHARE + "/tests/files/helloworld.txt");
+		Writer wr = Files.writeFileWriter(ApplicationSetup.TERRIER_SHARE + "/tests/files/helloworld.txt.bgz");
+		wr.write(br.readLine());
+		br.close();
+		wr.close();*/
+		
+		assertEquals("hello world", readFirstLineReader(ApplicationSetup.TERRIER_SHARE + "/tests/files/helloworld.txt.bgz"));
 	}
 	
 	@Test public void testWrite() throws Exception

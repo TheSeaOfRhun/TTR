@@ -17,7 +17,7 @@
  *
  * The Original Code is SimpleJettyHTTPServer.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,7 +35,7 @@ import org.mortbay.jetty.Server;
 
 /** Class to make a simple Jetty servlet. Two arguments: port name, and webapps root path.
  * <tt>share/images</tt> is automatically added as /images.
- * @author craigm
+ * @author Craig Macdonald
  * @since 3.0
  */
 public class SimpleJettyHTTPServer {

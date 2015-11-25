@@ -17,7 +17,7 @@
  *
  * The Original Code is LexiconMap.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -70,6 +70,7 @@ public class LexiconMap {
 	 */
 	public void insert(final String term, final int tf)
 	{
+		if (term.length()==0) throw new IllegalArgumentException("Attempted to add a term with length 0 to the lexicon, empty terms may not be added to the lexicon.");
 		tfs.adjustOrPutValue(term, tf, tf);
 		nts.adjustOrPutValue(term, 1 , 1);
 		numberOfPointers++;

@@ -17,7 +17,7 @@
  *
  * The Original Code is FieldDocumentPostingList.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,6 +28,9 @@ package org.terrier.structures.indexing;
 import gnu.trove.TObjectIntHashMap;
 import gnu.trove.TObjectIntProcedure;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.terrier.sorting.HeapSortInt;
@@ -200,6 +203,11 @@ public class FieldDocumentPostingList extends DocumentPostingList {
 			System.arraycopy(getFieldFrequencies(), 0, fbp.getFieldFrequencies(), 0, fieldCount);
 			return fbp;
 		}
+
+		@Override
+		public void setFieldLengths(int[] newLengths) {
+			throw new UnsupportedOperationException();
+		}
 		
 	}
 	
@@ -207,5 +215,16 @@ public class FieldDocumentPostingList extends DocumentPostingList {
 	protected IterablePosting makePostingIterator(String[] _terms, int[] termIds)
 	{
 		return new fieldPostingIterator(_terms, termIds);
+	}
+	
+	
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void write(final DataOutput out) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 }

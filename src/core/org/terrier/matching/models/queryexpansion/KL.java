@@ -17,7 +17,7 @@
  *
  * The Original Code is KL.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,7 +26,7 @@
  */
 package org.terrier.matching.models.queryexpansion;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /** 
  * This class implements the Kullback-Leibler divergence for
@@ -55,7 +55,7 @@ public class KL extends QueryExpansionModel {
     public final double parameterFreeNormaliser(){	
     	return (maxTermFrequency) * Math.log(collectionLength/totalDocumentLength)/
 			(Math.log(2d)*totalDocumentLength);
-		//return  maxTermFrequency * idf.log(collectionLength/totalDocumentLength)/ idf.log (totalDocumentLength);
+		//return  maxTermFrequency * log(collectionLength/totalDocumentLength)/ log(totalDocumentLength);
 	}
 	
     /**
@@ -81,7 +81,7 @@ public class KL extends QueryExpansionModel {
             return 0;
         else
             return withinDocumentFrequency / this.totalDocumentLength * 
-                    Idf.log(withinDocumentFrequency / this.totalDocumentLength, 
+                    log(withinDocumentFrequency / this.totalDocumentLength, 
                         termFrequency / this.collectionLength);
     } 
     
@@ -105,7 +105,7 @@ public class KL extends QueryExpansionModel {
             return 0;
         else
             return withinDocumentFrequency / totalDocumentLength * 
-                    Idf.log(withinDocumentFrequency / totalDocumentLength, 
+                    log(withinDocumentFrequency / totalDocumentLength, 
                         termFrequency / collectionLength);
     }
 }

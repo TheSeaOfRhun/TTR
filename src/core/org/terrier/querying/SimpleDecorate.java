@@ -17,7 +17,7 @@
  *
  * The Original Code is SimpleDecorate.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,28 +25,39 @@
  */
 package org.terrier.querying;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.log4j.Logger;
 import org.terrier.matching.ResultSet;
 import org.terrier.structures.MetaIndex;
 
-/** A simple decorator, which applies all metadata in the MetaIndex to each document on the way out. */
+/** A simple decorator, which applies all metadata in the MetaIndex to each retrieved, displayed document. */
 public class SimpleDecorate implements PostFilter {
 
 	static Logger logger = Logger.getLogger(SimpleDecorate.class);
-
+	protected static final Pattern controlNonVisibleCharacters = Pattern.compile("[\\p{Cntrl}\uFFFD\uFFFF]|[^\\p{Graph}\\p{Space}]");
+	
 	MetaIndex meta = null;
 	String[] decorateKeys = null;
+	
+	Matcher controlNonVisibleCharactersMatcher = controlNonVisibleCharacters.matcher("");
 	/** 
+	 * Adds all the metadata for the specified document occurring at the specified
+	 * rank to the ResultSet
 	 * {@inheritDoc} 
 	 */
 	public final byte filter(
 			Manager m, SearchRequest srq, ResultSet results,
-			int DocAtNumber, int DocNo) 
+			int rank, int docid) 
 	{
 		try{
-			final String[] values = meta.getItems(decorateKeys, DocNo);
+			final String[] values = meta.getItems(decorateKeys, docid);
 			for(int j=0;j<decorateKeys.length;j++)
-				results.addMetaItem(decorateKeys[j], DocAtNumber, values[j]);
+			{
+				controlNonVisibleCharactersMatcher.reset(values[j]);
+				results.addMetaItem(decorateKeys[j], rank, controlNonVisibleCharactersMatcher.replaceAll(""));
+			}
 			return PostFilter.FILTER_OK;
 		} catch (Exception e) {
 			return PostFilter.FILTER_REMOVE;

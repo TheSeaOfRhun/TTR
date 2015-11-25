@@ -17,7 +17,7 @@
  *
  * The Original Code is QueryExpansion.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -32,22 +32,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.models.queryexpansion.QueryExpansionModel;
 import org.terrier.querying.parser.SingleTermQuery;
-import org.terrier.structures.BitIndexPointer;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.DocumentIndex;
 import org.terrier.structures.Index;
-import org.terrier.structures.InvertedIndex;
 import org.terrier.structures.Lexicon;
 import org.terrier.structures.MetaIndex;
 import org.terrier.structures.PostingIndex;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.Rounding;
 /**
- * Implements automatic query expansion as PostFilter that is applied to the resultset
+ * Implements automatic query expansion as PostProcess that is applied to the result set
  * after 1st-time matching.
  * <B>Controls</B>
  * <ul><li><tt>qemodel</tt> : The query expansion model used for Query Expansion. 
@@ -55,10 +52,10 @@ import org.terrier.utility.Rounding;
  * <B>Properties</B>
  * <ul><li><tt>expansion.terms</tt> : The maximum number of most weighted terms in the 
  * pseudo relevance set to be added to the original query. The system performs a conservative
- * query expansion if this property is set to 0. A conservation query expansion only reweighs
+ * query expansion if this property is set to 0. A conservative query expansion only re-weighs
  * the original query terms without adding new terms to the query.</li>
  * <li><tt>expansion.documents</tt> : The number of top documents from the 1st pass 
- * retrieval to use for QE. The query is expanded from this set of docuemnts, also 
+ * retrieval to use for QE. The query is expanded from this set of documents, also 
  * known as the pseudo relevance set.</li>
  * <li><tt>qe.feedback.selector</tt> : The class to be used for selecting feedback documents.</li>
  * <li><tt>qe.expansion.terms.class</tt> : The class to be used for selecting expansion terms from feedback documents.</li>
@@ -82,11 +79,11 @@ public class QueryExpansion implements PostProcess {
 	protected DocumentIndex documentIndex;
 	protected MetaIndex metaIndex;
 	/** The inverted index used for retrieval. */
-	protected InvertedIndex invertedIndex;
+	protected PostingIndex<?> invertedIndex;
 	/** An instance of Lexicon class. */
 	protected Lexicon<String> lexicon;
 	/** The direct index used for retrieval. */
-	protected PostingIndex<BitIndexPointer> directIndex;
+	protected PostingIndex<?> directIndex;
 	
 	
 	/** The statistics of the index */
@@ -131,16 +128,16 @@ public class QueryExpansion implements PostProcess {
 		if (feedback == null || feedback.length == 0)
 			return;
 	
-		double totalDocumentLength = 0;
-		for(FeedbackDocument doc : feedback)
-		{
-			totalDocumentLength += documentIndex.getDocumentLength(doc.docid);
+		//double totalDocumentLength = 0;
+		//for(FeedbackDocument doc : feedback)
+		//{
+			//totalDocumentLength += documentIndex.getDocumentLength(doc.docid);
 
-			if(logger.isDebugEnabled()){
-				logger.debug(doc.rank +": " + metaIndex.getItem("docno", doc.docid)+
-					" ("+doc.docid+") with "+doc.score);
-			}
-		}
+		//	if(logger.isDebugEnabled()){
+		//		logger.debug(doc.rank +": " + metaIndex.getItem("docno", doc.docid)+
+		//			" ("+doc.docid+") with "+doc.score);
+		//	}
+		//}
 		ExpansionTerms expansionTerms = getExpansionTerms();
 		expansionTerms.setModel(QEModel);
 		
@@ -318,6 +315,7 @@ public class QueryExpansion implements PostProcess {
 		
 		logger.info("NEWQUERY "+q.getQueryID() +" "+newQuery.toString());
 		lastExpandedQuery = newQuery.toString();
+		q.setControl("QE.ExpandedQuery", newQuery.toString());
 		final boolean no2ndPass = Boolean.parseBoolean(ApplicationSetup.getProperty("qe.no.2nd.matching", "false"));
 		if (no2ndPass)
 		{

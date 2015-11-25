@@ -17,7 +17,7 @@
  *
  * The Original Code is BasicPostingImpl.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,6 +36,9 @@ import org.apache.hadoop.io.WritableUtils;
  */
 public class BasicPostingImpl implements WritablePosting {
 
+	private static final long serialVersionUID = 1L;
+	protected int dl = 0;
+	
 	/** id of the posting */
 	protected int id = -1;
 	/** frequency of this posting */
@@ -54,12 +57,12 @@ public class BasicPostingImpl implements WritablePosting {
 	}
 
 	/** {@inheritDoc} */
-	public int getId() {
+	public final int getId() {
 		return id;
 	}
 
 	/** {@inheritDoc} */
-	public int getFrequency() {
+	public final int getFrequency() {
 		return tf;
 	}
 
@@ -83,7 +86,7 @@ public class BasicPostingImpl implements WritablePosting {
 
 	/** Returns 0 */
 	public int getDocumentLength() {
-		return 0;
+		return dl;
 	}
 	
 	/** {@inheritDoc} */
@@ -96,6 +99,19 @@ public class BasicPostingImpl implements WritablePosting {
 	public String toString()
 	{
 		return "(" + id + "," + tf + ")";
+	}
+
+	@Override
+	public void setDocumentLength(int l) {
+		dl = l;
+	}
+
+	/**
+	 * Set the term frequency in the document
+	 * @param tf
+	 */
+	public void setTf(int tf) {
+		this.tf = tf;
 	}
 
 }

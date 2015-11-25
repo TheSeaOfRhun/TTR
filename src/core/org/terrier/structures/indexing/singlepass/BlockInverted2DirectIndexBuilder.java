@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockInverted2DirectIndexBuilder.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,13 +28,17 @@ package org.terrier.structures.indexing.singlepass;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.terrier.structures.BlockDirectIndex;
-import org.terrier.structures.BlockDirectIndexInputStream;
 import org.terrier.structures.Index;
-import org.terrier.structures.InvertedIndexInputStream;
-import org.terrier.structures.postings.BlockFieldIterablePosting;
-import org.terrier.structures.postings.BlockIterablePosting;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.LexiconEntry;
+import org.terrier.structures.PostingIndexInputStream;
+import org.terrier.structures.bit.BitPostingIndex;
+import org.terrier.structures.bit.BitPostingIndexInputStream;
+import org.terrier.structures.postings.IterablePosting;
+import org.terrier.structures.postings.bit.BlockFieldIterablePosting;
+import org.terrier.structures.postings.bit.BlockIterablePosting;
 import org.terrier.utility.ApplicationSetup;
+import org.terrier.utility.TerrierTimer;
 
 
 /** Create a block direct index from a BlockInvertedIndex.
@@ -51,11 +55,11 @@ public class BlockInverted2DirectIndexBuilder extends Inverted2DirectIndexBuilde
 	 * constructor
 	 * @param i
 	 */
-	public BlockInverted2DirectIndexBuilder(Index i)
+	public BlockInverted2DirectIndexBuilder(IndexOnDisk i)
 	{
 		super(i);
-		directIndexClass = BlockDirectIndex.class.getName();
-    	directIndexInputStreamClass = BlockDirectIndexInputStream.class.getName();
+		directIndexClass = BitPostingIndex.class.getName();
+    	directIndexInputStreamClass = BitPostingIndexInputStream.class.getName();
     	basicDirectIndexPostingIteratorClass = BlockIterablePosting.class.getName();
     	fieldDirectIndexPostingIteratorClass = BlockFieldIterablePosting.class.getName();
 		processTokens = Long.parseLong(ApplicationSetup.getProperty("inverted2direct.processtokens", "10000000"));
@@ -91,80 +95,66 @@ public class BlockInverted2DirectIndexBuilder extends Inverted2DirectIndexBuilde
     }
 	
 	/** traverse the inverted file, looking for all occurrences of documents in the given range */
-    protected long traverseInvertedFile(final InvertedIndexInputStream iiis, int firstDocid, int lastDocid, final Posting[] directPostings)
+    @Override
+    protected long traverseInvertedFile(final PostingIndexInputStream iiis, int firstDocid, int lastDocid, final Posting[] directPostings)
         throws IOException
     {
         //foreach posting list in the inverted index
             //for each (in range) posting in list
                 //add termid->tf tuple to the Posting array
-		long tokens = 0;
-        int[][] postings;
+		long tokens = 0; 
         int termId = -1;
         //array recording which of the current set of documents has had any postings written thus far
         boolean[] prevUse = new boolean[lastDocid - firstDocid + 1];
         Arrays.fill(prevUse, false);
-        final int[] fieldFs = new int[fieldCount];
+        int[] fieldFs = null;
         
-        while((postings = iiis.getNextDocuments()) != null)
-        {
-            termId++;
-            final int[] postings_docids = postings[0];
-            final int[] postings_freqs = postings[1];
-            final int[] postings_blockfreqs = postings[fieldCount + 2];
-            final int[] postings_blockids = postings[fieldCount + 3];
-            int startOffset = Arrays.binarySearch(postings_docids, firstDocid);
-            int endOffset = Arrays.binarySearch(postings_docids, lastDocid+1);
-            if (startOffset < 0)
-                startOffset = -(startOffset+1);
-            //no documents in range for this term
-            if (startOffset == postings_docids.length)
-                continue;
-            if (endOffset < 0)
-                endOffset = -(endOffset+1);
-            if (endOffset == 0)
-                continue;
-			int blockIndex = 0;
-            if (startOffset != 0)
-                for(int i=0;i<startOffset;i++)
-                    blockIndex += postings_blockfreqs[i];
-            for(int offset = startOffset; offset<endOffset;offset++)
-            {
-                if (postings_docids[offset] >= firstDocid && postings_docids[offset] <= lastDocid)
-                {
-                    final int writerOffset = postings_docids[offset] - firstDocid;
-					tokens += postings_freqs[offset];
-					final int[] blocks = new int[postings_blockfreqs[offset]];
-					//System.err.println("Term has "+ postings4.length + " blocks, of which we are at offset "+ blockIndex + ", and this posting has "+ postings3[offset] + " blocks");
-					/* TODO by adding offset/length parameters to the insert/writeFirstDoc methods of BlockPosting
-					 * and BlockFieldPosting, this arraycopy could be prevented */
-					System.arraycopy(postings_blockids, blockIndex, blocks, 0, postings_blockfreqs[offset]);
-                    if (prevUse[writerOffset])
-                    {
-                    	if (saveTagInformation)
+        TerrierTimer tt = new TerrierTimer("Inverted index processing for this iteration", index.getCollectionStatistics().getNumberOfPointers());
+		tt.start();
+		try{
+			while(iiis.hasNext())
+			{
+				IterablePosting ip = iiis.next();
+				//after TR-279, termids are not lexographically assigned in single-pass indexers
+				termId = ((LexiconEntry) iiis.getCurrentPointer()).getTermId();
+				final int numPostingsForTerm = iiis.getNumberOfCurrentPostings();
+				int docid = ip.next(firstDocid);
+				if (docid == IterablePosting.EOL)
+					continue;
+				
+				do {
+					tokens += ip.getFrequency();
+					final int writerOffset = docid - firstDocid;
+					final int[] blocks = ((org.terrier.structures.postings.BlockPosting) ip).getPositions();
+					if (prevUse[writerOffset])
+					{
+						
+						if (saveTagInformation)
 						{
-							for(int fi=0;fi< fieldCount;fi++)
-								fieldFs[fi] = postings[2+fi][offset];
-							((BlockFieldPosting)directPostings[writerOffset]).insert(termId, postings_freqs[offset],  fieldFs, blocks);
+							fieldFs = ((org.terrier.structures.postings.FieldPosting) ip).getFieldFrequencies();
+							((BlockFieldPosting)directPostings[writerOffset]).insert(termId, ip.getFrequency(), fieldFs, blocks);
 						}
 						else
-                            ((BlockPosting)directPostings[writerOffset]).insert(termId, postings_freqs[offset], blocks);
-                    }
-                    else
-                    {
-                        prevUse[writerOffset] = true;
-                        if (saveTagInformation)
-						{
-							for(int fi=0;fi< fieldCount;fi++)
-								fieldFs[fi] = postings[2+fi][offset];
-							((BlockFieldPosting)directPostings[writerOffset]).writeFirstDoc(termId, postings_freqs[offset],  fieldFs, blocks);
+							((BlockPosting)directPostings[writerOffset]).insert(termId, ip.getFrequency(), blocks);
+					}
+					else
+					{
+						prevUse[writerOffset] = true;
+						if (saveTagInformation)
+						{	
+							fieldFs = ((org.terrier.structures.postings.FieldPosting) ip).getFieldFrequencies();
+							((BlockFieldPosting)directPostings[writerOffset]).writeFirstDoc(termId, ip.getFrequency(), fieldFs, blocks);
 						}
 						else
-                            ((BlockPosting)directPostings[writerOffset]).writeFirstDoc(termId, postings_freqs[offset], blocks);
-                    }
-                }
-				blockIndex+= postings_blockfreqs[offset];
-            }
-        }
+							((BlockPosting)directPostings[writerOffset]).writeFirstDoc(termId, ip.getFrequency(), blocks);
+					}
+					docid = ip.next();
+				} while(docid <= lastDocid && docid != IterablePosting.EOL);				
+				tt.increment(numPostingsForTerm);
+			}
+		} finally {
+			tt.finished();
+		}
 		return tokens;
     }
 
@@ -176,7 +166,7 @@ public class BlockInverted2DirectIndexBuilder extends Inverted2DirectIndexBuilde
 	public static void main (String[] args) throws Exception
 	{
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index i = Index.createIndex();
+		IndexOnDisk i = Index.createIndex();
 		if (i== null)
 		{
 			System.err.println("Sorry, no index could be found in default location");

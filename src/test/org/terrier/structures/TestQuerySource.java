@@ -17,7 +17,7 @@
  *
  * The Original Code is TestQuerySource.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.PrintWriter;
 
-import org.terrier.applications.TRECQuerying.QuerySource;
+import org.terrier.applications.batchquerying.QuerySource;
 import org.terrier.tests.ApplicationSetupBasedTest;
 import org.terrier.utility.Files;
 

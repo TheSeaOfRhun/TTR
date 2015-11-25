@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopPlugin.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -362,6 +362,14 @@ public class HadoopPlugin implements ApplicationSetup.TerrierApplicationPlugin
 	{
 		return org.apache.hadoop.fs.FileSystem.getDefaultUri(singletonConfiguration);
 	}
+	
+	/** What is the default file system according to Hadoop 
+	 * @throws IOException */
+	public static org.apache.hadoop.fs.FileSystem getDefaultFileSystem() throws IOException
+	{
+		return org.apache.hadoop.fs.FileSystem.get(singletonConfiguration);
+	}
+	
 
 	/** Wrapper around FSDataInputStream which implements RandomDataInput. */
 	static class HadoopFSRandomAccessFile implements RandomDataInput

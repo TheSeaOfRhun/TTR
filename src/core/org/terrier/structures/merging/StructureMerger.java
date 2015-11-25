@@ -17,7 +17,7 @@
  *
  * The Original Code is StructureMerger.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -37,38 +37,37 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
-import org.terrier.compression.BitIn;
+import org.terrier.structures.AbstractPostingOutputStream;
 import org.terrier.structures.BasicDocumentIndexEntry;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.DirectIndex;
-import org.terrier.structures.DirectIndexInputStream;
-import org.terrier.structures.DirectInvertedOutputStream;
 import org.terrier.structures.DocumentIndexEntry;
 import org.terrier.structures.FSOMapFileLexiconOutputStream;
-import org.terrier.structures.FieldDirectInvertedOutputStream;
 import org.terrier.structures.FieldDocumentIndexEntry;
 import org.terrier.structures.FieldLexiconEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
-import org.terrier.structures.InvertedIndex;
-import org.terrier.structures.InvertedIndexInputStream;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.LexiconOutputStream;
 import org.terrier.structures.MetaIndex;
+import org.terrier.structures.Pointer;
 import org.terrier.structures.PostingIndex;
 import org.terrier.structures.PostingIndexInputStream;
 import org.terrier.structures.SimpleBitIndexPointer;
 import org.terrier.structures.SimpleDocumentIndexEntry;
+import org.terrier.structures.bit.DirectInvertedOutputStream;
+import org.terrier.structures.bit.FieldDirectInvertedOutputStream;
 import org.terrier.structures.indexing.CompressingMetaIndexBuilder;
+import org.terrier.structures.indexing.CompressionFactory;
 import org.terrier.structures.indexing.DocumentIndexBuilder;
 import org.terrier.structures.indexing.LexiconBuilder;
 import org.terrier.structures.indexing.MetaIndexBuilder;
-import org.terrier.structures.postings.BasicIterablePosting;
-import org.terrier.structures.postings.FieldIterablePosting;
+import org.terrier.structures.indexing.CompressionFactory.CompressionConfiguration;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.structures.postings.Posting;
 import org.terrier.structures.postings.PostingIdComparator;
+import org.terrier.structures.postings.bit.BasicIterablePosting;
+import org.terrier.structures.postings.bit.FieldIterablePosting;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.ArrayUtils;
@@ -104,32 +103,23 @@ public class StructureMerger {
 	protected int numberOfTerms;
 
 	
+	protected CompressionConfiguration compressionDirectConfig;
+	protected CompressionConfiguration compressionInvertedConfig;
+	
 	protected boolean MetaReverse = Boolean.parseBoolean(ApplicationSetup.getProperty("merger.meta.reverse", "true"));
 	
 	/** source index 1 */	
-	protected Index srcIndex1; 
+	protected IndexOnDisk srcIndex1; 
 	/** source index 2 */
-	protected Index srcIndex2; 
+	protected IndexOnDisk srcIndex2; 
 	/** destination index */
-	protected Index destIndex;
+	protected IndexOnDisk destIndex;
 
 	/** class to use to write direct file */	
 	protected Class<? extends DirectInvertedOutputStream> directFileOutputStreamClass = DirectInvertedOutputStream.class;
 	protected Class<? extends DirectInvertedOutputStream> fieldDirectFileOutputStreamClass = FieldDirectInvertedOutputStream.class;
 	
-	/** class to use to write inverted file */
-	protected Class<? extends DirectInvertedOutputStream> invertedFileOutputStreamClass = DirectInvertedOutputStream.class;
-	/** class to use to write inverted file */
-	protected Class<? extends DirectInvertedOutputStream> fieldInvertedFileOutputStreamClass = FieldDirectInvertedOutputStream.class;
-	
-	/** class to use to read the direct file */
-	protected String directFileInputClass = DirectIndex.class.getName();
-	/** class to use to read the direct file as a stream */
-	protected String directFileInputStreamClass = DirectIndexInputStream.class.getName();
-	/** class to use to read the inverted file */
-	protected String invertedFileInputClass = InvertedIndex.class.getName();
-	/** class to use to read the inverted file as a stream */
-	protected String invertedFileInputStreamClass = InvertedIndexInputStream.class.getName();
+	protected final int fieldCount;
 	
 	protected String basicInvertedIndexPostingIteratorClass = BasicIterablePosting.class.getName();
 	protected String fieldInvertedIndexPostingIteratorClass = FieldIterablePosting.class.getName();
@@ -141,7 +131,7 @@ public class StructureMerger {
 	 * @param _srcIndex2
 	 * @param _destIndex
 	 */
-	public StructureMerger(Index _srcIndex1, Index _srcIndex2, Index _destIndex)
+	public StructureMerger(IndexOnDisk _srcIndex1, IndexOnDisk _srcIndex2, IndexOnDisk _destIndex)
 	{
 		this.srcIndex1 = _srcIndex1;
 		this.srcIndex2 = _srcIndex2;
@@ -149,6 +139,19 @@ public class StructureMerger {
 		numberOfDocuments = 0;
 		numberOfPointers = 0;
 		numberOfTerms = 0;
+		
+		final int srcFieldCount1 = srcIndex1.getIntIndexProperty("index.inverted.fields.count", 0);
+		final int srcFieldCount2 = srcIndex2.getIntIndexProperty("index.inverted.fields.count", 0);
+		if (srcFieldCount1 != srcFieldCount2)
+		{
+			throw new Error("FieldCounts in source indices must match");
+		}
+		String[] fieldNames = ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.inverted.fields.names", ""));
+		assert srcFieldCount1 == fieldNames.length;
+		
+		fieldCount = srcFieldCount1;
+		compressionDirectConfig = CompressionFactory.getCompressionConfiguration("direct", fieldNames, false);
+		compressionInvertedConfig = CompressionFactory.getCompressionConfiguration("inverted", fieldNames, false);
 	}
 	
 
@@ -158,7 +161,7 @@ public class StructureMerger {
 	 * Sets the output index. This index should have no documents
 	 * @param _outputIndex the index to be merged to
 	 */
-	public void setOutputIndex(Index _outputIndex) {
+	public void setOutputIndex(IndexOnDisk _outputIndex) {
 		this.destIndex = _outputIndex;
 		//invertedFileOutput = _outputName;
 	}
@@ -215,17 +218,17 @@ public class StructureMerger {
 			LexiconOutputStream<String> lexOutStream = 
 				new FSOMapFileLexiconOutputStream(destIndex, "lexicon", (Class <FixedSizeWriteableFactory<LexiconEntry>>) lvf.getClass());
 
-			int newCodes = (int)srcIndex1.getCollectionStatistics().getNumberOfUniqueTerms(); 
+			int newCodes = keepTermCodeMap
+					 ? (int)srcIndex1.getCollectionStatistics().getNumberOfUniqueTerms()
+					 : 0;
 			
-			PostingIndex inverted1 = srcIndex1.getInvertedIndex();
-			PostingIndex inverted2 = srcIndex2.getInvertedIndex();
+			PostingIndex<Pointer> inverted1 = (PostingIndex<Pointer>) srcIndex1.getInvertedIndex();
+			PostingIndex<Pointer> inverted2 = (PostingIndex<Pointer>) srcIndex2.getInvertedIndex();
 			
-			DirectInvertedOutputStream invOS =null;
+			AbstractPostingOutputStream invOS = null;
 			try{
-				invOS = (fieldCount > 0 ? fieldInvertedFileOutputStreamClass : invertedFileOutputStreamClass)
-					.getConstructor(String.class)
-					.newInstance(destIndex.getPath() + ApplicationSetup.FILE_SEPARATOR +  
-						destIndex.getPrefix() + ".inverted"+ BitIn.USUAL_EXTENSION);
+				invOS = compressionInvertedConfig.getPostingOutputStream(((IndexOnDisk) destIndex).getPath() + ApplicationSetup.FILE_SEPARATOR +  
+						((IndexOnDisk) destIndex).getPrefix() + ".inverted"+ compressionInvertedConfig.getStructureFileExtension());
 				
 			} catch (Exception e) {
 				logger.error("Couldn't create specified DirectInvertedOutputStream", e);
@@ -256,11 +259,14 @@ public class StructureMerger {
 					BitIndexPointer newPointer = invOS.writePostings(inverted1.getPostings(lee1.getValue()));
 					lee1.getValue().setPointer(newPointer);
 					numberOfPointers+=newPointer.getNumberOfEntries();
+					if (! keepTermCodeMap)
+						lee1.getValue().setTermId(newCodes++);
 					lexOutStream.writeNextEntry(term1, lee1.getValue());
 					hasMore1 = lexInStream1.hasNext();
 					if (hasMore1)
 						lee1 = lexInStream1.next();
-				
+					
+					
 				} else if (lexicographicalCompare > 0) {
 					//write to inverted file postings for the term that only occurs in 2nd index
 					//docids are transformed as we go.
@@ -294,6 +300,8 @@ public class StructureMerger {
 					lee1.getValue().setPointer(newPointer1);
 					if (keepTermCodeMap)
 						termcodeHashmap.put(lee2.getValue().getTermId(), lee1.getValue().getTermId());
+					else
+						lee1.getValue().setTermId(newCodes++);
 					
 					lee1.getValue().add(lee2.getValue());
 					lexOutStream.writeNextEntry(term1, lee1.getValue());
@@ -315,6 +323,8 @@ public class StructureMerger {
 					BitIndexPointer newPointer = invOS.writePostings(
 							inverted1.getPostings(lee1.getValue()));
 					lee1.getValue().setPointer(newPointer);
+					if (! keepTermCodeMap)
+						lee1.getValue().setTermId(newCodes++);
 					numberOfPointers+=newPointer.getNumberOfEntries();
 					lexOutStream.writeNextEntry(lee1.getKey(), lee1.getValue());
 					hasMore1 = lexInStream1.hasNext();
@@ -350,20 +360,16 @@ public class StructureMerger {
 			destIndex.setIndexProperty("num.Documents", ""+numberOfDocuments);
 			destIndex.addIndexStructure(
 						"inverted",
-						invertedFileInputClass,
-						"org.terrier.structures.Index,java.lang.String,org.terrier.structures.DocumentIndex,java.lang.Class", 
+						compressionInvertedConfig.getStructureClass().getName(),
+						"org.terrier.structures.IndexOnDisk,java.lang.String,org.terrier.structures.DocumentIndex,java.lang.Class", 
 						"index,structureName,document,"+ 
-							(fieldCount > 0
-								? fieldInvertedIndexPostingIteratorClass
-								: basicInvertedIndexPostingIteratorClass ));
+						compressionInvertedConfig.getPostingIteratorClass().getName() );
 	        destIndex.addIndexStructureInputStream(
 	                    "inverted",
-	                    invertedFileInputStreamClass,
-	                    "org.terrier.structures.Index,java.lang.String,java.util.Iterator,java.lang.Class",
+	                    compressionInvertedConfig.getStructureInputStreamClass().getName(),
+	                    "org.terrier.structures.IndexOnDisk,java.lang.String,java.util.Iterator,java.lang.Class",
 	                    "index,structureName,lexicon-entry-inputstream,"+
-	                    	(fieldCount > 0
-	                    		? fieldInvertedIndexPostingIteratorClass
-								: basicInvertedIndexPostingIteratorClass ));
+	                    compressionInvertedConfig.getPostingIteratorClass().getName());
 	        destIndex.setIndexProperty("index.inverted.fields.count", ""+fieldCount);
 			lexOutStream.close();
 			if (fieldCount > 0)
@@ -389,12 +395,13 @@ public class StructureMerger {
 			final String[] metaTags = ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.key-names", "docno"));
 			final int[] metaTagLengths = ArrayUtils.parseCommaDelimitedInts(srcIndex1.getIndexProperty("index.meta.value-lengths", "20"));
 			final String[] metaReverseTags = MetaReverse
-				? ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.reverse-key-names", "docno"))
+				? ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.reverse-key-names", ""))
 				: new String[0];
 			final MetaIndexBuilder metaBuilder = new CompressingMetaIndexBuilder(destIndex, metaTags, metaTagLengths, metaReverseTags);
 		
 			if (! srcIndex1.getIndexProperty("index.meta.key-names", "docno").equals(srcIndex2.getIndexProperty("index.meta.key-names", "docno")))
 			{
+				metaBuilder.close();
 				throw new Error("Meta fields in source indices must match");
 			}
 			final BitIndexPointer emptyPointer = new SimpleBitIndexPointer();
@@ -404,6 +411,7 @@ public class StructureMerger {
 			final int srcFieldCount2 = srcIndex1.getIntIndexProperty("index.direct.fields.count", 0);
 			if (srcFieldCount1 != srcFieldCount2)
 			{
+				metaBuilder.close();
 				throw new Error("FieldCounts in source indices must match");
 			}
 			
@@ -415,16 +423,13 @@ public class StructureMerger {
 				destIndex.setIndexProperty(property, srcIndex1.getIndexProperty(property, null));
 			}
 			
-			DirectInvertedOutputStream dfOutput = null;
+			AbstractPostingOutputStream dfOutput = null;
 			try{
-				dfOutput = 
-					(fieldCount > 0 ? fieldDirectFileOutputStreamClass : directFileOutputStreamClass)
-					.getConstructor(String.class)
-					.newInstance(destIndex.getPath() + ApplicationSetup.FILE_SEPARATOR +  
-								destIndex.getPrefix() + ".direct" + BitIn.USUAL_EXTENSION);
+				dfOutput = compressionDirectConfig.getPostingOutputStream(destIndex.getPath() + ApplicationSetup.FILE_SEPARATOR +  
+					destIndex.getPrefix() + ".direct" + compressionDirectConfig.getStructureFileExtension());
 			} catch (Exception e) {
-				logger.error("Couldn't create specified DirectInvertedOutputStream", e);
-				return;
+				metaBuilder.close();
+				throw new Error("Couldn't create specified DirectInvertedOutputStream", e);
 			}
 			
 			
@@ -488,18 +493,7 @@ public class StructureMerger {
 			docidOutput.finishedCollections();
 			docidOutput.close();
 
-			destIndex.addIndexStructure(
-					"direct", 
-					"org.terrier.structures.DirectIndex", 
-					"org.terrier.structures.Index,java.lang.String,java.lang.Class", 
-					"index,structureName,"+ 
-						(fieldCount > 0 ? fieldDirectIndexPostingIteratorClass : basicDirectIndexPostingIteratorClass));
-			destIndex.addIndexStructureInputStream(
-					"direct",
-					"org.terrier.structures.DirectIndexInputStream", 
-					"org.terrier.structures.Index,java.lang.String,java.lang.Class",
-					"index,structureName,"+ 
-						(fieldCount > 0 ? fieldDirectIndexPostingIteratorClass : basicDirectIndexPostingIteratorClass));
+			compressionDirectConfig.writeIndexProperties(destIndex, "document-inputstream");
 			
 			if (fieldCount > 0)
 			{
@@ -543,12 +537,13 @@ public class StructureMerger {
 			final String[] metaTags = ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.key-names", "docno"));
 			final int[] metaTagLengths = ArrayUtils.parseCommaDelimitedInts(srcIndex1.getIndexProperty("index.meta.value-lengths", "20"));
 			final String[] metaReverseTags = MetaReverse
-				? ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.reverse-key-names", "docno"))
+				? ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.meta.reverse-key-names", ""))
 				: new String[0];
 			final MetaIndexBuilder metaBuilder = new CompressingMetaIndexBuilder(destIndex, metaTags, metaTagLengths, metaReverseTags);
 		
 			if (! srcIndex1.getIndexProperty("index.meta.key-names", "docno").equals(srcIndex2.getIndexProperty("index.meta.key-names", "docno")))
 			{
+				metaBuilder.close();
 				throw new Error("Meta fields in source indices must match");
 			}
 			
@@ -560,6 +555,7 @@ public class StructureMerger {
 			int srcFieldCount2 = srcIndex2.getIntIndexProperty("index.inverted.fields.count", 0);
 			if (srcFieldCount1 != srcFieldCount2)
 			{
+				metaBuilder.close();
 				throw new Error("FieldCounts in source indices must match");
 			}
 			if (srcIndex1.getIndexProperty("index.document-factory.class", "").equals("org.terrier.structures.SimpleDocumentIndexEntry$Factory")
@@ -597,6 +593,8 @@ public class StructureMerger {
 			metaBuilder.close();
 			IndexUtil.close(docidInput1);
 			IndexUtil.close(docidInput2);
+			IndexUtil.close(metaInput1);
+			IndexUtil.close(metaInput2);
 			//destIndex.setIndexProperty("index.inverted.fields.count", ""+ fieldCount);
 			if (fieldCount > 0)
 			{
@@ -693,9 +691,9 @@ public class StructureMerger {
 		}
 		
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index indexSrc1 = Index.createIndex(args[0], args[1]);
-		Index indexSrc2 = Index.createIndex(args[2], args[3]);
-		Index indexDest = Index.createNewIndex(args[4], args[5]);
+		IndexOnDisk indexSrc1 = Index.createIndex(args[0], args[1]);
+		IndexOnDisk indexSrc2 = Index.createIndex(args[2], args[3]);
+		IndexOnDisk indexDest = Index.createNewIndex(args[4], args[5]);
 		
 		StructureMerger sMerger = new StructureMerger(indexSrc1, indexSrc2, indexDest);
 		long start = System.currentTimeMillis();

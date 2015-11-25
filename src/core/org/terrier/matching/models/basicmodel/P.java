@@ -17,7 +17,7 @@
  *
  * The Original Code is P.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,7 +25,7 @@
  */
 package org.terrier.matching.models.basicmodel;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.*;
 
 /**
  * This class implements the P basic model for randomness.
@@ -65,13 +65,11 @@ public class P extends BasicModel{
 		double documentFrequency,
 		double termFrequency,
 		double keyFrequency,
-		double documentLength
-		){
-		
-		double f = (1.0D * termFrequency) / (1.0D * numberOfDocuments);
-		return keyFrequency * (tf * Idf.log(1.0D / f)
-				+ f * Idf.REC_LOG_2_OF_E
-				+ 0.5d * Idf.log(2 * Math.PI * tf)
-				+ tf * (Idf.log(tf) - Idf.REC_LOG_2_OF_E));
+		double documentLength) {
+		final double f = (1.0D * termFrequency) / (1.0D * numberOfDocuments);
+		return keyFrequency * (tf * log(1.0D / f)
+				+ f * LOG_2_OF_E
+				+ 0.5d * log(2 * Math.PI * tf)
+				+ tf * (log(tf) - LOG_2_OF_E));
 	}
 }

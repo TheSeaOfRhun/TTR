@@ -17,7 +17,7 @@
  *
  * The Original Code is ApplicationSetup.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -91,7 +91,7 @@ public class ApplicationSetup {
 	}
 	
 	/** Current Terrier version */
-	public static final String TERRIER_VERSION = "3.5";
+	public static final String TERRIER_VERSION = "4.0";
 	static Logger logger = null;
 	
 	/** Default log4j config Terrier loads if no TERRIER_ETC/terrier-log.xml file exists 
@@ -235,104 +235,7 @@ public class ApplicationSetup {
 	public static String TREC_MODELS;
 	//end of TREC specific section
 		
-	/**
-	 * The suffix of the inverted file. The corresponding
-	 * property is <tt>if.suffix</tt> and by default
-	 * the value of this property is <tt>.if</tt>
-	 */
-	//public static String IFSUFFIX;
 	
-	/**
-	 * The suffix of the file that contains the
-	 * lexicon. The corresponding property is 
-	 * <tt>lexicon.suffix</tt> and by default 
-	 * the value of this property is <tt>.lex</tt>
-	 */
-	//public static String LEXICONSUFFIX;
-	
-	/**
-	 * The suffix of the file that contains the
-	 * document index. The corresponding property
-	 * is <tt>doc.index.suffix</tt> and by default 
-	 * the value of this property is <tt>.docid</tt>
-	 */
-	//public static String DOC_INDEX_SUFFIX;
-	
-	/** 
-	 * The suffix of the lexicon index file
-	 * that contains the offset of each term 
-	 * in the lexicon. The corresponding 
-	 * property is <tt>lexicon.index.suffix</tt> and
-	 * by default its value is .lexid.
-	 */
-	//public static String LEXICON_INDEX_SUFFIX;
-
-	/** The suffix of the lexicon hash file. Corresponding property
-     * is <tt>lexicon.hash.suffix</tt>, default is ".lexhash". */
-	//public static String LEXICON_HASH_SUFFIX;
-
-	
-	/**
-	 * The suffix of the file that contains 
-	 * the collection statistics. It corresponds
-	 * to the property <tt>log.suffix</tt> and 
-	 * by default the value of this property is <tt>.log</tt>
-	 */
-	//public static String LOG_SUFFIX;
-	/**
-	 * The suffix of the file that contains 
-	 * the index properties. It corresponds
-	 * to the property <tt>indexproperties.suffix</tt> and 
-	 * by default the value of this property is <tt>.log</tt>
-	 */
-	//public static String PROPERTIES_SUFFIX;
-	/**
-	 * The suffix of the direct index. It corresponds
-	 * to the property <tt>df.suffix</tt> and by default
-	 * the value of this property is <tt>.df</tt>
-	 */
-	//public static String DF_SUFFIX;
-	
-	/**
-	 * The prefix of the temporary merged files, 
-	 * which are created during merging the 
-	 * lexicon files. It corresponds to the property 
-	 * <tt>merge.prefix</tt> and the default value is <tt>MRG_</tt>.
-	 */
-	//public static String MERGE_PREFIX;
-	
-	/**
-	 * A progressive number which is assigned to the 
-	 * temporary lexicon files built during the indexing.
-	 * It is used to keep track of the order with which
-	 * the temporary files were created. It corresponds to 
-	 * the property <tt>merge.temp.number</tt> and the default value
-	 * is <tt>100000</tt>
-	 */
-	//public static int MERGE_TEMP_NUMBER;
-	
-	/**
-	 * The number of documents to be processed as a group during indexing.
-	 * For each such group of documents, a temporary lexicon is built,
-	 * and after indexing, all temporary lexicons are merged in order to 
-	 * create a single lexicon. It corresponds to the property 
-	 * <tt>bundle.size</tt> and the default value is <tt>2000</tt>.
-	 */
-	//public static int BUNDLE_SIZE;
-	
-	/**
-	 * The number of bytes used to store a term. Corresponds to MAX_TERM_LENGTH
-	 * if not using UTF, and 3*MAX_TERM_LENGTH if using UTF. No property is associated.
-	 * UTF support can be enabled by setting the property <tt>string.use_utf</tt> to
-	 * true.
-	 */
-	//public static int STRING_BYTE_LENGTH;
-
-	/** The number of bytes used to store a document number. It corresponds
-	  * to the property <tt>docno.byte.length</tt>, and the default value
-	  * is 20.
-	  * @since 1.1.0 */
-	//public static int DOCNO_BYTE_LENGTH;
 
 	/** The maximum size of a term. It corresponds to the the property 
 	  * <tt>max.term.length</tt>, and the default value is 20.
@@ -355,21 +258,7 @@ public class ApplicationSetup {
 	 */
 	public static String TERRIER_INDEX_PREFIX;
 	
-	/** The filename of the inverted file.*/
-	//public static String INVERTED_FILENAME;
-	/** The filename of the direct file.*/
-	//public static String DIRECT_FILENAME;
-	/** The filename of the document index.*/
-	//public static String DOCUMENT_INDEX_FILENAME;
-	/** The filename of the lexicon file.*/
-	//public static String LEXICON_FILENAME;
-	
-	/** The filename of the lexicon index file.*/
-	//public static String LEXICON_INDEX_FILENAME;
-	/** The filename of the log (statistics) file.*/
-	//public static String LOG_FILENAME;
-	
-	//query expansion properties
+		//query expansion properties
 	/** 
 	 * The number of terms added to the original query. 
 	 * The corresponding property is <tt>expansion.terms</tt>
@@ -556,22 +445,7 @@ public class ApplicationSetup {
 		//The following properties specify the filenames and suffixes
 		COLLECTION_SPEC = makeAbsolute(getProperty("collection.spec", "collection.spec"), TERRIER_ETC);
 	
-		//IFSUFFIX = getProperty("if.suffix", ".if");
-		//LEXICONSUFFIX = getProperty("lexicon.suffix", ".lex");
-		//LEXICON_INDEX_SUFFIX = getProperty("lexicon.index.suffix", ".lexid");
-		//LEXICON_HASH_SUFFIX = getProperty("lexicon.hash.suffix",".lexhash");
-		//DOC_INDEX_SUFFIX = getProperty("doc.index.suffix", ".docid");
-		//LOG_SUFFIX = getProperty("log.suffix", ".log");
-		//DF_SUFFIX = getProperty("df.suffix", ".df");
-		//PROPERTIES_SUFFIX = getProperty("indexproperties.suffix", ".properties");
 				
-		//the following two properties are related to the indexing of 
-		//documents. The prefix mergepref and and the number prog.nr 
-		//specify the names of the temporary lexicon created 
-		//during creating a global lexicon.
-		//MERGE_PREFIX = getProperty("merge.prefix", "MRG_");
-		//MERGE_TEMP_NUMBER = Integer.parseInt(getProperty("merge.temp.number", "100000"));
-		
 		//if a document is empty, that is it does not contain any terms, 
 		//we have the option to add it to the index, or not. By default, 
 		//empty documents are added to the index.
@@ -583,12 +457,6 @@ public class ApplicationSetup {
 		
 		//the maximum size of a term (string)
 		MAX_TERM_LENGTH = Integer.parseInt(getProperty("max.term.length", "20"));
-
-		//the maximum number of bytes used to store a term.
-		//if (Boolean.parseBoolean(ApplicationSetup.getProperty("string.use_utf", "false")))
-		//	STRING_BYTE_LENGTH = MAX_TERM_LENGTH *3;
-		//else
-		//	STRING_BYTE_LENGTH = MAX_TERM_LENGTH;
 
 		//the maximum number of bytes used to store a document number.
 		//DOCNO_BYTE_LENGTH = Integer.parseInt(getProperty("docno.byte.length", "20"));	
@@ -630,35 +498,34 @@ public class ApplicationSetup {
 		}
 		//setup the logger for this class
 		logger = Logger.getLogger(ApplicationSetup.class);
-		//setup default filename
-		setupFilenames();
 		//setup any plugins
 		setupPlugins();
 	}
 	
-	//@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	private static boolean isLog4JConfigured()
 	{
-//		boolean log4jConfigured = false;
-//		java.util.Enumeration en = Logger.getRootLogger().getAllAppenders(); 
-//		if (!(en instanceof org.apache.log4j.helpers.NullEnumeration))
-//		{
-//			log4jConfigured = true;
-//		}
-//		else
-//		{
-//			java.util.Enumeration cats = org.apache.log4j.LogManager.getCurrentLoggers();
-//			while (cats.hasMoreElements())
-//			{
-//				Logger c = (org.apache.log4j.Logger) cats.nextElement();
-//				if (!(c.getAllAppenders() instanceof org.apache.log4j.helpers.NullEnumeration))
-//				{
-//					log4jConfigured = true;
-//				}
-//			}
-//		}
-		//return log4jConfigured;
-		return false;
+		boolean log4jConfigured = false;		
+		java.util.Enumeration en = Logger.getRootLogger().getAllAppenders(); 
+		if (!(en instanceof org.apache.log4j.helpers.NullEnumeration))
+		{
+			log4jConfigured = true;
+		}
+		else
+		{
+			java.util.Enumeration cats = org.apache.log4j.LogManager.getCurrentLoggers();
+			while (cats.hasMoreElements())
+			{
+				Logger c = (org.apache.log4j.Logger) cats.nextElement();
+				if (!(c.getAllAppenders() instanceof org.apache.log4j.helpers.NullEnumeration))
+				{
+					log4jConfigured = true;
+					return true;
+				}
+			}
+		}
+		return log4jConfigured;
+		//return false;
 	}
 	
 	
@@ -740,13 +607,6 @@ public class ApplicationSetup {
 			setProperty(propertyKey, defaultValue);
 	}
 	
-	/**
-	 * Sets up the names of the inverted file, the direct file, 
-	 * the document index file and the lexicon file.
-	 * @deprecated
-	 */
-	public static void setupFilenames() {}
-
 	/** list of loaded plugins */
 	protected static List<TerrierApplicationPlugin> loadedPlugins = null;
 	/** Calls the initialise method of any plugins named in terrier.plugins */

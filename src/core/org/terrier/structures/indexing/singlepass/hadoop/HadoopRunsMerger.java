@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopRunsMerger.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -94,7 +94,6 @@ public class HadoopRunsMerger extends RunsMerger {
 		byte startBitOffset = this.getBitOffset();
 		LexiconEntry le = null;
 		// for each run in the list 
-		int counter = 0;
 		//for one term: for each set of postings for that term
 		while (run.hasNext()) {
 			PostingInRun posting = run.next();
@@ -113,7 +112,6 @@ public class HadoopRunsMerger extends RunsMerger {
 				posting.addToLexiconEntry(le);
 			lastFreq += posting.getTF();
 			lastDocFreq += posting.getDf();
-			counter++;
 		}
 		le.setTermId(currentTerm++);
 		((BasicLexiconEntry)le).setOffset(startOffset, startBitOffset);
@@ -155,18 +153,22 @@ public class HadoopRunsMerger extends RunsMerger {
 		if (correctHRD == null)
 			throw new IOException("Did not find map data for split "+ splitNo);
 		
-		// Add the FlushShift
 		int currentFlushDocs=0;
-		ListIterator<Integer> LI = correctHRD.getFlushDocSizes().listIterator(0);
-		//System.out.println("Runs Flush number : "+run.getRunNo()+", Size of HRD :"+correctHRD.getFlushDocSizes().size());
-		int currentFlush =0;
-		while (currentFlush<flushNumber) {
-			//System.out.println("Runs Flush number : "+run.getRunNo()+", FlushCheck : "+currentFlush+", Size of HRD :"+correctHRD.getFlushDocSizes().size());
-			currentFlushDocs += LI.next(); 
-			currentFlush++;
+		// Add the FlushShift, if configured to do so 
+		if (Hadoop_BasicSinglePassIndexer.RESET_IDS_ON_FLUSH)
+		{		
+			
+			ListIterator<Integer> LI = correctHRD.getFlushDocSizes().listIterator(0);
+			//System.out.println("Runs Flush number : "+run.getRunNo()+", Size of HRD :"+correctHRD.getFlushDocSizes().size());
+			int currentFlush =0;
+			while (currentFlush<flushNumber) {
+				//System.out.println("Runs Flush number : "+run.getRunNo()+", FlushCheck : "+currentFlush+", Size of HRD :"+correctHRD.getFlushDocSizes().size());
+				currentFlushDocs += LI.next(); 
+				currentFlush++;
+			}		
 		}
-		
 		return NumPreDocs+currentFlushDocs;
+		
 	}
 
 }

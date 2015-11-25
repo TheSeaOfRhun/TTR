@@ -17,7 +17,7 @@
  *
  * The Original Code is TestBitIndexPointer.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -61,7 +61,7 @@ import org.terrier.structures.seralization.FixedSizeWriteableFactory;
  * 
  * @author Craig Macdonald
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"rawtypes","unchecked"})
 public class TestBitIndexPointer {
 	
 	/** A selection of valid byte offsets, including lower and upper bound extremes */
@@ -160,6 +160,7 @@ public class TestBitIndexPointer {
 	}
 	
 	
+	
 	@Test
 	public void testBasicLE() throws Exception
 	{
@@ -178,6 +179,7 @@ public class TestBitIndexPointer {
 		test((FixedSizeWriteableFactory<? extends BitIndexPointer>)(FixedSizeWriteableFactory)new BlockFieldLexiconEntry.Factory(3));
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testBlockLE() throws Exception
 	{

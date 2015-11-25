@@ -1,6 +1,6 @@
 @echo off
 REM Terrier - Terabyte Retriever
-REM Webpage: http://terrier.org
+REM Webpage: http://ir.dcs.gla.ac.uk/terrier
 REM Contact: terrier@dcs.gla.ac.uk
 REM
 REM The contents of this file are subject to the Mozilla Public
@@ -16,7 +16,7 @@ REM
 REM The Original Code is anyclass.bat
 REM
 REM The Initial Developer of the Original Code is the University of Glasgow.
-REM Portions created by The Initial Developer are Copyright (C) 2004-2011
+REM Portions created by The Initial Developer are Copyright (C) 2004-2008
 REM the initial Developer. All Rights Reserved.
 REM
 REM Contributor(s):
@@ -62,15 +62,33 @@ SET TERRIER_LIB=%TERRIER_HOME%\lib
 :classpath
 
 REM ------------------------
-REM -- Build up class path, looking recurively in subdirs
+REM -- Build up class path 
 REM ------------------------
 call "%BIN%\lcp.bat" %CLASSPATH%
-FOR /R %TERRIER_LIB% %%i IN (*.jar) DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\*.jar") DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\hadoop\*.jar") DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\poi\*.jar") DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\jetty-ext\*.jar") DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\crawler4j\*.jar") DO call "%BIN%\lcp.bat" "%%i"
 
+REM ------------------------
+REM -- Derive logging setup 
+REM ------------------------
+SET LOGGING_OPTIONS=
+if not EXIST "%TERRIER_ETC%\terrier-log.xml" goto log4jxml
+SET LOGGING_OPTIONS=-Dlog4j.configuration=file:%TERRIER_ETC%\terrier-log.xml
+:log4jxml
+if not EXIST "%TERRIER_ETC%\log4j.xml" goto log4jxml
+SET LOGGING_OPTIONS=-Dlog4j.configuration=file:%TERRIER_ETC%\log4j.xml
+:log4jproperties
+if not EXIST "%TERRIER_ETC%\log4j.properties" goto dorun
+SET LOGGING_OPTIONS=-Dlog4j.configuration=file:%TERRIER_ETC%\log4j.properties
+
+:dorun
 
 REM ------------------------
 REM -- Run TRECTerrier
 REM ------------------------
-java -Xmx512M -Dterrier.home="%TERRIER_HOME%" -Dterrier.etc="%TERRIER_ETC%" -Dterrier.setup="%TERRIER_ETC%\terrier.properties" -cp %LOCALCLASSPATH% %JAVA_OPTIONS% %TERRIER_OPTIONS% %*
+java -Xmx512M -Dterrier.home="%TERRIER_HOME%" -Dterrier.etc="%TERRIER_ETC%" -Dterrier.setup="%TERRIER_ETC%\terrier.properties" -cp %LOCALCLASSPATH% %LOGGING_OPTIONS% %JAVA_OPTIONS% %TERRIER_OPTIONS% %*
 
 if "Windows_NT"=="%OS%" endlocal

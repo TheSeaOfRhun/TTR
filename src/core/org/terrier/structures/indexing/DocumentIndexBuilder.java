@@ -17,7 +17,7 @@
  *
  * The Original Code is DocumentIndexBuilder.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,7 +30,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.collections.FSArrayFile;
 import org.terrier.utility.ApplicationSetup;
 
@@ -49,7 +49,7 @@ public class DocumentIndexBuilder {
 	/** The total number of entries in the document index.*/
 	protected int numberOfDocumentIndexEntries;
 	/** index object of the index currently being created */
-	protected Index index;
+	protected IndexOnDisk index;
 	
 	FSArrayFile.ArrayFileWriter fileWriter;
 	
@@ -57,7 +57,7 @@ public class DocumentIndexBuilder {
 	  * @param i Index being constructed
 	  * @param _structureName the name of the structure being created
 	  */	
-	public DocumentIndexBuilder(Index i, String _structureName) 
+	public DocumentIndexBuilder(IndexOnDisk i, String _structureName) 
 	{
 		this.index = i;
 		this.structureName = _structureName;
@@ -105,11 +105,11 @@ public class DocumentIndexBuilder {
 				numberOfDocumentIndexEntries > maxDocsEncodedDocid 
 					? "org.terrier.structures.FSADocumentIndex"
 					: "org.terrier.structures.FSADocumentIndexInMem",
-				"org.terrier.structures.Index,java.lang.String",
+				"org.terrier.structures.IndexOnDisk,java.lang.String",
 				"index,structureName");
 			index.addIndexStructureInputStream(structureName, 
 					"org.terrier.structures.FSADocumentIndex$FSADocumentIndexIterator",
-					"org.terrier.structures.Index,java.lang.String",
+					"org.terrier.structures.IndexOnDisk,java.lang.String",
 					"index,structureName");
 		}
 		close();

@@ -17,7 +17,7 @@
  *
  * The Original Code is FixedSizeInputStream.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -50,6 +50,7 @@ public class FixedSizeInputStream extends FilterInputStream
 	public FixedSizeInputStream(InputStream in, long _maxsize)
 	{
 		super(in);
+		assert _maxsize >= 0 : "_maxsize must have a non-negative length : " + _maxsize;
 		this.maxsize = _maxsize;
 	}
 
@@ -87,6 +88,9 @@ public class FixedSizeInputStream extends FilterInputStream
 			//System.err.println("2. size="+size +" rtr="+rtr);
 			return rtr;
 		}
+		assert ! (off < 0);
+		assert ! (len < 0);
+		assert ! ((int)(maxsize - size) < 0) : "Read request would be negative: maxsize - size = " + maxsize + " - " + size + " = " + (int)(maxsize - size);
 		int rtr = in.read(cbuf, off, (int)(maxsize - size));
 		size += rtr;
 		//System.err.println("3. size="+size +" rtr="+rtr);

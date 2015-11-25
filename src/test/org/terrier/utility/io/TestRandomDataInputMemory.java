@@ -17,7 +17,7 @@
  *
  * The Original Code is TestRandomDataInputMemory.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -55,7 +55,7 @@ public class TestRandomDataInputMemory extends TestCase {
 		System.err.println("testStreamMulti");
 		final int old = RandomDataInputMemory.MAX_INDIVIDUAL_BUFFER_SIZE;
 		
-		for(int l : new int[]{2,4,6})
+		for(int l : new int[]{2,3,4,5,6})
 		{
 			RandomDataInputMemory.MAX_INDIVIDUAL_BUFFER_SIZE = l;
 			RandomDataInput rdi = new RandomDataInputMemory(new DataInputStream(new ByteArrayInputStream(data)), (long)data.length);
@@ -70,7 +70,7 @@ public class TestRandomDataInputMemory extends TestCase {
 		for(byte b : data)
 		{
 			byte got = rdi.readByte();
-			//System.err.println("Got=" + got + " expected " + b);
+			System.err.println("Got=" + got + " expected " + b);
 			assertEquals(b, got);
 		}
 		rdi.seek(0);

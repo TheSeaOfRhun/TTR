@@ -17,7 +17,7 @@
  *
  * The Original Code is WeightingModel.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,13 +26,12 @@
 package org.terrier.matching.models;
 
 import org.apache.log4j.Logger;
-
 import org.terrier.matching.models.aftereffect.AfterEffect;
 import org.terrier.matching.models.basicmodel.BasicModel;
 import org.terrier.matching.models.normalisation.Normalisation;
+import org.terrier.structures.BasicLexiconEntry;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
-
 
 /**
  * This class implements a modular Divergence from Randomness weighting model. 
@@ -50,8 +49,10 @@ import org.terrier.structures.EntryStatistics;
  * </ul>
  * @author Ben He
  */
-public class DFRWeightingModel extends WeightingModel{
+public class DFRWeightingModel extends WeightingModel {
+
 	private static final long serialVersionUID = 1L;
+
 	protected static final Logger logger = Logger.getLogger(DFRWeightingModel.class);
 	/** The applied basic model for randomness. */
 	protected BasicModel basicModel;
@@ -80,12 +81,26 @@ public class DFRWeightingModel extends WeightingModel{
 	 * @param components Corresponds to the names of the 3 DFR weighting models component
 	 * names, as passed to initialise().
 	 */
-	public DFRWeightingModel (String[] components){
+	public DFRWeightingModel (String[] components) {
 		this.initialise(
 			components[0].trim(), 
 			components.length > 1 ? components[1].trim() : "",
 			components.length > 2 ? components[2].trim() : "");
 	}
+	
+	
+	
+	@Override
+	public DFRWeightingModel clone() {
+		DFRWeightingModel rtr = (DFRWeightingModel) super.clone();
+		rtr.basicModel = (BasicModel) this.basicModel.clone();
+		rtr.afterEffect = (AfterEffect) this.afterEffect.clone();
+		rtr.normalisation = (Normalisation) this.normalisation.clone();
+		return rtr;
+	}
+
+
+
 	/**
 	 * Initialise the components in the DFR model. For each component, if a package
 	 * is not specified, then a prefix will be applied. These are BASICMODEL_PREFIX,
@@ -243,23 +258,28 @@ public class DFRWeightingModel extends WeightingModel{
 						docLength);
 	}
 	/**
-	 * Compute a weight for a term in a document.
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param documentFrequency The document frequency of the term
 	 * @param termFrequency the term frequency in the collection
 	 * @param queryTermWeight the term frequency in the query
-	 * @return the score assigned by the weighting model PL2.
+	 * @return the score returned by the implemented weighting model.
 	 */
-	@SuppressWarnings("deprecation")
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
 		double documentFrequency,
 		double termFrequency,
 		double queryTermWeight) {
-		this.setDocumentFrequency(documentFrequency);
-		this.setTermFrequency(termFrequency);
+		this.setEntryStatistics(new BasicLexiconEntry(0, (int) documentFrequency, (int) termFrequency));
 		this.setKeyFrequency(queryTermWeight);
 		return this.score(tf, docLength);
 	}
@@ -276,13 +296,14 @@ public class DFRWeightingModel extends WeightingModel{
 		this.normalisation.setAverageDocumentLength(_cs.getAverageDocumentLength());
 		this.i.setNumberOfDocuments(_cs.getNumberOfDocuments());
 	}
-	
-	
+
+	/** 
+	 * {@inheritDoc} 
+	 */
 	@Override
 	public void setEntryStatistics(EntryStatistics _es) {
 		super.setEntryStatistics(_es);
 		this.normalisation.setDocumentFrequency(_es.getDocumentFrequency());
 	}
 
-	
 }

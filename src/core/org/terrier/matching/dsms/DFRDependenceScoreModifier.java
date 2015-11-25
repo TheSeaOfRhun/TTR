@@ -17,7 +17,7 @@
  *
  * The Original Code is DependenceScoreModifier.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -92,22 +92,23 @@ public class DFRDependenceScoreModifier extends DependenceScoreModifier {
 	{
 		if (matchingNGrams == 0)
 			return 0.0d;
-		final int numberOfNGrams = (docLength > 0 && docLength < ngramLength) ? 1
-				: docLength - ngramLength + 1;
+		final double numberOfNGrams = (docLength > 0 && docLength < ngramLength) ? 1
+				: docLength - ngramLength + 1.0d;
 		
 		double score = 0.0d;
 		
 		// apply Norm2 to pf?
-		final double matchingNGramsNormalised = norm2 ? matchingNGrams
-				* Math.log(1 + ngramC * avgDocLen / numberOfNGrams)
+		//System.err.println("C="+ ngramC + " windows="+ numberOfNGrams + " avgDocLen="+ avgDocLen + " gf="+gf.getClass().getSimpleName());
+		final double matchingNGramsNormalised = norm2 ? ((double)matchingNGrams)
+				* Math.log(1.0d + ngramC * avgDocLen / numberOfNGrams)
 				* REC_LOG_2 : matchingNGrams;
 		//System.err.println("matchingNGramsNormalised="+matchingNGramsNormalised);
 		final double background = norm2 ? avgDocLen : numberOfNGrams;
-		//System.err.println("background="+background);
 		final double p = 1.0D / background;
 		final double q = 1.0d - p;
+		//System.err.println("background="+background + " p="+p + " q="+q);
 		score = 
-			-gf.compute_log(background + 1.0d) * REC_LOG_2
+			- gf.compute_log(background + 1.0d) * REC_LOG_2
 			+ gf.compute_log(matchingNGramsNormalised + 1.0d) * REC_LOG_2
 			+ gf.compute_log(background - matchingNGramsNormalised+ 1.0d)* REC_LOG_2
 			- matchingNGramsNormalised * Math.log(p) * REC_LOG_2

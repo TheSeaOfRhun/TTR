@@ -17,7 +17,7 @@
  *
  * The Original Code is LL.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,7 +25,7 @@
  */
 package org.terrier.matching.models.aftereffect;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /**
  * This class implements the LL model for the first normalisation by 
@@ -61,6 +61,6 @@ public class LL extends AfterEffect{
 	 * @return the gain returned by the implemented formula.
 	 */
 	public double gain(double tf, double documentFrequency, double termFrequency){
-		return Idf.log((1+tf)/tf);
+		return log((1+tf)/tf);
 	}
 }

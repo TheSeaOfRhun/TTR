@@ -17,7 +17,7 @@
  *
  * The Original Code is KLComplete.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,7 +27,7 @@
  */
 package org.terrier.matching.models.queryexpansion;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /**
  * This class implements the complete Kullback-Leibler divergence for
@@ -75,18 +75,17 @@ public class KLComplete extends QueryExpansionModel {
 			return 0;
 		double f = withinDocumentFrequency / this.totalDocumentLength;
 		double p = termFrequency / this.collectionLength;
-		double D = f * Idf.log(f, p) + f * Idf.log(1 - f, 1 - p);
+		double D = f * log(f, p) + f * log(1 - f, 1 - p);
 		return this.totalDocumentLength * D
 		//D(withinDocumentFrequency / this.totalDocumentLength, termFrequency / this.collectionLength)
 		+1
 			/ (2d)
-			* (Idf
-				.log(
+			* (log(
 					withinDocumentFrequency
 						* (1d
 							- withinDocumentFrequency
 								/ this.totalDocumentLength))
-				+ Idf.log(2 * Math.PI));
+				+ log(2 * Math.PI));
 	}
 	/**
 	 * This method provides the contract for implementing query expansion models.
@@ -109,17 +108,16 @@ public class KLComplete extends QueryExpansionModel {
 			return 0;
 		double f = withinDocumentFrequency / totalDocumentLength;
 		double p = termFrequency / collectionLength;
-		double D = f * Idf.log(f, p) + f * Idf.log(1 - f, 1 - p);
+		double D = f * log(f, p) + f * log(1 - f, 1 - p);
 		return totalDocumentLength * D
 		//D(withinDocumentFrequency / totalDocumentLength, termFrequency / collectionLength)
 		+1
 			/ (2d)
-			* (Idf
-				.log(
+			* (log(
 					withinDocumentFrequency
 						* (1d
 							- withinDocumentFrequency
 								/ totalDocumentLength))
-				+ Idf.log(2 * Math.PI));
+				+ log(2 * Math.PI));
 	}
 }

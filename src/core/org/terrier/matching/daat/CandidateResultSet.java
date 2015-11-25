@@ -17,7 +17,7 @@
  *
  * The Original Code is CandidateResultSet.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.terrier.matching.QueryResultSet;
 import org.terrier.matching.ResultSet;
+import org.terrier.utility.HeapSort;
 
 /** ResultSet which is created from a set of CandidateResults.
  * Used by DAAT matching strategies.
@@ -73,6 +74,8 @@ public class CandidateResultSet implements ResultSet, Serializable
 	public boolean hasMetaItems(String name) { return false; }
 	@Override /** {@inheritDoc}. Unsupported for this implementation */
 	public String[] getMetaKeys() { return null; }
+	
+	protected CandidateResultSet(){}
 	
 	/** Create a ResultSet from the specified queue of results */
 	public CandidateResultSet(Queue<CandidateResult> q)
@@ -169,6 +172,15 @@ public class CandidateResultSet implements ResultSet, Serializable
 	public void setResultSize(int newResultSize) 
 	{
 		this.resultSize = newResultSize;
+	}
+	@Override
+	public void sort() {
+		sort(this.docids.length);
+	}
+	
+	@Override
+	public void sort(int topDocs) {
+		HeapSort.descendingHeapSort(getScores(), getDocids(), getOccurrences(), topDocs);
 	}
 	
 }

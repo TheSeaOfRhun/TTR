@@ -17,13 +17,14 @@
  *
  * The Original Code is RequirementQuery.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk> (original author)
  */
 package org.terrier.querying.parser;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +34,7 @@ import org.terrier.matching.MatchingQueryTerms;
  * Models a query where the query terms have been qualified
  * with a requirement operator, either plus, or minus.
  * @author Vassilis Plachouras &amp; Craig Macdonald
-  */
+ */
 public class RequirementQuery extends Query {
 	/**
 	 * 
@@ -42,7 +43,7 @@ public class RequirementQuery extends Query {
 	/** 
 	 * The query requirement. The default value is true. */
 	private boolean MustHave = true;
-	
+
 	/** An empty default constructor. */
 	public RequirementQuery(){}
 	/** 
@@ -54,7 +55,7 @@ public class RequirementQuery extends Query {
 		rq.MustHave = MustHave;
 		return (Object)rq;
 	}
-	
+
 	/** 
 	 * Sets whether the query is required or not.
 	 * @param needed boolean indicates whether the query is required or not.
@@ -62,7 +63,7 @@ public class RequirementQuery extends Query {
 	public void setRequired(boolean needed) {
 		MustHave = needed;
 	}
-	
+
 	/** Returns True if the subquery is REQUIRED to exist, or
 	 * false if it REQUIRED to NOT exit.
 	 * @return See above.
@@ -71,7 +72,7 @@ public class RequirementQuery extends Query {
 	{
 		return MustHave;
 	}
-	
+
 	/**
 	 * Returns a string representation of the query.
 	 * @return String a string representation of the query.
@@ -87,7 +88,7 @@ public class RequirementQuery extends Query {
 		}
 		return (MustHave ? "+" : "-") + child.toString();
 	}
-	
+
 	/**
 	 * Stores the terms of the query in the given structure, which 
 	 * is used for matching documents to the query. 
@@ -97,16 +98,16 @@ public class RequirementQuery extends Query {
 	public void obtainQueryTerms(MatchingQueryTerms terms) {
 		child.obtainQueryTerms(terms, MustHave);
 	}
-    /** 
-     * This object cannot contain any controls, 
-     * so this method will always return false.
-     * @return false 
-     */
+	/** 
+	 * This object cannot contain any controls, 
+	 * so this method will always return false.
+	 * @return false 
+	 */
 	public boolean obtainControls(Set<String> allowed, Map<String, String> controls)
 	{
 		return false;
 	}
-	
+
 	/** 
 	 * Returns all the query terms, in subqueries that
 	 * are instances of a given class.
@@ -119,12 +120,26 @@ public class RequirementQuery extends Query {
 	public void getTermsOf(Class<? extends Query> c, List<Query> alist, boolean req) {		
 		if (PhraseQuery.class.isInstance(child) && !MustHave)
 			return;
-		if (c.isInstance(this) && req == MustHave)
-			this.getTerms(alist);
-		
-		child.getTermsOf(c, alist, (req == MustHave));
+
+		int required = 0;
+		if (this.toString().startsWith("+")) required=1;
+		if (this.toString().startsWith("-")) required=-1;
+
+		//System.err.println("Requirement for "+this.toString()+" = "+required);
+		List<Query> termsOfThisType = new ArrayList<Query>();
+		if (c.isInstance(this)) this.getTerms(termsOfThisType);
+		child.getTermsOf(c, termsOfThisType, req==MustHave);
+		try {
+			for (Query q : termsOfThisType) {
+				((SingleTermQuery)q).required=required;
+			}
+		} catch (Exception e) {
+			System.err.println("RequirementQuery: Failed to set query requirement, this probably failed since getTerms() returned a query type other than SingleTermQuery");
+			e.printStackTrace();
+		}
+		alist.addAll(termsOfThisType);
 	}
-	
+
 	@Override
 	public String parseTree() {
 		return this.getClass().getSimpleName() + "(" + child.parseTree() + ")";

@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopRunPostingIterator.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,7 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.terrier.compression.BitInputStream;
+import org.terrier.compression.bit.BitInputStream;
 import org.terrier.structures.indexing.singlepass.PostingInRun;
 import org.terrier.structures.indexing.singlepass.RunIterator;
 

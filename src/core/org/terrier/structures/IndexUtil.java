@@ -17,7 +17,7 @@
  *
  * The Original Code is IndexUtil.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -37,7 +37,8 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.hadoop.io.Writable;
-
+import org.terrier.structures.bit.BitPostingIndex;
+import org.terrier.structures.bit.BitPostingIndexInputStream;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.utility.ArrayUtils;
 import org.terrier.utility.Files;
@@ -83,6 +84,74 @@ public class IndexUtil {
 			BitPostingIndexInputStream bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream(structureName);
 			bpiis.print();
 			bpiis.close();
+		}
+		else if (cmd.equals("--printterm"))
+		{
+			IndexUtil.forceStructure(index, "document", new DocumentIndex() {	
+				@Override
+				public int getNumberOfDocuments() {
+					return index.getCollectionStatistics().getNumberOfDocuments();
+				}
+				
+				@Override
+				public int getDocumentLength(int docid) throws IOException {
+					return 0;
+				}
+				
+				@Override
+				public DocumentIndexEntry getDocumentEntry(int docid) throws IOException {
+					return null;
+				}
+			});
+			Lexicon<String> lex = index.getLexicon();
+			PostingIndex<Pointer> inv = (PostingIndex<Pointer>) index.getInvertedIndex();
+			LexiconEntry le = lex.getLexiconEntry(args[1]);
+			IterablePosting ip = inv.getPostings(le);
+			while(ip.next() != IterablePosting.EOL)
+			{
+				System.out.print(ip.toString());
+				System.out.println(" ");
+			}
+			ip.close();
+			lex.close();
+			close(inv);
+		}
+		else if (cmd.equals("--printPosting"))
+		{
+			IndexUtil.forceStructure(index, "document", new DocumentIndex() {
+				
+				@Override
+				public int getNumberOfDocuments() {
+					return index.getCollectionStatistics().getNumberOfDocuments();
+				}
+				
+				@Override
+				public int getDocumentLength(int docid) throws IOException {
+					return 0;
+				}
+				
+				@Override
+				public DocumentIndexEntry getDocumentEntry(int docid) throws IOException {
+					return null;
+				}
+			});
+			Lexicon<String> lex = index.getLexicon();
+			PostingIndex<Pointer> inv = (PostingIndex<Pointer>) index.getInvertedIndex();
+			LexiconEntry le = lex.getLexiconEntry(args[1]);
+			IterablePosting ip = inv.getPostings(le);
+			int targetId = Integer.parseInt(args[2]);
+			int foundId = ip.next(targetId);
+			if (foundId == targetId)
+			{
+				System.out.println(ip.toString());
+			}
+			else
+			{
+				System.err.println("Docid " + targetId + " not found for term " + args[1] + " (nearest was " + foundId+")");
+			}
+			ip.close();
+			lex.close();
+			close(inv);
 		}
 		else if (cmd.equals("--printbitentry"))
 		{
@@ -149,21 +218,21 @@ public class IndexUtil {
 	 */
 	public static void forceStructure(Index index, String structureName, Object structure)
 	{
-		index.structureCache.put(structureName, structure);
+		((IndexOnDisk) index).structureCache.put(structureName, structure);
 	}
 	
 	/** Forces a structure to be reloaded, by removing it from the index's structure cache */
 	public static void forceReloadStructure(Index index, String structureName)
 	{
-		index.structureCache.remove(structureName);
+		((IndexOnDisk) index).structureCache.remove(structureName);
 	}
 	
 	/** Reopen an existing index */
 	public static Index reOpenIndex(Index index) throws IOException
 	{
 		Index rtr = null;
-		String path = index.getPath();
-		String prefix = index.getPrefix();
+		String path = ((IndexOnDisk) index).getPath();
+		String prefix = ((IndexOnDisk) index).getPrefix();
 		index.close();
 		rtr = Index.createIndex(path, prefix);
 		return rtr;
@@ -196,7 +265,14 @@ public class IndexUtil {
 			if (filename.startsWith(actualPrefix))
 			{
 				final String newFilename = filename.replaceFirst(srcPrefix, dstPrefix);
-				Files.rename(srcPath + "/" + filename, dstPath+"/"+ newFilename);
+				if (! Files.rename(srcPath + "/" + filename, dstPath+"/"+ newFilename))
+				{
+					final String srcExists = Files.exists(srcPath + "/" + filename) ? "exists" : "notexists";
+					final String destExists = Files.exists(dstPath+"/"+ newFilename) ? "exists" : "notexists";
+					throw new IOException("Rename of index structure file '"+srcPath + "/" + filename+"' ("+srcExists+") to " + 
+							"'"+ dstPath+"/"+ newFilename +"' ("+destExists+") failed - likely that source file is still open. " +
+							"Possible indexing bug?");
+				}
 			}
 		}
 	}
@@ -255,11 +331,11 @@ public class IndexUtil {
 		for(String key : toRemove)
 			index.getProperties().remove(key);
 		
-		for(String file : Files.list(index.getPath()))
+		for(String file : Files.list(((IndexOnDisk) index).getPath()))
 		{
-			if (file.startsWith(index.getPrefix() + "." + structureName + "."))
+			if (file.startsWith(((IndexOnDisk) index).getPrefix() + "." + structureName + "."))
 			{
-				Files.delete(index.getPath() + "/" + file);
+				Files.delete(((IndexOnDisk) index).getPath() + "/" + file);
 			}
 		}
 		return found;
@@ -283,7 +359,7 @@ public class IndexUtil {
 		
 		final boolean sameIndex = sourceIndex == destIndex;
 		// use temporary index as destination
-		Index tmpDestIndex = sameIndex ? new Index((long)0, (long)0, (long)0) : destIndex;
+		IndexOnDisk tmpDestIndex = (IndexOnDisk) (sameIndex ? new IndexOnDisk((long)0, (long)0, (long)0) : destIndex);
 
 		for(Object o : sourceIndex.getProperties().keySet())
 		{
@@ -307,15 +383,15 @@ public class IndexUtil {
 		}
 		tmpDestIndex = null;
 		//copy 
-		for(String file : Files.list(sourceIndex.getPath()))
+		for(String file : Files.list(((IndexOnDisk) sourceIndex).getPath()))
 		{
-			if (file.startsWith(sourceIndex.getPrefix() + "." + sourceStructureName + "."))
+			if (file.startsWith(((IndexOnDisk) sourceIndex).getPrefix() + "." + sourceStructureName + "."))
 			{
 				Files.copyFile(
-					sourceIndex.getPath() + "/" + file, 
-					destIndex.getPath() + "/" + file.replaceFirst(
-						sourceIndex.getPrefix() + "\\." + sourceStructureName, 
-						destIndex.getPrefix() + "." + sourceStructureName));
+					((IndexOnDisk) sourceIndex).getPath() + "/" + file, 
+					((IndexOnDisk) destIndex).getPath() + "/" + file.replaceFirst(
+						((IndexOnDisk) sourceIndex).getPrefix() + "\\." + sourceStructureName, 
+						((IndexOnDisk) destIndex).getPrefix() + "." + sourceStructureName));
 			}
 		}
 		return found;
@@ -338,10 +414,10 @@ public class IndexUtil {
 	 */
 	public static boolean renameIndexStructure(Index index, String sourceStructureName, String destinationStructureName) throws IOException
 	{
-		final String actualSourcePrefix = index.getPrefix() +'.' + sourceStructureName+".";
-		final String actualDestinationPrefix = index.getPrefix() +'.' + destinationStructureName + ".";
-		final String path = index.getPath();
-		for (String filename : Files.list(index.getPath()))
+		final String actualSourcePrefix = ((IndexOnDisk) index).getPrefix() +'.' + sourceStructureName+".";
+		final String actualDestinationPrefix = ((IndexOnDisk) index).getPrefix() +'.' + destinationStructureName + ".";
+		final String path = ((IndexOnDisk) index).getPath();
+		for (String filename : Files.list(((IndexOnDisk) index).getPath()))
 		{
 			if (filename.startsWith(actualSourcePrefix))
 			{

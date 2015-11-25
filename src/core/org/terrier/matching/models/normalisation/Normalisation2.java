@@ -17,7 +17,7 @@
  *
  * The Original Code is Normalisation2.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,7 +25,7 @@
  */
 package org.terrier.matching.models.normalisation;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /**
  * This class implements the DFR normalisation 2.
@@ -63,6 +63,6 @@ public class Normalisation2 extends Normalisation{
 	public double normalise(double tf, double docLength, double termFrequency){
 		if (docLength == 0)
 			return tf;
-		return tf * Idf.log(1.0d + (parameter * averageDocumentLength) / docLength);
+		return tf * log(1.0d + (parameter * averageDocumentLength) / docLength);
 	}
 }

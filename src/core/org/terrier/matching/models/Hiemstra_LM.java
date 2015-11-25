@@ -17,12 +17,13 @@
  *
  * The Original Code is Hiemstra_LM.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s): Jie Peng <pj{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
 
 /**
  * This class implements the Hiemstra LM weighting model.
@@ -34,17 +35,17 @@ package org.terrier.matching.models;
  * @author Jie Peng
   */
 public class Hiemstra_LM extends WeightingModel {
+
 	private static final long serialVersionUID = 1L;
+
 	/** 
 	 * A default constructor. Uses the default value of lambda=0.15.
 	 */
-	
 	public Hiemstra_LM() {
 		super();
 		this.c = 0.15;
-		
 	}
-	
+
 	/** 
 	 * Constructs an instance of this class with the 
 	 * specified value for the parameter lambda.
@@ -73,7 +74,7 @@ public class Hiemstra_LM extends WeightingModel {
 
 		return 
 		  
-	Idf.log(1 + (c * tf * numberOfTokens) 
+				WeightingModelLibrary.log(1 + (c * tf * numberOfTokens) 
 	/ ((1-c) * termFrequency * docLength ))
 	        ;	
 		
@@ -85,14 +86,21 @@ public class Hiemstra_LM extends WeightingModel {
 	*/	
 	}
 	/**
-	 * Uses Hiemstra_LM to compute a weight for a term in a document.
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param n_t The document frequency of the term
 	 * @param F_t the term frequency in the collection
 	 * @param keyFrequency the term frequency in the query
-	 * @return the score assigned by the weighting model Hiemstra_LM.
+	 * @return the score returned by the implemented weighting model.
 	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -102,7 +110,7 @@ public class Hiemstra_LM extends WeightingModel {
 
 		return 
 
-		Idf.log(1 + (c * tf * numberOfTokens) 
+				WeightingModelLibrary.log(1 + (c * tf * numberOfTokens) 
 		/ ((1-c) * F_t * docLength))        ;	
 		
 /**		Idf.log(((1 - c) * (tf / docLength)) 

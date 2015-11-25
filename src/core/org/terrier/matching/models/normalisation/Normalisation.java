@@ -17,7 +17,7 @@
  *
  * The Original Code is Normalisation.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,7 +36,7 @@ import org.terrier.matching.models.Idf;
   * </ul>
  * @author Ben He
  */
-public abstract class Normalisation implements Serializable{
+public abstract class Normalisation implements Serializable,Cloneable{
 
 	private static final long serialVersionUID = 1L;
 	/** The average document length in the collection. */
@@ -67,6 +67,19 @@ public abstract class Normalisation implements Serializable{
 	public Normalisation(){
 		idf = new Idf();
 	}
+	
+	/** Clone this weighting model */
+	@Override
+	public Normalisation clone() {
+		try{
+			Normalisation newModel = (Normalisation)super.clone();
+			newModel.idf = (Idf)this.idf.clone();
+			return newModel;
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(e.toString());
+		}
+	}
+	
 	/**
 	 * Set the average document length in the collection.
 	 * @param value The average document length in the collection.

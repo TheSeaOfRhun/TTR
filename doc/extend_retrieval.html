@@ -8,7 +8,7 @@
 
 <body>
 <!--!bodystart-->
-[<a href="extend_indexing.html">Previous: Extending Indexing</a>] [<a href="index.html">Contents</a>] [<a href="languages.html">Next: Non English language support</a>]
+[<a href="extend_indexing.html">Previous: Extending Indexing</a>] [<a href="index.html">Contents</a>] [<a href="compression.html">Next: Pluggable Compression</a>]
 </br><br><h1>Extending Retrieval in Terrier</h1>
 
 
@@ -22,11 +22,11 @@ An application's interface with Terrier is through the <a href="javadoc/org/terr
 <P>Once the <a href="javadoc/org/terrier/matching/ResultSet.html">ResultSet</a> has been returned to the <a href="javadoc/org/terrier/querying/Manager.html">Manager</a>, there are two further phases, namely <a href="javadoc/org/terrier/querying/PostProcess.html">PostProcessing</a> and <a href="javadoc/org/terrier/querying/PostFilter.html">PostFiltering</a>. In PostProcessing, the ResultSet can be altered in any way - for example, <a href="javadoc/org/terrier/querying/QueryExpansion.html">QueryExpansion</a> expands the query, and then calls Matching again to generate an improved ranking of documents. PostFiltering is simpler, allowing documents to be either included or excluded - this is ideal for interactive applications where users want to restrict the domain of the documents being retrieved.</p>
 
 <h2>Changing Batch Retrieval</h2>
-<p><a href="javadoc/org/terrier/applications/TRECQuerying.html">TRECQuerying</a> is the main way in which retrieval is deployed for batch retrieval experiments.
+<p><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">TRECQuerying</a> is the main way in which retrieval is deployed for batch retrieval experiments.
  It has a multitude of ways in which it can be extended:
 <ul>
-<li><b>Format of input topics</b>: Terrier supports topics in two formats (<a href="javadoc/org/terrier/structures/TRECQuery.html">TREC tagged</a>, or <a href="javadoc/org/terrier/structures/SingleLineTRECQuery.html">one query per line</a>). If neither of these is suitable, then you can implement another <a href="javadoc/org/terrier/applications/TRECQuerying.QuerySource.html">TRECQuerying.QuerySource</a> that knows how parse your topics files. Use the <tt>trec.topics.parser</tt> property to configure Terrier to use your new QuerySource. E.g. <tt>trec.topics.parser=my.package.DBTopicsSource</tt>.</li>
-<li><b>Format of output results</b>: You can implement another <a href="javadoc/org/terrier/applications/TRECQuerying.OutputFormat.html">TRECQuerying.OutputFormat</a> to change the format of the results in the .res files. Use the <tt>trec.querying.outputformat</tt> property to configure Terrier to use your new OutputFormat. E.g. <tt>trec.querying.outputformat=my.package.MyTRECResultsFormat</tt>.</li>
+<li><b>Format of input topics</b>: Terrier supports topics in two formats (<a href="javadoc/org/terrier/structures/TRECQuery.html">TREC tagged</a>, or <a href="javadoc/org/terrier/structures/SingleLineTRECQuery.html">one query per line</a>). If neither of these is suitable, then you can implement another <a href="javadoc/org/terrier/applications/batchquerying/QuerySource.html">QuerySource</a> that knows how parse your topics files. Use the <tt>trec.topics.parser</tt> property to configure Terrier to use your new QuerySource. E.g. <tt>trec.topics.parser=my.package.DBTopicsSource</tt>.</li>
+<li><b>Format of output results</b>: You can implement another <a href="javadoc/org/terrier/structures/outputformat/OutputFormat.html">OutputFormat</a> to change the format of the results in the .res files. Use the <tt>trec.querying.outputformat</tt> property to configure Terrier to use your new OutputFormat. E.g. <tt>trec.querying.outputformat=my.package.MyTRECResultsFormat</tt>.</li>
 </ul>
 
 <h2>Altering query expansion</h2>
@@ -126,7 +126,7 @@ ResultSet rs = srq.getResultSet();
 
 <p></p>
 
-[<a href="extend_indexing.html">Previous: Extending Indexing</a>] [<a href="index.html">Contents</a>] [<a href="languages.html">Next: Non English language support</a>]
+[<a href="extend_indexing.html">Previous: Extending Indexing</a>] [<a href="index.html">Contents</a>] [<a href="compression.html">Next: Pluggable Compression</a>]
 <!--!bodyend-->
 <hr>
 <small>
@@ -134,7 +134,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

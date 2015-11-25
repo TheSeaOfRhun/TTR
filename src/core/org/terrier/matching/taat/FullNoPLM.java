@@ -17,7 +17,7 @@
  *
  * The Original Code is FullNoPLM.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -32,11 +32,9 @@ import java.io.IOException;
 import org.terrier.matching.AccumulatorResultSet;
 import org.terrier.matching.BaseMatching;
 import org.terrier.matching.CollectionResultSet;
-
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.ResultSet;
 import org.terrier.matching.models.WeightingModel;
-import org.terrier.structures.BitIndexPointer;
 import org.terrier.structures.Index;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.postings.IterablePosting;
@@ -57,10 +55,19 @@ import org.terrier.structures.postings.IterablePosting;
  */
 public class FullNoPLM extends BaseMatching
 {
+	/** number of documents to warn about inefficient TAAT */
+	static final int WARN_DOCS = 4000000;
+	
 	/** Create a new Matching instance based on the specified index */
 	public FullNoPLM(Index index) 
 	{
 		super(index);
+		if (this.getClass() == FullNoPLM.class) 
+		{
+			logger.warn(this.getClass().getName() + " is not suitable for indices with large numbers of documents (> "+WARN_DOCS+") "
+					+"- consider using org.terrier.matching.daat.FullNoPLM");
+		}
+		
 		resultSet = new AccumulatorResultSet(collectionStatistics.getNumberOfDocuments());		
 	}
 
@@ -90,7 +97,7 @@ public class FullNoPLM extends BaseMatching
 		for (int i = 0; i < queryLength; i++) 
 		{
 			LexiconEntry lexiconEntry = queryTermsToMatchList.get(i).getValue();
-			postings = invertedIndex.getPostings((BitIndexPointer)lexiconEntry);
+			postings = invertedIndex.getPostings(lexiconEntry);
 			assignScores(i, wm[i], (AccumulatorResultSet) resultSet, postings);
 		}
 

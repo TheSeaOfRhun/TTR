@@ -17,7 +17,7 @@
  *
  * The Original Code is ApplicationSetupBasedTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -40,13 +40,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-import org.terrier.applications.TRECSetup;
+import org.terrier.applications.batchquerying.TRECSetup;
 import org.terrier.utility.Files;
 
 /** Base class for a test that requires ApplicationSetup to be correctly initialised.
  * Uses a JUnit-created temporary folder, and invokes TRECSetup on it, to ensure that
  * a default configuration is generated.
- * @author craigm
+ * @author Craig Macdonald
  */
 public class ApplicationSetupBasedTest {
 
@@ -93,7 +93,7 @@ public class ApplicationSetupBasedTest {
 		org.terrier.utility.ApplicationSetup.bootstrapInitialisation();
 		//
 		//if (true)
-		//	Logger.getRootLogger().setLevel(Level.ALL);
+			//org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.ALL);
 		assertEquals(terrier_home, org.terrier.utility.ApplicationSetup.TERRIER_HOME);
 		assertEquals(terrier_etc, org.terrier.utility.ApplicationSetup.TERRIER_ETC);
 		assertEquals(terrier_etc, org.terrier.utility.ApplicationSetup.TERRIER_INDEX_PATH);

@@ -17,7 +17,7 @@
  *
  * The Original Code is FSOrderedMapFile.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -34,19 +34,20 @@ import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
 
-import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.Skipable;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
@@ -65,18 +66,21 @@ import org.terrier.utility.io.RandomDataOutput;
  * @param <V> Type of the values
  */
 //unchecked warnings are suppressed because WritableComparable should be parameterised. I have no idea how though.
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class FSOrderedMapFile<
         K extends WritableComparable,
         V extends Writable
-        > 
-    implements OrderedMap<K,V>, Closeable
+        > extends ReadOnlyMap<K, V> 
+    implements OrderedMap<K,V>, Closeable, SortedMap<K, V>
 {
 	/** USUAL_EXTENSION */
 	public static final String USUAL_EXTENSION = ".fsomapfile";
 	
     /** The logger used for this class */
 	protected static final Logger logger = Logger.getLogger(FSOrderedMapFile.class);
+	
+	/** This is a file lock used to stop multiple threads from attempting to traverse the underlying file at once */
+	Object fileAccessLock = new Object();
 
 	/** interface FSOMapFileBSearchShortcut */
     public interface FSOMapFileBSearchShortcut<KEY>
@@ -107,7 +111,7 @@ public class FSOrderedMapFile<
     }
     /** MapFileInMemory class */
     public static class MapFileInMemory<IK extends Writable,IV extends Writable>
-    	extends HashMap<IK, IV>
+    	extends TreeMap<IK, IV>
     	implements Map<IK,IV>
     {
 		private static final long serialVersionUID = 1L;
@@ -262,7 +266,7 @@ public class FSOrderedMapFile<
     }
     
     /** an iterator for entries. */
-    class valueIterator implements Iterator<V>
+    class valueIterator implements Iterator<V>, Skipable
     {
         DataInput di;
         int numEntries;
@@ -301,10 +305,27 @@ public class FSOrderedMapFile<
         }
         
         public void remove() { throw new UnsupportedOperationException();}
+
+		@Override
+		public void skip(int _numEntries) throws IOException {
+			if (_numEntries == 0)
+				return;
+			int entrySize = keyFactory.getSize() + valueFactory.getSize();
+			long targetSkipped = (long)_numEntries * (long)entrySize;
+			long actualSkipped = 0;
+			while(actualSkipped < targetSkipped)
+			{
+				int toSkip = targetSkipped - actualSkipped > (long)Integer.MAX_VALUE
+					? Integer.MAX_VALUE
+					: (int)(targetSkipped - actualSkipped);
+				actualSkipped += di.skipBytes(toSkip);
+			}
+			count += _numEntries;
+		}
     }
     
     /** an iterator for entries. */
-    class keyIterator implements Iterator<K>, Closeable
+    class keyIterator implements Iterator<K>, Closeable, Skipable
     {
         DataInput di;
         int numEntries;
@@ -317,6 +338,23 @@ public class FSOrderedMapFile<
             numEntries = _numEntries;
             uselessValue = valueFactory.newInstance();
         }
+        
+        @Override
+		public void skip(int _numEntries) throws IOException {
+        	if (_numEntries == 0)
+				return;
+			int entrySize = keyFactory.getSize() + valueFactory.getSize();
+			long targetSkipped = (long)_numEntries * (long)entrySize;
+			long actualSkipped = 0;
+			while(actualSkipped < targetSkipped)
+			{
+				int toSkip = targetSkipped - actualSkipped > (long)Integer.MAX_VALUE
+					? Integer.MAX_VALUE
+					: (int)(targetSkipped - actualSkipped);
+				actualSkipped += di.skipBytes(toSkip);
+			}
+			count += _numEntries;
+		}
         
         public boolean hasNext()
         {
@@ -353,7 +391,18 @@ public class FSOrderedMapFile<
     
     class MapFileEntrySet extends AbstractSet<Entry<K,V>>
     {
-    	 @edu.umd.cs.findbugs.annotations.SuppressWarnings(
+    	int first = 0;
+    	int last = numberOfEntries-1;
+    	
+    	public MapFileEntrySet(){}
+    	
+    	public MapFileEntrySet(int _first, int _last) {
+    		this.first = _first;
+    		this.last = _last;
+    	}
+    	
+    	
+    	@edu.umd.cs.findbugs.annotations.SuppressWarnings(
     				value="DMI_UNSUPPORTED_METHOD",
     				justification="May be implemented in future release")
         public boolean add(Map.Entry<K,V> e)
@@ -364,7 +413,7 @@ public class FSOrderedMapFile<
         
         public int size()
         {
-            return numberOfEntries;
+            return last - first +1;
         }
         
         public boolean isEmpty()
@@ -375,21 +424,25 @@ public class FSOrderedMapFile<
         public Iterator<Map.Entry<K,V>> iterator()
         {
             try{
-              return new EntryIterator<K,V>(
+            	EntryIterator<K,V> ei = new EntryIterator<K,V>(
                     new DataInputStream(Files.openFileStream(dataFilename)),
-                    numberOfEntries,
+                    last+1,
                     keyFactory,
                     valueFactory
                     );
+            	if (first > 0)
+            		ei.skip(first);
+            	return ei;
             } catch (IOException ioe) {
                 return null;
             }
         }
         
         //@SuppressWarnings("unchecked")
+		@SuppressWarnings("unchecked")
 		public boolean contains(Object o)
         {
-            K key = (K)o;
+			K key = (K)o;
             if (get(key) == null)
                 return false;
             return true;
@@ -409,9 +462,21 @@ public class FSOrderedMapFile<
     
     class MapFileKeySet extends AbstractSet<K>
     {
+    	int first = 0;
+    	int last = numberOfEntries-1;
+    	
+    	public MapFileKeySet()
+    	{}
+    	
+    	public MapFileKeySet(int _first, int _last)
+    	{
+    		this.first = _first;
+    		this.last = _last;
+    	}
+    	
         public int size()
         {
-            return numberOfEntries;
+            return last - first +1;
         }
         
         public boolean isEmpty()
@@ -422,16 +487,20 @@ public class FSOrderedMapFile<
         public Iterator<K> iterator()
         {
             try{
-              return new keyIterator(
+            	keyIterator k = new keyIterator(
                     new DataInputStream(Files.openFileStream(dataFilename)),
-                    numberOfEntries
-                    );
+                    last+1
+                );
+            	if (first > 0)
+            		k.skip(first);
+            	return k;
             } catch (IOException ioe) {
                 return null;
             }
         }
         
         //@SuppressWarnings("unchecked")
+		@SuppressWarnings("unchecked")
 		public boolean contains(Object o)
         {
             K key = (K)o;
@@ -441,7 +510,179 @@ public class FSOrderedMapFile<
         }
     }
     
-    
+    class SubMap extends ReadOnlyMap<K, V> implements SortedMap<K,V>
+	{
+		final FSOrderedMapFile<K,V> parent;
+		K headKey;
+		int headKeyIndex;
+		K tailKey;
+		int tailKeyIndex;
+		
+		public SubMap(FSOrderedMapFile<K,V> _parent, K _headKey, K _tailKey)
+		{
+			this.parent = _parent;
+			if (_headKey != null)
+			{
+				this.headKey = _headKey;
+				this.headKeyIndex = parent.getEntry(headKey).index;
+				if (this.headKeyIndex < 0)
+				{
+					this.headKeyIndex = -this.headKeyIndex -1;
+				}
+			} else {
+				this.headKeyIndex = 0;
+				this.headKey = parent.get(this.headKeyIndex).getKey();
+			}
+			if (_tailKey != null)
+			{
+				this.tailKey = _tailKey;
+				this.tailKeyIndex = parent.getEntry(tailKey).index;
+				if (this.tailKeyIndex < 0)
+				{
+					this.tailKeyIndex = -this.tailKeyIndex -2;
+					this.tailKey = parent.get(this.tailKeyIndex).getKey();
+				}
+				else
+				{
+					this.tailKeyIndex = this.tailKeyIndex -1;
+					this.tailKey = parent.get(this.tailKeyIndex).getKey();
+				}
+			}
+			else
+			{
+				this.tailKeyIndex = parent.size() -1;
+				assert this.tailKeyIndex >= 0;
+				this.tailKey = parent.get(this.tailKeyIndex).getKey();
+			}
+//			System.err.println("sumap: " + this.headKeyIndex +"("+parent.get(headKeyIndex)+")" + " - " + this.tailKeyIndex +"("+parent.get(tailKeyIndex)+")");
+		}
+		
+		public SubMap(FSOrderedMapFile<K,V> _parent, K _headKey, int _headKeyIndex, K _tailKey, int _tailKeyIndex)
+		{
+			this.parent = _parent;
+			this.headKey = _headKey;
+			this.headKeyIndex = _headKeyIndex;
+			this.tailKey = _tailKey;
+			this.tailKeyIndex = _tailKeyIndex;
+		}
+		
+		@Override
+		public void clear() {
+			throw new UnsupportedOperationException();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public boolean containsKey(Object k) {
+			if (headKey != null && (headKey.compareTo(k) > 0))
+			{
+				//System.err.println("testKey " + k.toString() + " is too early compared to headkey " + headKey.toString());
+				return false;
+			}
+			if (tailKey != null && (tailKey.compareTo(k) < 0))
+			{
+				//System.err.println("testKey " + k.toString() + " is too late compared to tailkey " + tailKey.toString());
+				return false;
+			}
+			//System.err.println("checking parent for " + k.toString());
+			return parent.containsKey(k);
+		}
+
+		@Override
+		public boolean containsValue(Object arg0) {
+			throw new UnsupportedOperationException();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public V get(Object k) {
+			if (headKey != null && (headKey.compareTo(k) > 0))
+			{
+				//System.err.println("testKey " + arg0.toString() + " is too early compared to headkey " + headKey.toString());
+				return null;
+			}
+			if (tailKey != null && (tailKey.compareTo(k) < 0))
+			{
+				//System.err.println("testKey " + arg0.toString() + " is too late compared to tailkey " + tailKey.toString());
+				return null;
+			}
+			//System.err.println("checking parent for " + arg0.toString());
+			return parent.get(k);
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return headKeyIndex < tailKeyIndex;
+		}
+
+		@Override
+		public V put(K arg0, V arg1) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void putAll(Map<? extends K, ? extends V> arg0) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public V remove(Object arg0) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public int size() {
+			return this.tailKeyIndex - this.headKeyIndex +1 ;
+		}
+
+		@Override
+		public Comparator<? super K> comparator() {
+			return null;
+		}
+
+		@Override
+		public Set<java.util.Map.Entry<K, V>> entrySet() {
+			return new MapFileEntrySet(this.headKeyIndex, this.tailKeyIndex);
+		}
+
+		@Override
+		public K firstKey() {
+			return parent.get(headKeyIndex).getKey();
+		}
+		
+
+		@Override
+		public Set<K> keySet() {
+			return new MapFileKeySet(this.headKeyIndex, this.tailKeyIndex);
+		}
+
+		@Override
+		public K lastKey() {
+			return parent.get(tailKeyIndex).getKey();
+		}
+
+		
+		@Override
+		public SortedMap<K, V> headMap(K to) {
+			return new SubMap(parent, headKey, to);
+		}
+		
+		@Override
+		public SortedMap<K, V> subMap(K from, K to) {
+			return new SubMap(parent, from, to);
+		}
+
+		@Override
+		public SortedMap<K, V> tailMap(K from) {
+			return new SubMap(parent, from, tailKey);
+		}
+
+		@Override
+		public Collection<V> values() {
+			return new MapFileValueCollection(headKeyIndex, tailKeyIndex);
+		}
+		
+	}
 
     static class MapFileEntry<EK,EV> extends MapEntry<EK,EV> implements OrderedMapEntry<EK,EV>
     {
@@ -449,6 +690,7 @@ public class FSOrderedMapFile<
         MapFileEntry(EK _key, EV _value, int _index)
         {
             super(_key, _value);
+            index = _index;
         }
                 
         public int getIndex()
@@ -480,17 +722,30 @@ public class FSOrderedMapFile<
         extends AbstractCollection<V>
         implements Collection<V>
     {
+    	int first = 0;
+    	int last = numberOfEntries-1;
+    	
+    	public MapFileValueCollection() {}
+    	
+    	public MapFileValueCollection(int _first, int _last) {
+    		this.first = _first;
+    		this.last = _last;
+    	}
+    	
         public int size()
         {
-            return numberOfEntries;
+            return last - first +1;
         }
         
         public Iterator<V> iterator()
         {
             try{
-            return new valueIterator(
-                new DataInputStream(Files.openFileStream(dataFilename)),
-                    numberOfEntries);
+            	valueIterator v = new valueIterator(
+            			new DataInputStream(Files.openFileStream(dataFilename)),
+            			last+1);
+            	if (first > 0)
+            		v.skip(first);
+            	return v;
             } catch (IOException ioe) {
                 logger.error("Problem reading FSOrderedMapFile "+dataFilename+" as stream", ioe);
                 return null;
@@ -541,7 +796,8 @@ public class FSOrderedMapFile<
 	 * @param structureName
 	 * @throws IOException
 	 */
-	public FSOrderedMapFile(Index index, String structureName) throws IOException
+	@SuppressWarnings("unchecked")
+	public FSOrderedMapFile(IndexOnDisk index, String structureName) throws IOException
 	{
 		this(
 				index.getPath() + "/" + index.getPrefix() + "." + structureName + FSOrderedMapFile.USUAL_EXTENSION,
@@ -609,14 +865,23 @@ public class FSOrderedMapFile<
     	return this.valueFactory;
     }
     
+    
+    
     /** Remove all entries from this map */
-    public void clear()
-    {
-        _clear();
-    }
-    
-    
-    //renamed so that inner classes can access
+	public void clear() {
+	    _clear();
+	}
+	
+	/** 
+	 * {@inheritDoc} 
+	 */
+	@edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "DMI_UNSUPPORTED_METHOD", justification = "May be implemented in future release")
+	public void putAll(Map<? extends K,? extends V> m) {
+		for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
+			put(e.getKey(), e.getValue()); 
+	}
+	
+	//renamed so that inner classes can access
     protected void _clear()
     {
         RandomDataOutput _dataFile = write();
@@ -664,10 +929,10 @@ public class FSOrderedMapFile<
 	/** 
 	 * {@inheritDoc} 
 	 */
-    //@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
 	public boolean containsKey(Object o)
     {
-        return getEntry((K)o) != null;
+        return getEntry((K)o).index >= 0;
     }
 	/** 
 	 * {@inheritDoc} 
@@ -677,23 +942,6 @@ public class FSOrderedMapFile<
         return numberOfEntries == 0;
     }
 	/** 
-	 * {@inheritDoc} 
-	 */
-    public V put(K key, V value)
-    {
-        //RandomDataOutput _dataFile = write();
-        throw new UnsupportedOperationException();
-    }
-	/** 
-	 * {@inheritDoc} 
-	 */
-    public V remove(Object _key)
-    {
-        //K key = (K)_key;
-        //RandomDataOutput _dataFile = write();
-        throw new UnsupportedOperationException();
-    }
-	/** 
 	 * Set the FSOMapFileBSearchShortcut
 	 */
     public void setBSearchShortcut(FSOMapFileBSearchShortcut<K> _shortcut)
@@ -701,9 +949,15 @@ public class FSOrderedMapFile<
         this.shortcut = _shortcut;
     }
     
-    /** this method is the one which does the actual disk lookup of entries */
-    protected Entry<K,V> getEntry(K key)
+    /** this method is the one which does the actual disk lookup of entries.
+     * If an entry is not found, then a MapFileEntry is returned
+     * where the index field indicates the (-(insertion point) -1)
+     * of the specified key. See also Arrays.binarySearch() */
+    @SuppressWarnings("unchecked")
+	protected MapFileEntry<K,V> getEntry(K key)
     {
+    	synchronized(fileAccessLock) {
+    	
     	int[] bounds;
     	try{
     		bounds = shortcut.searchBounds(key);
@@ -742,7 +996,7 @@ public class FSOrderedMapFile<
             }
         
             if (high == numberOfEntries)
-                return null;
+                return new MapFileEntry<K,V>(testKey, null, -(numberOfEntries) -1);
             
             if (high == 0) {
                 i = 0;
@@ -757,22 +1011,78 @@ public class FSOrderedMapFile<
             if (key.compareTo(testKey) == 0) {
                 return new MapFileEntry<K,V>(testKey, value, i);
             }
+            return new MapFileEntry<K,V>(testKey, null, -(i) -1);
 		} catch (IOException ioe) {
 		  logger.error("IOException reading FSOrderedMapFile", ioe);
+		  return new MapFileEntry<K,V>(testKey, null, Integer.MIN_VALUE);
 		}
-		return null;
+    	}
+		
     }
+    
+    
+    /** 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public K firstKey() {
+		return this.get(0).getKey();
+	}
+
+	/** 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public K lastKey() {
+		return this.get(this.size() -1).getKey();
+	}
+
+	/** 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public SortedMap<K, V> headMap(K to) {
+		return new SubMap(this, null, to);
+	}
+	
+	/** 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public SortedMap<K, V> subMap(K from, K to) {
+		return new SubMap(this, from, to);
+	}
+
+	/** 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public SortedMap<K, V> tailMap(K from) {
+		return new SubMap(this, from, null);
+	}
+
+	/** 
+	 * {@inheritDoc}
+	 * Always returns null, as keys for FSOMapFile are
+	 * always Comparable, and their Comparable implementation are
+	 * used.
+	 */
+	@Override
+	public final Comparator<? super K> comparator() {
+		return null;
+	}
+    
+    
 	/** 
 	 * {@inheritDoc} 
 	 */
-    //@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
 	public V get(Object _key)
     {
         K key = (K)_key;
-        Map.Entry<K,V> entry = getEntry(key);
-        if (entry == null)
+        MapFileEntry<K,V> entry = getEntry(key);
+        if (entry.index < 0)
             return null;
-        //System.err.println(key.toString() + "=" + entry.getValue().toString());
         return entry.getValue();
     }
 	/** 
@@ -780,6 +1090,8 @@ public class FSOrderedMapFile<
 	 */
     public Entry<K,V> get(int entryNumber)
     {
+    	synchronized(fileAccessLock) {
+    	
         K key = keyFactory.newInstance();
 		V value = valueFactory.newInstance();
 		if (entryNumber >= numberOfEntries)
@@ -794,17 +1106,8 @@ public class FSOrderedMapFile<
                 "IOException reading FSOrderedMapFile for entry number "+ entryNumber +" : "+ioe);
         }
         return new MapFileEntry<K,V>(key, value, entryNumber);
-    }
-	/** 
-	 * {@inheritDoc} 
-	 */
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(
-			value="DMI_UNSUPPORTED_METHOD",
-			justification="May be implemented in future release")
-    public void putAll(Map<? extends K,? extends V> m)
-    {
-    	for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
-    		put(e.getKey(), e.getValue()); 
+        
+    	}
     }
 	/** 
 	 * {@inheritDoc} 
@@ -877,9 +1180,11 @@ public class FSOrderedMapFile<
     	Map<WritableComparable, Writable> cache;
     	int maxCacheSize;
     	int flushCount = 0;
+    	boolean allowdups = false;
 
     	protected FixedSizeWriteableFactory keyFactory;
     	protected FixedSizeWriteableFactory valueFactory;	
+    	
     	/** 
     	 * Constructs an instance of the MultiFSOMapWriter.
     	 * @param filename
@@ -887,14 +1192,41 @@ public class FSOrderedMapFile<
     	 * @param _keyFactory
     	 * @param _valueFactory
     	 */
-    	public MultiFSOMapWriter(String filename, int numberOfValuesInMemory, 
-    			FixedSizeWriteableFactory _keyFactory, FixedSizeWriteableFactory _valueFactory)
+    	public MultiFSOMapWriter(
+    			String filename, 
+    			int numberOfValuesInMemory, 
+    			FixedSizeWriteableFactory _keyFactory, 
+    			FixedSizeWriteableFactory _valueFactory)
     	{
     		this.cache = new TreeMap<WritableComparable, Writable>();
     		this.maxCacheSize = numberOfValuesInMemory;
     		this.targetFilename = filename;
     		this.keyFactory = _keyFactory;
     		this.valueFactory = _valueFactory;
+    		this.allowdups = false;
+    	}
+    	
+    	/** 
+    	 * Constructs an instance of the MultiFSOMapWriter.
+    	 * @param filename
+    	 * @param numberOfValuesInMemory
+    	 * @param _keyFactory
+    	 * @param _valueFactory
+    	 * @param dupsAllows are duplicates allowed
+    	 */
+    	public MultiFSOMapWriter(
+    			String filename, 
+    			int numberOfValuesInMemory, 
+    			FixedSizeWriteableFactory _keyFactory, 
+    			FixedSizeWriteableFactory _valueFactory, 
+    			boolean dupsAllows)
+    	{
+    		this.cache = new TreeMap<WritableComparable, Writable>();
+    		this.maxCacheSize = numberOfValuesInMemory;
+    		this.targetFilename = filename;
+    		this.keyFactory = _keyFactory;
+    		this.valueFactory = _valueFactory;
+    		this.allowdups = dupsAllows;
     	}
 
     	/** {@inheritDoc} */
@@ -976,7 +1308,8 @@ public class FSOrderedMapFile<
     		}
     	}
 
-    	protected void mergeTwo(int id1, int id2, String filename) throws IOException
+    	@SuppressWarnings({ "unchecked"})
+		protected void mergeTwo(int id1, int id2, String filename) throws IOException
     	{
     		Iterator<Map.Entry<WritableComparable,Writable>> i1 = new FSOrderedMapFile.EntryIterator<WritableComparable,Writable>(
     			targetFilename + "." + id1, keyFactory, valueFactory);
@@ -1013,8 +1346,23 @@ public class FSOrderedMapFile<
     			}
     			else //compare = 0
     			{
-    				throw new IOException("Key "+e1.getKey()+" is not unique: " 
-    						+ e2.getValue().toString() + "," + e1.getValue().toString());
+    				if (this.allowdups)
+    				{
+    					logger.warn("Key "+e1.getKey()+" is not unique: " 
+    						+ e2.getValue().toString() + "," 
+    						+ e1.getValue().toString() + " - keeping "+e2.getValue().toString());
+    					writer.write(e2.getKey(), e2.getValue());
+    					hasMore1 = i1.hasNext();
+        				if (hasMore1)
+        					e1 = i1.next();
+        				hasMore2 = i2.hasNext();
+        				if (hasMore2) 
+        					e2 = i2.next();
+    				}
+    				else
+    					throw new IOException("Key "+e1.getKey()+" is not unique: " 
+    						+ e2.getValue().toString() + "," + e1.getValue().toString() + "\n"
+    						+ "For MetaIndex, to suppress, set metaindex.compressed.reverse.allow.duplicates=true");
     			}
     		}
     		while(hasMore1)

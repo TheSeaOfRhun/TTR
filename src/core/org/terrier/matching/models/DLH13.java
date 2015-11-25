@@ -17,7 +17,7 @@
  *
  * The Original Code is DLH13.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,6 +26,8 @@
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
+
 /**
  * This class implements the DLH13 weighting model. This is a parameter-free
  * weighting model. Even if the user specifies a parameter value, it will <b>NOT</b>
@@ -69,20 +71,27 @@ public class DLH13 extends WeightingModel {
 		double f  = tf/docLength ;
   		return 
 			 keyFrequency
-			* (tf*Idf.log ((tf* averageDocumentLength/docLength) *
+			* (tf*WeightingModelLibrary.log ((tf* averageDocumentLength/docLength) *
 					( numberOfDocuments/termFrequency) )
-			   + 0.5d* Idf.log(2d*Math.PI*tf*(1d-f)))
+			   + 0.5d* WeightingModelLibrary.log(2d*Math.PI*tf*(1d-f)))
 			   /(tf + k);
 	}
 	/**
-	 * Uses DLH13 to compute a weight for a term in a document.
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param n_t The document frequency of the term
 	 * @param F_t the term frequency in the collection
 	 * @param keyFrequency the term frequency in the query
-	 * @return the score assigned by the weighting model DLH13.
+	 * @return the score returned by the implemented weighting model.
 	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -92,8 +101,8 @@ public class DLH13 extends WeightingModel {
 		double f  = tf/docLength ;
   		return 
 			 keyFrequency
-			* (tf*Idf.log ((tf* averageDocumentLength/docLength) *( numberOfDocuments/F_t) )
-			   + 0.5d* Idf.log(2d*Math.PI*tf*(1d-f)))
+			* (tf*WeightingModelLibrary.log ((tf* averageDocumentLength/docLength) *( numberOfDocuments/F_t) )
+			   + 0.5d* WeightingModelLibrary.log(2d*Math.PI*tf*(1d-f)))
 			   /(tf + k);
 	}
 }

@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.terrier.matching.ResultSet;
+import org.terrier.querying.summarisation.Summariser;
 import org.terrier.structures.MetaIndex;
 import org.terrier.structures.collections.LRUMap;
 import org.terrier.utility.ApplicationSetup;
@@ -50,16 +51,23 @@ import org.terrier.utility.StringTools.ESCAPE;
  * can have a query biased summary created, and
  * also be escaped for display in another format.
  * <b>Controls:</b>
- * &lt;ul&gt;
- * <li><tt>summaries</tt> - comma or semicolon delimited list of the key names for which a query biased summary should be created. e.g. summaries:snippet</li>
- * <li><tt>emphasis</tt> - comma or semicolon delimited list of they key names that should have boldened for occurrences of the query terms. e.g. emphasis:title;snippet</li>
- * <li><tt>earlyDecorate</tt> - comma or semicolon delimited list of the key names that should be decorated early, e.g. to support another PostProcess using them.</li>
- * <li><tt>escape</tt> - comma or semicolon delimited list of the key names that should be escaped e.g. escape:title;snippet;url</li>. Currently, per-key type escaping 
- * is not supported. The default escape type is defined using the property decorate.escape.
- * &lt;/li&gt;
+ * <ul>
+ * <li><tt>summaries</tt> - comma or semicolon delimited list of the key names for 
+ * which a query biased summary should be created. e.g. <tt>summaries:snippet</tt></li>
+ * <li><tt>emphasis</tt> - comma or semicolon delimited list of they key names that
+ *  should have boldened for occurrences of the query terms. 
+ *  e.g. <tt>emphasis:title;snippet</tt></li>
+ * <li><tt>earlyDecorate</tt> - comma or semicolon delimited list of the key names
+ * that should be decorated early, e.g. to support another PostProcess using them.</li>
+ * <li><tt>escape</tt> - comma or semicolon delimited list of the key names that 
+ * should be escaped e.g. <tt>escape:title;snippet;url</tt>. Currently, per-key 
+ * type escaping is not supported. The default escape type is 
+ * defined using the property <tt>decorate.escape</tt>.</li>
+ * </ul>
  * <b>Properties:</b>
  * <ul>
- * <li><tt>decorate.escape</tt> - default escape type for metadata. Default is html. See StringTools.ESCAPE for more information.
+ * <li><tt>decorate.escape</tt> - default escape type for metadata. Default is HTML. 
+ * Possible escape types include XML, JAVASCRIPT, and URL. See utility.StringTools.ESCAPE
  * </ul>
  * 
  * @author Craig Macdonald, Vassilis Plachouras, Ben He
@@ -93,6 +101,8 @@ public class Decorate implements PostProcess, PostFilter {
 	//a new object every time it is required to check for and remove control characters, or non-visible characters.
 	protected Matcher controlNonVisibleCharactersMatcher = controlNonVisibleCharacters.matcher("");
 	
+	protected static final Pattern cleanQuery = Pattern.compile(" \\w+\\p{Punct}\\w+ ");
+	
 	/** highlighting pattern for the current query */
 	protected Pattern highlight;
 	
@@ -100,15 +110,19 @@ public class Decorate implements PostProcess, PostFilter {
 	protected String[] qTerms;
 	
 	//the metadata keys
-	private TObjectIntHashMap<String> keys = new TObjectIntHashMap<String>();
+	protected TObjectIntHashMap<String> keys = new TObjectIntHashMap<String>();
 	//the keys which should be summarised
-	private Set<String> summaryKeys = new HashSet<String>();
+	protected Set<String> summaryKeys = new HashSet<String>();
 	//keys which should be emphasised
-	private Set<String> emphasisKeys = new HashSet<String>();
+	protected Set<String> emphasisKeys = new HashSet<String>();
 	//keys which should be escaped
-	private Map<String, ESCAPE> escapeKeys = new HashMap<String,ESCAPE>();
+	protected Map<String, ESCAPE> escapeKeys = new HashMap<String,ESCAPE>();
 	//keys which should be decorated at PostProcess rather than filter
-	private Set<String> earlyKeys = new HashSet<String>();
+	protected Set<String> earlyKeys = new HashSet<String>();
+	
+	protected Summariser summariser;
+	protected String[] metaKeys;
+	
 	/** 
 	 * {@inheritDoc} 
 	 */
@@ -151,6 +165,13 @@ public class Decorate implements PostProcess, PostFilter {
 			return;
 		}
 		highlight = generateEmphasisPattern(original_q.trim().toLowerCase().split("\\s+"));
+		summariser = Summariser.getSummariser();
+		metaKeys = keys.keys(new String[keys.size()]);
+		
+		qTerms = cleanQuery.matcher(q.getOriginalQuery()).replaceAll(" ").toLowerCase().split(" ");
+		for(int p = 0; p < qTerms.length; p++)
+			if(qTerms[p].contains(":"))
+				qTerms[p] = qTerms[p].substring(qTerms[p].indexOf(':')+1);
 	}
 	
 	/** 
@@ -159,10 +180,7 @@ public class Decorate implements PostProcess, PostFilter {
 	//decoration at the postfilter stage
 	public byte filter(Manager m, SearchRequest q, ResultSet rs, int rank, int docid)
 	{		
-		String[] _qTerms = q.getOriginalQuery().replaceAll(" \\w+\\p{Punct}\\w+ "," ").toLowerCase().split(" ");
-		String[] metaKeys = keys.keys(new String[keys.size()]);
 		String[] metadata = getMetadata(metaKeys, docid);
-		
 		int keyID = 0;
 		for(String key : metaKeys)
 		{
@@ -171,7 +189,7 @@ public class Decorate implements PostProcess, PostFilter {
 			//is it a snippet? if so, do create query biassed summary
 			if (summaryKeys.contains(key))
 			{
-				value = generateQueryBiasedSummary(value, _qTerms);
+				value =  summariser.generateSummary(value, qTerms);
 			}
 			//do some cleaning of the snippet
 			controlNonVisibleCharactersMatcher.reset(value);
@@ -205,7 +223,10 @@ public class Decorate implements PostProcess, PostFilter {
 		ResultSet rs = q.getResultSet();
 		new_query(manager, q, rs);
 		if (earlyKeys.size() == 0)
+		{
+			logger.warn(this.getClass().getSimpleName() + " was called as a PostProcess, but no early keys to decorate were defined");
 			return;
+		}
 		
 		
 		int docids[] = rs.getDocids();
@@ -213,11 +234,18 @@ public class Decorate implements PostProcess, PostFilter {
 		logger.info("Early decorating resultset with metadata for " + resultsetsize + " documents");
 		
 		String[] earlykeys = earlyKeys.toArray(new String[earlyKeys.size()]);
-		String[] allKeys = keys.keys(new String[keys.size()]);
+		String[] allKeys = manager.getIndex().getMetaIndex().getKeys();
 		String[][] metadata = getMetadata(allKeys, docids);
+		int keyId = 0;
+		for(String k : allKeys)
+		{
+			keys.put(k, keyId++);
+		}
 		for(String k : earlykeys)
 		{
-			rs.addMetaItems(k, metadata[keys.get(k)]);
+			for (int i = 0; i<docids.length; i++) {
+				rs.addMetaItem(k, i, metadata[i][keys.get(k)]);
+			}
 		}
 	}
 	
@@ -256,125 +284,6 @@ public class Decorate implements PostProcess, PostFilter {
 		}
 		return metadata;
 	}
-	
-	//the regular expression for splitting the text into sentences
-	private static Pattern sentencePattern = Pattern.compile("\\.\\s+|!\\s+|\\|\\s+|\\?\\s+");
-	
-	//the regular expression for removing common endings from words - similar to very light stemming
-	private static Pattern removeEndings = Pattern.compile("ing$|es$|s$");
-	
-	protected String generateQueryBiasedSummary(String extract, String[] _qTerms)
-	{
-		int tmpSentence;
-		double tmpScore;
-		String[] sentences = sentencePattern.split(extract, 50); //use 50 sentences at most
-		double[] sentenceScores = new double[sentences.length]; 
-		int frsSentence = -1;
-		int sndSentence = -1;
-		int top1Sentence = 0;
-		int top2Sentence = 0;
-		double max1Score = -1;
-		double max2Score = 0;
-		final int qTermsLength = _qTerms.length;
-		for (int i=0; i<qTermsLength; i++) {
-			_qTerms[i] = removeEndings.matcher(_qTerms[i]).replaceAll("");
-		}
-		String lowerCaseSentence;
-		int sentenceLength;
-		final int sentencesLength = sentences.length;
-
-		for (int i=0; i<sentencesLength; i++) {
-			
-			lowerCaseSentence = sentences[i].toLowerCase();
-			sentenceLength=sentences[i].length();
-			if (sentenceLength < 20 || sentenceLength > 250) {
-				for (int j=0; j<qTermsLength; j++) {
-					if (lowerCaseSentence.indexOf(_qTerms[j])>=0) {
-						sentenceScores[i]+=1.0d + sentenceLength / (20.0d + sentenceLength);
-					}
-				}
-
-				
-			} else {
-				for (int j=0; j<qTermsLength; j++) {
-					if (lowerCaseSentence.indexOf(_qTerms[j])>=0) {
-						sentenceScores[i]+=_qTerms[j].length() + sentenceLength / (1.0d + sentenceLength);
-					}
-				}					
-			}
-							
-			//do your best to get at least a second sentence for the snippet, 
-			//after having found the first one
-			if (frsSentence > -1 && sndSentence == -1 && sentenceLength > 5) {
-				sndSentence = i;
-			}
-
-			//do your best to get at least one sentence for the snippet
-			if (frsSentence == -1 && sentenceLength > 5) { 
-				frsSentence = i;
-			}
-
-			if (max2Score < sentenceScores[i]) {
-				max2Score = sentenceScores[i];
-				top2Sentence = i;
-				//logger.debug("top 2 sentence is " + i);
-				if (max2Score > max1Score) {
-					tmpScore = max1Score; max1Score = max2Score; max2Score = tmpScore;
-					tmpSentence = top1Sentence; top1Sentence = top2Sentence; top2Sentence = tmpSentence;
-				}
-			}
-
-		}
-		int lastIndexOfSpace = -1;
-		String sentence="";
-		String secondSentence="";
-		String snippet = "";
-		if (max1Score == -1) {
-			if (frsSentence>=0) {
-				sentence = sentences[frsSentence];
-				if (sentence.length() > 100) {
-					lastIndexOfSpace = sentence.substring(0, 100).lastIndexOf(" ");
-					sentence = sentence.substring(0, lastIndexOfSpace > 0 ? lastIndexOfSpace : 100);
-				}
-			}
-			
-			if (sndSentence>=0) {
-				secondSentence = sentences[sndSentence];
-				if (secondSentence.length() > 100) {
-					lastIndexOfSpace = secondSentence.substring(0, 100).lastIndexOf(" ");
-					secondSentence = secondSentence.substring(0, lastIndexOfSpace>0 ? lastIndexOfSpace : 100);
-				}					
-			}
-			
-			if (frsSentence >=0 && sndSentence >= 0) 
-				snippet = sentence.trim() + "..." + secondSentence.trim();
-			else if (frsSentence >= 0 && sndSentence<0) 
-				snippet = sentence.trim();
-			
-		} else if (sentences[top1Sentence].length()<100 && top1Sentence!=top2Sentence) {
-			sentence = sentences[top1Sentence];
-			if (sentence.length() > 100) {
-				lastIndexOfSpace = sentence.substring(0, 100).lastIndexOf(" ");
-				sentence = sentence.substring(0, lastIndexOfSpace > 0 ? lastIndexOfSpace : 100);
-			}
-							
-			secondSentence = sentences[top2Sentence];
-			if (secondSentence.length() > 100) {
-				lastIndexOfSpace = secondSentence.substring(0, 100).lastIndexOf(" ");
-				secondSentence = secondSentence.substring(0, lastIndexOfSpace>0 ? lastIndexOfSpace : 100);
-			}
-			snippet = sentence.trim() + "..." + secondSentence.trim();
-		} else {
-			sentence = sentences[top1Sentence];
-			if (sentence.length()>200) {
-				lastIndexOfSpace = sentence.substring(0, 200).lastIndexOf(" ");
-				sentence = sentence.substring(0, lastIndexOfSpace > 0 ? lastIndexOfSpace : 200);
-			}
-			snippet = sentence.trim();
-		}
-		return snippet;
-	}
-	
 	
 	/** Creates a regular expression pattern to highlight query terms metadata.
 	 * @param _qTerms query terms

@@ -17,7 +17,7 @@
  *
  * The Original Code is LexiconEntry.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,7 +27,7 @@ package org.terrier.structures;
 import org.apache.hadoop.io.Writable;
 
 /** Represents the statistics of a term in the {@link Lexicon}, and
- * a pointer to the term's location in the {@link InvertedIndex}. For
+ * a pointer to the term's location in a {@link PostingIndex}. For
  * these reasons, this class implements {@link Pointer} and {@link EntryStatistics}.
  * @see Lexicon
  * @see Pointer
@@ -54,6 +54,30 @@ public abstract class LexiconEntry implements EntryStatistics, Pointer, Writable
 	 */
     public abstract void setStatistics(int n_t, int TF);
    
+	@Override
+	public int getNumberOfEntries() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	@Override
+	public void setNumberOfEntries(int n) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public String pointerToString() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void setPointer(Pointer p) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public EntryStatistics getWritableEntryStatistics() {
+		return this;
+	}
 	@Override
 	public boolean equals(Object obj) {
 		if (! (obj instanceof LexiconEntry))

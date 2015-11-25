@@ -17,7 +17,7 @@
  *
  * The Original Code is ShakespeareEndToEndTestSuite.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -45,6 +45,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	HadoopShakespeareEndToEndTest.BasicHadoopShakespeareEndToEndTest.class,
 	HadoopShakespeareEndToEndTest.BlockHadoopShakespeareEndToEndTest.class,
 	HadoopShakespeareEndToEndTest.BasicHadoopShakespeareEndToEndTestLowMem.class,
-	HadoopShakespeareEndToEndTest.BlockHadoopShakespeareEndToEndTestLowMem.class
+	HadoopShakespeareEndToEndTest.BlockHadoopShakespeareEndToEndTestLowMem.class,
+	OnDiskShakespeareEndToEndTest.class,
+	BlockOnDiskShakespeareEndToEndTest.class
 } )
 public class ShakespeareEndToEndTestSuite {}

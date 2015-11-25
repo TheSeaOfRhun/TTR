@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockStructureMerger.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,15 +28,10 @@ package org.terrier.structures.merging;
 import org.terrier.utility.ApplicationSetup;
 import java.util.Date;
 
-import org.terrier.structures.BlockDirectIndex;
-import org.terrier.structures.BlockDirectIndexInputStream;
-import org.terrier.structures.BlockDirectInvertedOutputStream;
-import org.terrier.structures.BlockFieldDirectInvertedOutputStream;
-import org.terrier.structures.BlockInvertedIndex;
-import org.terrier.structures.BlockInvertedIndexInputStream;
 import org.terrier.structures.Index;
-import org.terrier.structures.postings.BlockFieldIterablePosting;
-import org.terrier.structures.postings.BlockIterablePosting;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.indexing.CompressionFactory;
+import org.terrier.utility.ArrayUtils;
 
 
 /**
@@ -58,23 +53,13 @@ public class BlockStructureMerger extends StructureMerger {
 	 * @param _srcIndex2
 	 * @param _destIndex
 	 */
-	public BlockStructureMerger(Index _srcIndex1, Index _srcIndex2, Index _destIndex)
+	public BlockStructureMerger(IndexOnDisk _srcIndex1, IndexOnDisk _srcIndex2, IndexOnDisk _destIndex)
 	{
 		super(_srcIndex1, _srcIndex2, _destIndex);
-		directFileOutputStreamClass = BlockDirectInvertedOutputStream.class;
-		fieldDirectFileOutputStreamClass = BlockFieldDirectInvertedOutputStream.class;
-		invertedFileOutputStreamClass = BlockDirectInvertedOutputStream.class;		
-		fieldInvertedFileOutputStreamClass = BlockFieldDirectInvertedOutputStream.class;
-				
-		directFileInputClass = BlockDirectIndex.class.getName();
-		directFileInputStreamClass = BlockDirectIndexInputStream.class.getName();
-		invertedFileInputClass = BlockInvertedIndex.class.getName();
-		invertedFileInputStreamClass = BlockInvertedIndexInputStream.class.getName();
+		String[] fieldNames = ArrayUtils.parseCommaDelimitedString(srcIndex1.getIndexProperty("index.inverted.fields.names", ""));
 		
-		basicInvertedIndexPostingIteratorClass = BlockIterablePosting.class.getName();
-		fieldInvertedIndexPostingIteratorClass = BlockFieldIterablePosting.class.getName();
-		basicDirectIndexPostingIteratorClass = BlockIterablePosting.class.getName();
-		fieldDirectIndexPostingIteratorClass = BlockFieldIterablePosting.class.getName();
+		compressionDirectConfig = CompressionFactory.getCompressionConfiguration("direct", fieldNames, true);
+		compressionInvertedConfig = CompressionFactory.getCompressionConfiguration("inverted", fieldNames, true);
 	}
 
 	
@@ -90,9 +75,9 @@ public class BlockStructureMerger extends StructureMerger {
 			return;
 		}
 		Index.setIndexLoadingProfileAsRetrieval(false);
-		Index indexSrc1 = Index.createIndex(args[0], args[1]);
-		Index indexSrc2 = Index.createIndex(args[2], args[3]);
-		Index indexDest = Index.createNewIndex(args[4], args[5]);
+		IndexOnDisk indexSrc1 = Index.createIndex(args[0], args[1]);
+		IndexOnDisk indexSrc2 = Index.createIndex(args[2], args[3]);
+		IndexOnDisk indexDest = Index.createNewIndex(args[4], args[5]);
 		
 		StructureMerger sMerger = new BlockStructureMerger(indexSrc1, indexSrc2, indexDest);
 		long start = System.currentTimeMillis();

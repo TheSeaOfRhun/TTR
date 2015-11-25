@@ -17,7 +17,7 @@
  *
  * The Original Code is TestEnglishTokeniser.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,6 +28,8 @@
 package org.terrier.indexing.tokenisation;
 
 
+
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 
@@ -46,6 +48,14 @@ public class TestEnglishTokeniser extends BaseTestTokeniser {
 		testTokenisation(tokenise("a"), "a");
 		testTokenisation(tokenise("hello"), "hello");
 	}
+	
+	@Test public void testNull() throws Exception
+	{
+		TokenStream t = tokeniser.tokenise(null);
+		assertFalse(t.hasNext());
+	}
+	
+	
 	
 	//TODO: test length
 	

@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopIndexing.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -49,18 +49,20 @@ import org.apache.hadoop.mapred.TaskID;
 import org.apache.hadoop.mapred.lib.HashPartitioner;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.log4j.Logger;
-
-import org.terrier.indexing.hadoop.Hadoop_BasicSinglePassIndexer;
-import org.terrier.indexing.hadoop.Hadoop_BlockSinglePassIndexer;
 import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BitPostingIndexInputStream;
 import org.terrier.structures.FSOMapFileLexiconOutputStream;
 import org.terrier.structures.FieldLexiconEntry;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.LexiconOutputStream;
+import org.terrier.structures.bit.BitPostingIndexInputStream;
+import org.terrier.structures.indexing.CompressionFactory;
 import org.terrier.structures.indexing.LexiconBuilder;
+import org.terrier.structures.indexing.CompressionFactory.BitCompressionConfiguration;
+import org.terrier.structures.indexing.singlepass.hadoop.Hadoop_BasicSinglePassIndexer;
+import org.terrier.structures.indexing.singlepass.hadoop.Hadoop_BlockSinglePassIndexer;
 import org.terrier.structures.indexing.singlepass.hadoop.MapEmittedPostingList;
 import org.terrier.structures.indexing.singlepass.hadoop.MultiFileCollectionInputFormat;
 import org.terrier.structures.indexing.singlepass.hadoop.SplitEmittedTerm;
@@ -68,6 +70,7 @@ import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.FieldScore;
 import org.terrier.utility.Files;
+import org.terrier.utility.TerrierTimer;
 import org.terrier.utility.io.HadoopPlugin;
 import org.terrier.utility.io.HadoopUtility;
 
@@ -153,6 +156,13 @@ public class HadoopIndexing
 			logger.fatal(usage());
 			return;
 		}
+		
+		if (! (CompressionFactory.getCompressionConfiguration("inverted", new String[0], false) instanceof BitCompressionConfiguration ))
+        {
+        	logger.error("Sorry, only default BitCompressionConfiguration is supported by HadoopIndexing"
+        			+ " - you can recompress the inverted index later using IndexRecompressor");
+        	return;
+        }
 		
 		
 		if (jf == null)
@@ -265,6 +275,8 @@ public class HadoopIndexing
 		final String tmpLexiconStructure = "newlex";
 		final String invertedStructure = "inverted";
 
+		logger.info("Merging lexicons");
+		
 		//we're handling indices as streams, so dont need to load it. but remember previous status
 		//moreover, our indices dont have document objects, so errors may occur in preloading
 		final boolean indexProfile = Index.getIndexLoadingProfileAsRetrieval();
@@ -275,6 +287,7 @@ public class HadoopIndexing
 		final Index[] srcIndices = new Index[numberOfReducers];
 		final boolean[] existsIndices = new boolean[numberOfReducers];
 		Arrays.fill(existsIndices, true);
+		int terms = 0;
 		for(int i=0;i<numberOfReducers;i++)
 		{
 			final String index_prefix = ApplicationSetup.TERRIER_INDEX_PREFIX+"-"+i;
@@ -287,6 +300,8 @@ public class HadoopIndexing
 				//remember that this index doesnt exist
 				existsIndices[i] = false;
 				logger.warn("No reduce "+i+" output : no output index ["+index_path+","+index_prefix+ "]");
+			} else {
+				terms += srcIndices[i].getCollectionStatistics().getNumberOfUniqueTerms();
 			}
 		}
 		//2. the target index is the first source index
@@ -298,39 +313,47 @@ public class HadoopIndexing
 		
 		//3. create the new lexicon
 		LexiconOutputStream<String> lexOut = new FSOMapFileLexiconOutputStream(
-				dest, tmpLexiconStructure, 
+				(IndexOnDisk)dest, tmpLexiconStructure, 
 				(FixedSizeWriteableFactory<Text>) dest.getIndexStructure(lexiconStructure + "-keyfactory"),
 				(Class<? extends FixedSizeWriteableFactory<LexiconEntry>>) dest.getIndexStructure(lexiconStructure + "-valuefactory").getClass());
 		
 		//4. append each source lexicon on to the new lexicon, amending the filenumber as we go
+		TerrierTimer tt = new TerrierTimer("Merging lexicon entries", terms);
+		tt.start();
 		int termId = 0;
-		for(int i=0;i<numberOfReducers;i++)
-		{
-			//the partition did not have any stuff
-			if (! existsIndices[i])
+		try{
+			for(int i=0;i<numberOfReducers;i++)
 			{
-				//touch an empty inverted index file for this segment, as BitPostingIndex requires that all of the files exist
-				Files.writeFileStream(BitPostingIndexInputStream.getFilename(
-						dest, invertedStructure, (byte)numberOfReducers, (byte)i)).close();
-				continue;
+				//the partition did not have any stuff
+				if (! existsIndices[i])
+				{
+					//touch an empty inverted index file for this segment, as BitPostingIndex requires that all of the files exist
+					Files.writeFileStream(BitPostingIndexInputStream.getFilename(
+							(IndexOnDisk)dest, invertedStructure, (byte)numberOfReducers, (byte)i)).close();
+					continue;
+				}
+				//else, append the lexicon
+				Iterator<Map.Entry<String,LexiconEntry>> lexIn = (Iterator<Map.Entry<String, LexiconEntry>>) srcIndices[i].getIndexStructureInputStream("lexicon");
+				while(lexIn.hasNext())
+				{
+					Map.Entry<String,LexiconEntry> e = lexIn.next();
+					e.getValue().setTermId(termId);
+					((BitIndexPointer)e.getValue()).setFileNumber((byte)i);
+					lexOut.writeNextEntry(e.getKey(), e.getValue());
+					termId++;
+				}
+				IndexUtil.close(lexIn);
+				//rename the inverted file to be part of the destination index
+				Files.rename(
+						BitPostingIndexInputStream.getFilename((IndexOnDisk)srcIndices[i], invertedStructure, (byte)1, (byte)1), 
+						BitPostingIndexInputStream.getFilename((IndexOnDisk)dest, invertedStructure, (byte)numberOfReducers, (byte)i));
+				tt.increment();
 			}
-			//else, append the lexicon
-			Iterator<Map.Entry<String,LexiconEntry>> lexIn = (Iterator<Map.Entry<String, LexiconEntry>>) srcIndices[i].getIndexStructureInputStream("lexicon");
-			while(lexIn.hasNext())
-			{
-				Map.Entry<String,LexiconEntry> e = lexIn.next();
-				e.getValue().setTermId(termId);
-				((BitIndexPointer)e.getValue()).setFileNumber((byte)i);
-				lexOut.writeNextEntry(e.getKey(), e.getValue());
-				termId++;
-			}
-			IndexUtil.close(lexIn);
-			//rename the inverted file to be part of the destination index
-			Files.rename(
-					BitPostingIndexInputStream.getFilename(srcIndices[i], invertedStructure, (byte)1, (byte)1), 
-					BitPostingIndexInputStream.getFilename(dest, invertedStructure, (byte)numberOfReducers, (byte)i));
+		} finally {
+			tt.finished();
 		}
 		lexOut.close();
+		logger.info("Structure cleanups");
 		
 		//5. change over lexicon structures
 		final String[] structureSuffices = new String[]{"", "-entry-inputstream"};
@@ -346,13 +369,14 @@ public class HadoopIndexing
 			if (! IndexUtil.renameIndexStructure(dest, tmpLexiconStructure + suffix, lexiconStructure + suffix))
 				logger.warn("Structure " + tmpLexiconStructure + suffix + " not found when renaming");
 		}
-			
+		IndexUtil.deleteStructure(dest, tmpLexiconStructure + "-valuefactory");
+		
 		//6. update destimation index
 		
 		if (FieldScore.FIELDS_COUNT > 0)
 			dest.addIndexStructure("lexicon-valuefactory", FieldLexiconEntry.Factory.class.getName(), "java.lang.String", "${index.inverted.fields.count}");
 		dest.setIndexProperty("index."+invertedStructure+".data-files", ""+numberOfReducers);
-		LexiconBuilder.optimise(dest, lexiconStructure);
+		LexiconBuilder.optimise((IndexOnDisk)dest, lexiconStructure);
 		dest.flush();
 		
 		//7. close source and dest indices

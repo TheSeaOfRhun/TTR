@@ -17,7 +17,7 @@
  *
  * The Original Code is PostFilter.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -59,8 +59,8 @@ public interface PostFilter
 	  * Called for each result in the resultset, used to filter out unwanted results.
 	  * @param m The manager controlling this query
 	  * @param srq The search request being processed
-	  * @param DocAtNumber which array index in the resultset have we reached
-	  * @param DocNo The document number of the currently being procesed result.
+	  * @param DocAtNumber which array index (rank) in the resultset have we reached
+	  * @param docid The docid of the currently being procesed result.
 	  */
-	byte filter(Manager m, SearchRequest srq, ResultSet results, int DocAtNumber, int DocNo);
+	byte filter(Manager m, SearchRequest srq, ResultSet results, int DocAtNumber, int docid);
 }

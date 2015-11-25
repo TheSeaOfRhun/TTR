@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockShakespeareEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,16 +27,17 @@ package org.terrier.tests;
 
 import static org.junit.Assert.assertTrue;
 
-import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BitPostingIndex;
-import org.terrier.structures.BitPostingIndexInputStream;
 import org.terrier.structures.Index;
+import org.terrier.structures.Pointer;
+import org.terrier.structures.PostingIndex;
+import org.terrier.structures.PostingIndexInputStream;
 import org.terrier.structures.postings.BlockPosting;
 import org.terrier.structures.postings.IterablePosting;
 
 public class BlockShakespeareEndToEndTest extends BasicShakespeareEndToEndTest {
 	public static final String PHRASE_TOPICS = "share/tests/shakespeare/test.shakespeare-merchant.phrase.topics";	
 	
+	@SuppressWarnings("unchecked")
 	static class BlockBatchEndToEndTestEventChecks extends BatchEndToEndTestEventHooks
 	{
 		@Override
@@ -44,24 +45,27 @@ public class BlockShakespeareEndToEndTest extends BasicShakespeareEndToEndTest {
 				throws Exception
 		{			
 			//no check correct type of all structures
-			BitPostingIndexInputStream bpiis;
+			PostingIndexInputStream bpiis;
 			IterablePosting ip;
-			BitPostingIndex bpi;
+			PostingIndex<Pointer> bpi;
 			
 			//check stream structures
-			bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("direct");
+			bpiis = (PostingIndexInputStream) index.getIndexStructureInputStream("direct");
 			ip = bpiis.next();
 			assertTrue(ip instanceof BlockPosting);
-			bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("inverted");
+			bpiis.close();
+			
+			bpiis = (PostingIndexInputStream) index.getIndexStructureInputStream("inverted");
 			ip = bpiis.next();
 			assertTrue(ip instanceof BlockPosting);
+			bpiis.close();
 			
 			//check random structures
-			bpi = (BitPostingIndex) index.getInvertedIndex();
-			ip = bpi.getPostings((BitIndexPointer) index.getLexicon().getLexiconEntry(0).getValue());
+			bpi = (PostingIndex<Pointer>) index.getInvertedIndex();
+			ip = bpi.getPostings(index.getLexicon().getLexiconEntry(0).getValue());
 			assertTrue(ip instanceof BlockPosting);
-			bpi = (BitPostingIndex) index.getDirectIndex();
-			ip = bpi.getPostings((BitIndexPointer) index.getDocumentIndex().getDocumentEntry(0));
+			bpi = (PostingIndex<Pointer>) index.getDirectIndex();
+			ip = bpi.getPostings(index.getDocumentIndex().getDocumentEntry(0));
 			assertTrue(ip instanceof BlockPosting);
 		}
 	}

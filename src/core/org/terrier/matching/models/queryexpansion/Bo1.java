@@ -17,7 +17,7 @@
  *
  * The Original Code is Bo1.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,7 +26,7 @@
  */
 package org.terrier.matching.models.queryexpansion;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /** 
  * This class implements the Bo1 model for query expansion. 
@@ -85,8 +85,7 @@ public class Bo1 extends QueryExpansionModel {
 		//double numberOfDocuments =
 			//collectionLength / averageDocumentLength;
 		double f = termFrequency / numberOfDocuments;
-		return withinDocumentFrequency * Idf.log((1d + f) / f)
-			+ Idf.log(1d + f);
+		return withinDocumentFrequency * log((1d + f) / f) + log(1d + f);
 	}
 	/**
 	 * This method implements the query expansion model.
@@ -109,7 +108,6 @@ public class Bo1 extends QueryExpansionModel {
 		//double numberOfDocuments =
 			//collectionLength / averageDocumentLength;
 		double f = termFrequency / numberOfDocuments;
-		return withinDocumentFrequency * Idf.log((1d + f) / f)
-			+ Idf.log(1d + f);
+		return withinDocumentFrequency * log((1d + f) / f) + log(1d + f);
 	}
 }

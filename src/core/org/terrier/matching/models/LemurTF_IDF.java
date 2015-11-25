@@ -17,7 +17,7 @@
  *
  * The Original Code is LemurTF_IDF.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -63,17 +63,24 @@ public class LemurTF_IDF extends WeightingModel {
 	public final double score(double tf, double docLength) {
 		double Robertson_tf = k_1*tf/(tf+k_1*(1-b+b*docLength/averageDocumentLength));
 		return keyFrequency*Robertson_tf * 
-				Math.pow(Idf.log(numberOfDocuments/documentFrequency), 2);
+				Math.pow(WeightingModelLibrary.log(numberOfDocuments/documentFrequency), 2);
 	}
 	/**
-	 * Uses LemurTF_IDF to compute a weight for a term in a document.
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param documentFrequency The document frequency of the term
 	 * @param termFrequency the term frequency in the collection
 	 * @param keyFrequency the term frequency in the query
-	 * @return the score assigned by the weighting model LemurTF_IDF.
+	 * @return the score returned by the implemented weighting model.
 	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -82,7 +89,7 @@ public class LemurTF_IDF extends WeightingModel {
 		double keyFrequency) {
 		double Robertson_tf = k_1*tf/(tf+k_1*(1-b+b*docLength/averageDocumentLength));
 		return keyFrequency*Robertson_tf * 
-				Math.pow(Idf.log(numberOfDocuments/documentFrequency), 2);
+				Math.pow(WeightingModelLibrary.log(numberOfDocuments/documentFrequency), 2);
 
 	}
 }

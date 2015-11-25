@@ -17,7 +17,7 @@
  *
  * The Original Code is SingleTermQuery.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -65,7 +65,7 @@ public class SingleTermQuery extends Query {
 	 * that corresponds to '-', +1 that corresponds to '+' and
 	 * 0 that corresponds to unspecified. The default value is 0
 	 */
-	int required = 0;
+	public int required = 0;
 	
 	/** The weight of a query term. */
 	double weight = 1.0d;
@@ -186,7 +186,7 @@ public class SingleTermQuery extends Query {
 	 * @param terms the hashmap in which to store the query terms.
 	 */
 	public void obtainQueryTerms(MatchingQueryTerms terms) {
-		terms.setTermProperty(term, weight);
+		terms.addTermPropertyWeight(term, weight);
 	}
 	
 	/**

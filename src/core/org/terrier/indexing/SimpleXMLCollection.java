@@ -17,7 +17,7 @@
  *
  * The Original Code is SimpleXMLCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -85,8 +85,12 @@ public class SimpleXMLCollection implements Collection
 		protected Tokeniser tokeniser = Tokeniser.getTokeniser();
 		protected TokenStream currentTokenStream;
 		
+		protected Map<String,String> props = new HashMap<String,String>();
+		
 		public XMLDocument(Node root)
 		{
+			for (String s : PropertyElements.keySet()) System.err.println(s);
+			
 			this.doRecursive(root);
 			if (logger.isDebugEnabled())
 				logger.debug("Found " + terms.size() + " terms");
@@ -135,7 +139,8 @@ public class SimpleXMLCollection implements Collection
 			String parentNodeName = parent.getNodeName();
 			switch(n.getNodeType()) {
 			case Node.ELEMENT_NODE:
-				if (TermElements.contains(parentNodeName.toLowerCase()) || !holderStack.isEmpty()) {
+				if (TermElements.contains(parentNodeName.toLowerCase()) || PropertyElements.containsKey(parentNodeName.toLowerCase()) || !holderStack.isEmpty()) {
+					if (PropertyElements.containsKey(parentNodeName.toLowerCase())) System.err.println("Found "+parentNodeName+" as property");
 					pushHolder(parentNodeName);
 					currentHolder = null;
 				}
@@ -152,22 +157,32 @@ public class SimpleXMLCollection implements Collection
 					doText(n.getNodeValue());
 					currentHolder = null;
 				}
+				
+				if (PropertyElements.containsKey(parentNodeName.toLowerCase())) {
+					doProperty(parentNodeName, n.getNodeValue());
+				}
+				
 				break;
-			case Node.ATTRIBUTE_NODE:				
-				if (DocIdIsAttribute || TermsInAttributes)
+			case Node.ATTRIBUTE_NODE:	
+				
+				if (DocIdIsAttribute || TermsInAttributes || PropertiesInAttibutes)
 				{
-					
 					String attributeName = (parentNodeName + 
 						ELEMENT_ATTR_SEPARATOR + n.getNodeName()).toLowerCase();
-					//System.err.println("ATTRIBUTE NODE " + attributeName);
+					System.err.println("ATTRIBUTE NODE " + attributeName+" "+n.getNodeValue());
 					if(DocIdIsAttribute && attributeName.equals(DocIdLocation))
 						ThisDocId = n.getNodeValue().replaceAll("\n","");
+					if(PropertiesInAttibutes && PropertyElements.containsKey(attributeName))
+					{
+						doProperty(attributeName, n.getNodeValue());
+					}
 					if(TermsInAttributes && TermElements.contains(attributeName))
 					{
 						currentHolder = attributeName;
 						doText(n.getNodeValue());
 						currentHolder = null;
 					}
+					
 				}
 				break;
 			case Node.CDATA_SECTION_NODE:
@@ -178,6 +193,11 @@ public class SimpleXMLCollection implements Collection
 					doText(n.getNodeValue());
 					currentHolder = null;
 				}
+				
+				if (PropertyElements.containsKey(parentNodeName.toLowerCase())) {
+					doProperty(parentNodeName, n.getNodeValue());
+				}
+				
 				break;
 			default:
 				if(logger.isDebugEnabled()){
@@ -222,6 +242,23 @@ public class SimpleXMLCollection implements Collection
 				}
 			}
 		}
+		
+		private void doProperty(String nodeName, String value) {
+			if (nodeName != null & nodeName.length() > 0 && value != null && value.length() > 0) {
+				
+				// if properties already has something with this key
+				// append value
+				if (props.containsKey(nodeName)) {
+					value = props.get(nodeName) + value;
+				}
+				
+				// truncate value to max key length
+				value = value.substring(0, Math.min(value.length(), PropertyElements.get(nodeName.toLowerCase()).intValue()));
+
+				// add to properties HashMap
+				props.put(nodeName, value);
+			}
+		}
 
 		/** Returns true if no more terms can be fetched from this document */
 		public boolean endOfDocument()
@@ -243,12 +280,12 @@ public class SimpleXMLCollection implements Collection
 		public Reader getReader(){ return null; }
 	
 		public String getProperty(String name){
-			if (name.equals("docno"))
-				return ThisDocId;
-			return null;
+			Map<String, String> props = this.getAllProperties();
+			return props.get(name);			
 		}
+		
 		public Map<String,String> getAllProperties(){
-			Map<String,String> props = new HashMap<String,String>();
+			// make sure props always has docno
 			props.put("docno", ThisDocId);
 			return props;
 		}
@@ -274,6 +311,13 @@ public class SimpleXMLCollection implements Collection
 	protected boolean DocIdIsAttribute = false; //set if DocIdLocation contains ELEMENT_ATTR_SEPARATOR
 	/** set if any TermElements contains ELEMENT_ATTR_SEPARATOR */
 	protected boolean TermsInAttributes = false;//set if any TermElements contains ELEMENT_ATTR_SEPARATOR
+	
+	/** set if any PropertyElements contains ELEMENT_ATTR_SEPARATOR */
+	protected boolean PropertiesInAttibutes = false;//set if any MetaElements contains ELEMENT_ATTR_SEPARATOR
+	
+	/** Contains the names of tags and attributes that encapsulate meta properties with their lengths */
+	//protected HashSet<String> PropertyElements = new HashSet<String>();
+	protected Map<String,Integer> PropertyElements = new HashMap<String,Integer>();
 	
 	/** The xml parser factory for DOM */
 	protected DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -404,7 +448,24 @@ public class SimpleXMLCollection implements Collection
 			if (termElements[i].indexOf(ELEMENT_ATTR_SEPARATOR) != -1)
 				TermsInAttributes = true;			
 		}
+		
+		//4. property elements and lengths
+		String[] propertyElements = ApplicationSetup.getProperty("indexer.meta.forward.keys", DocIdLocation).toLowerCase().split("\\s*,\\s*");
+		String[] propertyLengths = ApplicationSetup.getProperty("indexer.meta.forward.keylens", "20").toLowerCase().split("\\s*,\\s*");
+				
+		if (propertyElements.length != propertyLengths.length) {
+			logger.fatal("Number of keys in indexer.meta.forward.keys must equal number of lengths specified in indexer.meta.forward.keylens");
+		}
+		
+		// add to HashMap
+		for(int i=0;i<propertyElements.length;i++) {
+			Integer keyLen = Integer.parseInt(propertyLengths[i]);
+			PropertyElements.put(propertyElements[i].trim(), keyLen);
+			if (propertyElements[i].indexOf(ELEMENT_ATTR_SEPARATOR) != -1)
+				PropertiesInAttibutes = true;	
+		}
 	}
+	
 	/** 
 	 * {@inheritDoc} This is not supported in this implemented class.
 	 */
@@ -476,7 +537,7 @@ public class SimpleXMLCollection implements Collection
 		if(n == null)
 			return false;
 		
-		if (DocumentElements.contains(n.getNodeName().toLowerCase()))
+		if (DocumentElements.contains(n.getNodeName().toLowerCase()) && n.getNodeType() != Node.DOCUMENT_TYPE_NODE)
 		{
 			Documents.addLast(new XMLDocument(n));
 			return true;//assume no other documents are contained in documents
@@ -576,7 +637,7 @@ public class SimpleXMLCollection implements Collection
 	 * main
 	 * @param args
 	 */
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
 		Collection c = new SimpleXMLCollection();
 		while(c.nextDocument())
@@ -593,6 +654,7 @@ public class SimpleXMLCollection implements Collection
 				}
 			}
 		}
+		c.close();
 	}
 
 }

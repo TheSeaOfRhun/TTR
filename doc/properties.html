@@ -279,7 +279,7 @@ structures        created by Terrier are stored</td>
       <td>Used in</td>
      <td><a
  href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
-       <a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer</a></td>
+       <a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer</a></td>
    </tr>
  <tr>
       <td>Possible values</td>
@@ -369,7 +369,7 @@ for the Collection object. This is often a list of files or directories.</td>
       <td>Used in</td>
      <td><a
  href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
-       <a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer
+       <a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer
        </a></td>
    </tr>
  <tr>
@@ -600,7 +600,7 @@ the BlockIndexer.</td>
       <td>Used in</td>
      <td><a
  href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
-       <a href="javadoc/org/terrier/indexing/BlockIndexer.html">org.terrier.indexing.BlockIndexer</a></td>
+       <a href="javadoc/org/terrier/structures/indexing/classical/BasicIndexer.html">org.terrier.structures.indexing.classical.BasicIndexer</a></td>
    </tr>
  <tr>
       <td>Possible values</td>
@@ -630,7 +630,7 @@ same block</td>
       <td>Used in</td>
      <td><a
  href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
-       <a href="javadoc/org/terrier/indexing/BlockIndexer.html">org.terrier.indexing.BlockIndexer</a></td>
+       <a href="javadoc/org/terrier/structures/indexing/classical/BasicIndexer.html">org.terrier.structures.indexing.classical.BasicIndexer</a></td>
    </tr>
  <tr>
       <td>Possible values</td>
@@ -657,8 +657,7 @@ same block</td>
    </tr>
  <tr>
       <td>Used in</td>
-     <td><a href="javadoc/org/terrier/indexing/HTMLDocument.html">org.terrier.indexing.HTMLDocument</a>,
-       <a href="javadoc/org/terrier/indexing/TRECDocument.html">org.terrier.indexing.TRECDocument</a>,
+     <td><a href="javadoc/org/terrier/indexing/TaggedDocument.html">org.terrier.indexing.TaggedDocument</a>,
        <a
  href="javadoc/org/terrier/indexing/TRECFullTokenizer.html">org.terrier.indexing.TRECFullTokenizer</a></td>
    </tr>
@@ -717,7 +716,7 @@ same block</td>
    </tr>
  <tr>
       <td>Used in</td>
-     <td><a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer</a></td>
+     <td><a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer</a></td>
    </tr>
  <tr>
       <td>Possible values</td>
@@ -745,7 +744,7 @@ The default value 0 means that there is no limit.</td>
    </tr>
  <tr>
       <td>Used in</td>
-     <td><a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer</a></td>
+     <td><a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer</a></td>
    </tr>
  <tr>
       <td>Possible values</td>
@@ -781,7 +780,7 @@ This property also applies for single-pass indexing, although it can be safely s
  <tr>
       <td>Used in</td>
       <td><a href="javadoc/org/terrier/querying/Manager.html">org.terrier.querying.Manager</a>,
-      <a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer</a></td>
+      <a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -811,9 +810,9 @@ This property also applies for single-pass indexing, although it can be safely s
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/structures/indexing/InvertedIndexBuilder.html">org.terrier.structures.indexing.InvertedIndexBuilder</a>,
+ href="javadoc/org/terrier/structures/indexing/classical/InvertedIndexBuilder.html">org.terrier.structures.indexing.classical.InvertedIndexBuilder</a>,
       <a
- href="javadoc/org/terrier/structures/indexing/BlockInvertedIndexBuilder.html">org.terrier.structures.indexing.BlockInvertedIndexBuilder</a></t
+ href="javadoc/org/terrier/structures/indexing/classical/BlockInvertedIndexBuilder.html">org.terrier.structures.indexing.classical.BlockInvertedIndexBuilder</a></t
 d>
     </tr>
  <tr>
@@ -853,8 +852,7 @@ to be used, set invertedfile.processpointers to 0.
       <td>Used in</td>
       <td><a
  href="javadoc/org/terrier/structures/indexing/LexiconBuilder.html">org.terrier.structures.indexing.LexiconBuilder</a>,
-      <a
- href="javadoc/org/terrier/structures/indexing/BlockLexiconBuilder.html">org.terrier.structures.indexing.BlockLexiconBuilder</a></td>
+      </td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1117,20 +1115,9 @@ use        for the corresponding files.</td>
      <td><a
  href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
        <a href="javadoc/org/terrier/indexing/FileDocument.html">org.terrier.indexing.FileDocument</a>,
-       <a href="javadoc/org/terrier/indexing/HTMLDocument.html">org.terrier.indexing.HTMLDocument</a>,
-       <a href="javadoc/org/terrier/indexing/TRECDocument.html">org.terrier.indexing.TRECDocument</a>,
        <a
  href="javadoc/org/terrier/indexing/TRECFullTokenizer.html">org.terrier.indexing.TRECFullTokenizer</a>,
        <a href="javadoc/org/terrier/structures/Lexicon.html">org.terrier.structures.Lexicon</a>,
-       <a href="javadoc/org/terrier/structures/BlockLexicon.html">org.terrier.structures.BlockLexicon</a>,
-       <a
- href="javadoc/org/terrier/structures/BlockLexiconInputStream.html">org.terrier.structures.BlockLexiconInputStream</a>,
-       <a
- href="javadoc/org/terrier/structures/BlockLexiconOutputStream.html">org.terrier.structures.BlockLexiconOutputStream</a>,
-       <a
- href="javadoc/org/terrier/structures/LexiconInputStream.html">org.terrier.structures.LexiconInputStream</a>,
-       <a
- href="javadoc/org/terrier/structures/LexiconOutputStream.html">org.terrier.structures.LexiconOutputStream</a>
      </td>
    </tr>
  <tr>
@@ -1160,7 +1147,7 @@ term.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/indexing/BasicSinglePassIndexer.html">org.terrier.indexing.BasicSinglePassIndexer</a></td>
+ href="javadoc/org/terrier/structures/indexing/singlepass/BasicSinglePassIndexer.html">org.terrier.structures.indexing.singlepass.BasicSinglePassIndexer</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1187,7 +1174,7 @@ term.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/indexing/BasicSinglePassIndexer.html">org.terrier.indexing.BasicSinglePassIndexer</a></td>
+ href="javadoc/org/terrier/structures/indexing/singlepass/BasicSinglePassIndexer.html">org.terrier.structures.indexing.singlepass.BasicSinglePassIndexer</a></td>
     </tr>
  <tr> 
       <td>Possible values</td> 
@@ -1214,7 +1201,7 @@ term.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/indexing/BasicSinglePassIndexer.html">org.terrier.indexing.BasicSinglePassIndexer</a></td>
+ href="javadoc/org/terrier/structures/indexing/singlepass/BasicSinglePassIndexer.html">org.terrier.structures.indexing.singlepass.BasicSinglePassIndexer</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1445,8 +1432,7 @@ term.</td>
     </tr>
  <tr>
       <td>Used in</td>
-      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a>,
-      <a href="javadoc/org/terrier/matching/LMMatching.html">org.terrier.matching.LMMatching</a></td>
+      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1507,7 +1493,7 @@ You may wish to turn this off for small or focused collections.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1535,8 +1521,7 @@ You may wish to turn this off for small or focused collections.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a>,
-      <a href="javadoc/TrecTerrier.html">TrecTerrier</a></td>
+ href="javadoc/org/terrier/utility/ApplicationSetup.html">org.terrier.utility.ApplicationSetup</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1564,7 +1549,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1589,7 +1574,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1640,8 +1625,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>,
-			<a href="javadoc/org/terrier/applications/TRECQueryingExpansion.html">org.terrier.applications.TRECQueryingExpansion</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1666,7 +1650,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1691,7 +1675,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1777,11 +1761,7 @@ results files and where evaluation files should be placed.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECQueryingExpansion.html">org.terrier.applications.TRECQueryingExpansion</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECLMQuerying.html">org.terrier.applications.TRECLMQuerying</a></td>
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a>,
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1808,7 +1788,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1834,7 +1814,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1859,7 +1839,7 @@ results files and where evaluation files should be placed.</td>
 		</tr>
 		<tr>
 			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a></td>
+			<td><a href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
 		</tr>
 		<tr>
 			<td>Possible values</td>
@@ -1887,11 +1867,7 @@ results files and where evaluation files should be placed.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECQueryingExpansion.html">org.terrier.applications.TRECQueryingExpansion</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECLMQuerying.html">org.terrier.applications.TRECLMQuerying</a></td>
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1919,9 +1895,7 @@ results files and where evaluation files should be placed.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECQueryingExpansion.html">org.terrier.applications.TRECQueryingExpansion</a>,
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a>,
     </tr>
  <tr>
       <td>Possible values</td>
@@ -1949,9 +1923,7 @@ results files and where evaluation files should be placed.</td>
  <tr>
       <td>Used in</td>
       <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>,
-      <a
- href="javadoc/org/terrier/applications/TRECQueryingExpansion.html">org.terrier.applications.TRECQueryingExpansion</a>,
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a>,
     </tr>
  <tr>
       <td>Possible values</td>
@@ -2152,7 +2124,7 @@ results files and where evaluation files should be placed.</td>
  <tr>
       <td>Used in</td>
      <td><a
- href="javadoc/org/terrier/applications/TRECQuerying.html">org.terrier.applications.TRECQuerying</a>
+ href="javadoc/org/terrier/applications/batchquerying/TRECQuerying.html">org.terrier.applications.batchquerying.TRECQuerying</a>
      </td>
    </tr>
  <tr>
@@ -2334,8 +2306,7 @@ Class(es) that select terms during query expansion. All classes must extend <a h
     </tr>
  <tr>
       <td>Used in</td>
-      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a>,
-      <a href="javadoc/org/terrier/matching/LMMatching.html">org.terrier.matching.LMMatching</a></td>
+      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -2545,8 +2516,7 @@ value would be: link:LinkFilter</td>
     </tr>
  <tr>
       <td>Used in</td>
-      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a>,
-      <a href="javadoc/org/terrier/matching/LMMatching.html">org.terrier.matching.LMMatching</a></td>
+      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -2576,8 +2546,7 @@ that should be applied to all terms of all queries.</td>
     </tr>
  <tr>
       <td>Used in</td>
-      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a>,
-      <a href="javadoc/org/terrier/matching/LMMatching.html">org.terrier.matching.LMMatching</a></td>
+      <td><a href="javadoc/org/terrier/matching/Matching.html">org.terrier.matching.Matching</a></td>
     </tr>
  <tr>
       <td>Possible values</td>
@@ -2721,32 +2690,6 @@ TERRIER_HOME/var </td>
  
  
   
-<table border="1" width="100%">
- <tbody>
-    <tr>
-      <td width="15%">Property</td>
-     <td><b>trec.collection.pointers</b></td>
-   </tr>
- <tr>
-      <td>Used in</td>
-     <td><a
- href="javadoc/org/terrier/indexing/TRECCollection.html">org.terrier.indexing.TRECCollection</a></td>
-   </tr>
- <tr>
-      <td>Possible values</td>
-     <td>full path to filename</td>
-   </tr>
- <tr>
-      <td>Default value</td>
-     <td>TERRIER_INDEX_PATH + "docpointers.col"</td>
-   </tr>
-      <td>Configures</td>
-     <td>The name of a file that saves pointers for each file to the original
-text in the collection files.</td>
-   </tr>
- 
-  </tbody>
-</table>
 
 <table border="1" width="100%">
 	<tbody>
@@ -2773,35 +2716,6 @@ text in the collection files.</td>
 	</tbody>
 </table>
 
-<table border="1" width="100%">
-	<tbody>
-		<tr>
-			<td width="15%">Property</td>
-			<td><b>string.use_utf</b></td>
-		</tr>
-		<tr>
-			<td>Used in</td>
-			<td><a href="javadoc/org/terrier/structures/TRECQuery.html">org.terrier.structures.TRECQuery</a>,
-<a href="javadoc/org/terrier/structures/merging/LexiconMerger.html">org.terrier.structures.LexiconMerger</a>,
-<a href="javadoc/org/terrier/indexing/BasicIndexer.html">org.terrier.indexing.BasicIndexer</a>,
-<a href="javadoc/org/terrier/indexing/BlockIndexer.html">org.terrier.indexing.BlockIndexer</a>,
-<a href="javadoc/org/terrier/indexing/SimpleXMLCollection.html">org.terrier.indexing.SimpleXMLCollection</a></td>
-		</tr>
-		<tr>
-			<td>Possible values</td>
-			<td>true, false</td>
-		</tr>
-		<tr>
-			<td>Default value</td>
-			<td>false</td>
-		</tr>
-		<tr>
-			<td>Configures</td>
-			<td>Whether UTF support should be enabled.</td>
-		</tr>
-	</tbody>
-</table>
-
 
 <! EOL trec.encoding trecquery.ignore.desc.narr.name.tokens xml.doctag xml.idtag
 xml.terms max.number.retrieved>
@@ -2813,6 +2727,6 @@ xml.terms max.number.retrieved>
 <hr> <small> Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
  Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
  <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
-  Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>
+  Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>
 </body>
 </html>

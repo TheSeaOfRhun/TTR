@@ -17,7 +17,7 @@
  *
  * The Original Code is Full.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -45,7 +45,7 @@ import org.terrier.structures.postings.IterablePosting;
  * and modifying these scores with the appropriate modifiers.
  * Documents are matched in a document-at-a-time fashion.
  * In particular, the posting lists for all query terms are processed
- * in parallel (but without threads). In comparision to TAAT matching, this
+ * in parallel (but without threads). In comparison to TAAT matching, this
  * reduces the memory consumption during matching, as documents which will
  * not make the final retrieved set are discarded.
  * After matching, the document score modifiers are applied if necessary.
@@ -73,6 +73,7 @@ public class Full extends BaseMatching
 	}	
 	
 	/** {@inheritDoc} */
+	@SuppressWarnings("resource") //IterablePosting need not be closed
 	@Override
 	public ResultSet match(String queryNumber, MatchingQueryTerms queryTerms) throws IOException 
 	{
@@ -110,7 +111,7 @@ public class Full extends BaseMatching
         
         while (currentDocId != -1)  {
             // We create a new candidate for the doc id considered
-            CandidateResult currentCandidate = new CandidateResult(currentDocId);
+            CandidateResult currentCandidate = makeCandidateResult(currentDocId);
             
             int currentPostingListIndex = (int) (postingHeap.firstLong() & 0xFFFF), nextDocid;
             //System.err.println("currentDocid="+currentDocId+" currentPostingListIndex="+currentPostingListIndex);
@@ -148,13 +149,23 @@ public class Full extends BaseMatching
             currentDocId = selectMinimumDocId(postingHeap);
         }
         
-       // System.err.println("Scored " + scored + " documents");
-               		
+        // System.err.println("Scored " + scored + " documents");
+        plm.close();
+        
         // Fifth, we build the result set
-        resultSet = new CandidateResultSet(candidateResultList);
+        resultSet = makeResultSet(candidateResultList);
         numberOfRetrievedDocuments = resultSet.getScores().length;
         finalise(queryTerms);
 		return resultSet;
+	}
+
+	protected CandidateResultSet makeResultSet(
+			Queue<CandidateResult> candidateResultList) {
+		return new CandidateResultSet(candidateResultList);
+	}
+
+	protected CandidateResult makeCandidateResult(int currentDocId) {
+		return new CandidateResult(currentDocId);
 	}
 	
 	/** assign the score for this posting to this candidate result.

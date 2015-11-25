@@ -17,7 +17,7 @@
  *
  * The Original Code is TestCrawlDate.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,8 +35,8 @@ public class TestCrawlDate {
 	@Test public void testTRECWebCollection()
 	{
 		assertEquals("", TRECWebCollection.parseDate(null));
-		assertEquals("852707373000", TRECWebCollection.parseDate("19970108070933"));
-		assertEquals("852548585000", TRECWebCollection.parseDate("19970106110305"));
+		assertEquals("852707373", TRECWebCollection.parseDate("19970108070933"));
+		assertEquals("852548585", TRECWebCollection.parseDate("19970106110305"));
 	}
 	
 //	@Test public void testWARC019Collection()
@@ -48,7 +48,7 @@ public class TestCrawlDate {
 	@Test public void testWARC09Collection()
 	{
 		assertEquals("", WARC09Collection.parseDate(null));
-		assertEquals("1158795830000", WARC09Collection.parseDate("20060920234350"));
+		assertEquals("1158795830", WARC09Collection.parseDate("20060920234350"));
 	}
 	
 }

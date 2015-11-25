@@ -44,6 +44,34 @@ import org.terrier.utility.ApplicationSetup;
  * @since 3.0
  * @author Craig Macdonald */
 public abstract class GammaFunction implements Serializable {
+	static final boolean DEBUG = false;
+	
+	static class DebugGammaFunction extends GammaFunction
+	{
+
+		private static final long serialVersionUID = -4278880773160450823L;
+		
+		GammaFunction p;
+		public DebugGammaFunction(GammaFunction _p)
+		{
+			p = _p;
+		}
+
+		public double compute(double number)
+		{
+			double rtr = p.compute(number);
+			System.out.println(p.getClass().getSimpleName()+".compute("+number+")="+rtr);
+			return rtr;
+		}
+
+		public double compute_log(double number)
+        {
+            double rtr = p.compute_log(number);
+            System.out.println(p.getClass().getSimpleName()+".compute_log("+number+")="+rtr);
+            return rtr;
+        }
+	}
+
 	private static final long serialVersionUID = 1L;
 
 	/** Get the value of the gamma function for the specified number.
@@ -63,10 +91,15 @@ public abstract class GammaFunction implements Serializable {
 		String className = ApplicationSetup.getProperty("gamma.function", WikipediaLanczosGammaFunction.class.getName());
 		try{
 			Class<? extends GammaFunction> clz = Class.forName(className).asSubclass(GammaFunction.class);
-			return clz.newInstance();
+			return DEBUG ? new DebugGammaFunction(clz.newInstance()) : clz.newInstance();
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
 		}
+	}
+
+	public static void main(String[] args)
+	{
+		System.out.println(getGammaFunction().compute_log(Double.parseDouble(args[0])));
 	}
 	
 	/** Compute factorial of n, for 0 &lt; n &lt 21.
@@ -87,6 +120,7 @@ public abstract class GammaFunction implements Serializable {
 	 * @since 3.0
 	 */
 	static class WikipediaLanczosGammaFunction extends GammaFunction {		
+		private static final long serialVersionUID = 1129349228998597260L;
 		final static int g = 7;
 		final static double p[] = new double[]{ 0.99999999999980993, 676.5203681218851, -1259.1392167224028,
 			771.32342877765313, -176.61502916214059, 12.507343278686905,

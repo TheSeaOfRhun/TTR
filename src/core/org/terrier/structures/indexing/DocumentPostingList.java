@@ -17,7 +17,7 @@
  *
  * The Original Code is DocumentPostingList.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,10 +30,15 @@ package org.terrier.structures.indexing;
 import gnu.trove.TObjectIntHashMap;
 import gnu.trove.TObjectIntProcedure;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.terrier.sorting.HeapSortInt;
 import org.terrier.structures.BasicDocumentIndexEntry;
 import org.terrier.structures.DocumentIndexEntry;
@@ -49,7 +54,7 @@ import org.terrier.utility.TermCodes;
   * <ul><li><tt>indexing.avg.unique.terms.per.doc</tt> - number of unique terms per doc on average, used to tune the initial 
   * size of the hashmaps used in this class.</li></ul>
   */
-public class DocumentPostingList {
+public class DocumentPostingList implements Writable{
 	/** number of unique terms per doc on average, used to tune the initial size of the hashmaps used in this class. */
 	protected static final int AVG_DOCUMENT_UNIQUE_TERMS =
 		Integer.parseInt(ApplicationSetup.getProperty("indexing.avg.unique.terms.per.doc", "120"));
@@ -237,6 +242,38 @@ public class DocumentPostingList {
 		public void close() throws IOException {
 			terms = null;
 			termIds = null;
+		}
+	}
+
+	public void readFields(DataInput in) throws IOException {
+		clear();
+		final int termCount = WritableUtils.readVInt(in);
+		for(int i=0;i<termCount;i++)
+		{
+			String term = Text.readString(in);
+			int freq = WritableUtils.readVInt(in);
+			insert(freq, term);
+		}
+	}
+
+	public void write(final DataOutput out) throws IOException {
+		WritableUtils.writeVInt(out, getNumberOfPointers());
+		try
+		{
+			this.forEachTerm(new TObjectIntProcedure<String>()
+			{
+				public boolean execute(String term, int freq) {
+					try{
+					Text.writeString(out, term);
+					WritableUtils.writeVInt(out, freq);
+					} catch (IOException e) {
+						throw new Error(e);
+					}
+					return true;
+				}
+			});
+		} catch (Error e) {
+			throw (IOException)e.getCause();
 		}
 	}
 	

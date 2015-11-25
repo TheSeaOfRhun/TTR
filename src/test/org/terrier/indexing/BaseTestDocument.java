@@ -17,7 +17,7 @@
  *
  * The Original Code is BaseTestDocument.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -43,7 +43,7 @@ public abstract class BaseTestDocument extends ApplicationSetupBasedTest {
 			if (t != null)
 			{
 				String[] parts = terms[i].split(":");
-				assertEquals("Term mismatch on token "+ i, parts[0], t);
+				assertEquals("Term mismatch on token "+ i + " for " + d.getProperty("filename"), parts[0], t);
 				for(int j=1;j<parts.length;j++)
 					assertTrue("Term " +  parts[0]  + " was not found to occur in field " + parts[j], d.getFields().contains(parts[j]));
 				assertEquals("Term " +  parts[0]  + " did not have correct fields", parts.length-1, d.getFields().size());
@@ -53,7 +53,8 @@ public abstract class BaseTestDocument extends ApplicationSetupBasedTest {
 		assertEquals(terms.length, i);
 		while(! d.endOfDocument())
 		{
-			assertNull(d.getNextTerm());
+			String t = d.getNextTerm();
+			assertNull("Trailing term " + t + " was unexpected", t);
 		}
 		assertTrue(d.endOfDocument());
 	}

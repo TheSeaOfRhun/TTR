@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockFieldPostingImpl.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -30,14 +30,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.WritableUtils;
-
 import org.terrier.utility.ArrayUtils;
 /** 
  * A writable block field posting list 
  */
+@SuppressWarnings("serial")
 public class BlockFieldPostingImpl extends BlockPostingImpl implements FieldPosting {
 
 	int[] fieldFrequencies;
+	int[] fieldLengths;
 	
 	/**
 	 * default constructor
@@ -75,7 +76,11 @@ public class BlockFieldPostingImpl extends BlockPostingImpl implements FieldPost
 
 	/** {@inheritDoc} */
 	public int[] getFieldLengths() {
-		return null;
+		return fieldLengths;
+	}
+	
+	public void setFieldLengths(int[] fl) {
+		fieldLengths = fl;
 	}
 	
 	@Override
@@ -95,17 +100,17 @@ public class BlockFieldPostingImpl extends BlockPostingImpl implements FieldPost
 			WritableUtils.writeVInt(out, field_f);
 	}
 
+	/** {@inheritDoc} */
 	@Override
-	public WritablePosting asWritablePosting()
-	{	
-		int[] newPos = new int[positions.length];
-		System.arraycopy(positions, 0, newPos, 0, positions.length);
-		BlockFieldPostingImpl fbp = new BlockFieldPostingImpl(id, tf, newPos, fieldFrequencies.length);
-		fbp.id = id;
-		fbp.tf = tf;
-		System.arraycopy(fieldFrequencies, 0, fbp.fieldFrequencies, 0, fieldFrequencies.length);
-		return fbp;
+	public WritablePosting asWritablePosting() {
+		int fieldCount = fieldFrequencies.length;
+		//System.err.println(this.getClass().getSimpleName() + " clone happening. pos=" + Arrays.toString(this.getPositions()));
+		BlockFieldPostingImpl bfpi = new BlockFieldPostingImpl(id, tf, positions, fieldCount);
+		System.arraycopy(fieldFrequencies, 0, bfpi.getFieldFrequencies(), 0, fieldCount);
+		//System.err.println(bfpi.getClass().getSimpleName() + " clone happened. pos=" + Arrays.toString(bfpi.getPositions()));
+		return bfpi;
 	}
+	
 	/** 
 	 * {@inheritDoc} 
 	 */

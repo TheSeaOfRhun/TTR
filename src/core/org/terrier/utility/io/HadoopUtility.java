@@ -17,7 +17,7 @@
  *
  * The Original Code is HadoopUtility.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,13 +26,17 @@
  */
 package org.terrier.utility.io;
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -45,11 +49,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.log4j.Logger;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.utility.ApplicationSetup;
 import org.terrier.utility.Files;
 
@@ -74,51 +80,89 @@ import org.terrier.utility.Files;
 public class HadoopUtility {
 	
 	protected static final Logger logger = Logger.getLogger(HadoopUtility.class);
-	
-	/** Handy base class for MapReduce jobs. */
-	public static abstract class MapReduceBase<K1,V1,K2,V2,K3,V3> implements Mapper<K1,V1,K2,V2>, Reducer<K2,V2,K3,V3>
+
+	/**
+	 * A base class for a MapReduce job. It prepare Terrier IO access to the HDFS and
+	 * performs configuration of the Map and Reduce classes.
+	 * @author Richard McCreadie
+	 *
+	 */
+	static abstract class MRJobBase implements JobConfigurable, Closeable
 	{
 		protected JobConf jc;
-		
 		/** {@inheritDoc} */
-		public void configure(JobConf _jc) {
-			this.jc = _jc;
-						
-			//1. configure application
-			try{ 
-				HadoopUtility.loadTerrierJob(_jc);
-			} catch (Exception e) {
-				throw new Error("Cannot load ApplicationSetup", e);
-			}
-			
-			//2. configurure this class
-			try{
-				if (isMap(_jc))
-				{
-					configureMap();
-				} else {
-					configureReduce();
-				}
-			} catch (Exception e) { 
-				throw new Error("Cannot configure indexer", e);
-			}
-		}
-		
-		protected abstract void configureMap() throws IOException;
-		protected abstract void configureReduce() throws IOException;
-		
-		/** Called at end of map or reduce task. Calls internally closeMap() or closeReduce() */
-		public void close() throws IOException {
-			if (isMap(jc))
-			{
-				closeMap();
-			} else {
-				closeReduce();
-			}
-		}
+        public void configure(JobConf _jc) {
+            this.jc = _jc;
 
-		protected abstract void closeMap() throws IOException;
-		protected abstract void closeReduce() throws IOException;		
+            //1. configure application
+            try{
+                HadoopUtility.loadTerrierJob(_jc);
+            } catch (Exception e) {
+                throw new Error("Cannot load ApplicationSetup", e);
+            }
+			//2. configurure this class
+            try{
+                if (isMap(_jc))
+                {
+                    configureMap();
+                } else {
+                    configureReduce();
+                }
+            } catch (Exception e) {
+                throw new Error("Cannot configure indexer", e);
+            }
+        }
+		protected abstract void configureMap() throws IOException;
+        protected abstract void configureReduce() throws IOException;
+
+		/** Called at end of map or reduce task. Calls internally closeMap() or closeReduce() */
+        public void close() throws IOException {
+            if (isMap(jc))
+            {
+                closeMap();
+            } else {
+                closeReduce();
+            }
+        }
+
+        protected abstract void closeMap() throws IOException;
+        protected abstract void closeReduce() throws IOException;
+		
+	}
+
+	/**
+	 * Abstract class that provides default configure and close methods for a Reducer.
+	 * @author Richard McCreadie
+	 *
+	 * @param <K1> key 1
+	 * @param <V1> value 1
+	 * @param <K2> key 2
+	 * @param <V2> value 2
+	 */
+	public static abstract class ReduceBase<K1,V1,K2,V2> extends MRJobBase implements Reducer<K1,V1,K2,V2>
+	{
+		protected void configureMap() throws IOException {}	
+		protected void closeMap() throws IOException {}
+	}
+
+	/**
+	 * Abstract class that provides default configure and close methods for a Mapper.
+	 * @author Richard McCreadie
+	 *
+	 * @param <K1> key 1
+	 * @param <V1> value 1
+	 * @param <K2> key 2
+	 * @param <V2> value 2
+	 */
+	public static abstract class MapBase<K1,V1,K2,V2> extends MRJobBase implements Mapper<K1,V1,K2,V2>
+	{
+        protected void configureReduce() throws IOException {}
+        protected void closeReduce() throws IOException {}
+    }
+	
+	/** Handy base class for MapReduce jobs. */
+	public static abstract class MapReduceBase<K1,V1,K2,V2,K3,V3> extends MRJobBase implements Mapper<K1,V1,K2,V2>, Reducer<K2,V2,K3,V3>
+	{
 	}
 	
 	/** Utility method to detect if a task is a Map task or not */
@@ -208,8 +252,29 @@ public class HadoopUtility {
 				System.getenv().get("CLASSPATH"),
 				System.getProperty("java.class.path")
 			});
+		
+		/**
+		 * Remove from classpath hadoop libraries which are already present in a node classpath
+		 */
+		
+		
+		ArrayList<String> jarList = new ArrayList<String>(Arrays.asList(jars));
+		
+		List<String> hadoopJarList = new ArrayList<String>();
+		
+		// find all hadoop jar files. We use the structure of the lib folder to determine these
+		String separator = ApplicationSetup.FILE_SEPARATOR;
+		for (String candidateHadoopJar : jarList) {
+			if (candidateHadoopJar.contains("lib"+separator+"hadoop"+separator)) {
+				//System.err.println("Removing "+candidateHadoopJar+" from classpath");
+				hadoopJarList.add(candidateHadoopJar);
+			}
+		}
+		
+		jarList.removeAll(hadoopJarList);
+		
 		final FileSystem defFS = FileSystem.get(jobConf);
-		for (String jarFile : jars)
+		for (String jarFile : jarList)
 		{
 			Path srcJarFilePath = new Path("file:///"+jarFile);
 			String filename = srcJarFilePath.getName();
@@ -260,6 +325,7 @@ public class HadoopUtility {
 		return jars.toArray(new String[0]);
 	}
 
+	protected static final String HADOOP_TMP_PATH = ApplicationSetup.getProperty("terrier.hadoop.io.tmpdir", "/tmp");
 	protected static final String[] checkSystemProperties = {"file", "java", "line", "os", "path", "sun", "user"};
 	protected static final Random random = new Random();
 
@@ -268,7 +334,7 @@ public class HadoopUtility {
 		final int randomKey = jobConf.getInt("terrier.tempfile.id", random.nextInt());
 		jobConf.setInt("terrier.tempfile.id", randomKey);
 		FileSystem defFS = FileSystem.get(jobConf);
-        final Path tempFile = new Path("/tmp/"+(randomKey)+"-"+filename);
+        final Path tempFile = new Path(HADOOP_TMP_PATH + "/"+(randomKey)+"-"+filename);
         defFS.deleteOnExit(tempFile);
 		return tempFile;
 	}
@@ -413,7 +479,7 @@ public class HadoopUtility {
 	}
 	
 	/** Get an Index saved to the specifified Hadoop configuration by toHConfiguration() */
-	public static Index fromHConfiguration(Configuration c)
+	public static IndexOnDisk fromHConfiguration(Configuration c)
 	{
 		return Index.createIndex(c.get("terrier.index.path"), c.get("terrier.index.prefix"));
 	}
@@ -421,8 +487,8 @@ public class HadoopUtility {
 	/** Puts the specified index onto the given Hadoop configuration */
 	public static void toHConfiguration(Index i, Configuration c)
 	{
-		c.set("terrier.index.path", i.getPath());
-		c.set("terrier.index.prefix", i.getPrefix());
+		c.set("terrier.index.path", ((IndexOnDisk) i).getPath());
+		c.set("terrier.index.prefix", ((IndexOnDisk) i).getPrefix());
 	}
 	
 	/**

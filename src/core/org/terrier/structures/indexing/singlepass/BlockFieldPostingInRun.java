@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockFieldPostingInRun.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,7 +29,7 @@ package org.terrier.structures.indexing.singlepass;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.terrier.compression.BitOut;
+import org.terrier.compression.bit.BitOut;
 import org.terrier.structures.FieldLexiconEntry;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.postings.BlockFieldPostingImpl;
@@ -38,7 +38,7 @@ import org.terrier.structures.postings.WritablePosting;
 
 /** Class holding the information for a posting list read
  * from a previously written run at disk. Used in the merging phase of the Single pass inversion method.
- * This class knows how to append itself to a {@link org.terrier.compression.BitOut} and it
+ * This class knows how to append itself to a {@link org.terrier.compression.bit.BitOut} and it
  * represents a posting with blocks and field information <code>(tf, df, [docid, idf, fieldScore, blockFr [blockid]])</code>
  * @author Roi Blanco
  *
@@ -59,7 +59,7 @@ public class BlockFieldPostingInRun extends BlockPostingInRun{
 	}
 
 	/**
-	 * Writes the document data of this posting to a {@link org.terrier.compression.BitOut} 
+	 * Writes the document data of this posting to a {@link org.terrier.compression.bit.BitOut} 
 	 * It encodes the data with the right compression methods.
 	 * The stream is written as <code>d1, idf(d1), fields, blockNo(d1), bid1, bid2, ...,  d2 - d1, idf(d2), fields, blockNo(d2), ...</code> etc
 	 * @param bos BitOut to be written.
@@ -141,6 +141,13 @@ public class BlockFieldPostingInRun extends BlockPostingInRun{
 
 		public int[] getFieldLengths() {
 			return null;
+		}
+		
+		/** {@inheritDoc}.
+		 * This operation is unsupported. */
+		@Override
+		public void setFieldLengths(int[] fl) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

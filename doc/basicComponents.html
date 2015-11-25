@@ -20,7 +20,7 @@ On this page we will give an overview of Terrier's main components and their int
 
 
 <h3>Indexing</h3>
-<p>The graphic below gives an overview of the interaction of the main components 
+<p>The graphic below gives an overview of the interaction between the main components 
 involved in the indexing process.</p>
 <br> 
 <img src="images/indexing_architecture.png" alt="Indexing Architecture Overview" width="66%" />
@@ -33,7 +33,7 @@ Document implementations usually are provided with an instance of a <a href="jav
 </li>
 
 <li>
-The indexer is responsible for managing the indexing process. It iterates through the documents of the collection and sends each found term through a <a href="javadoc/org/terrier/terms/TermPipeline.html">TermPipeline</a> component.
+The indexer is responsible for managing the indexing process. It iterates over the documents of the collection and sends each term found through a <a href="javadoc/org/terrier/terms/TermPipeline.html">TermPipeline</a> component.
 
 </li>
 <li>
@@ -47,7 +47,7 @@ and then applies Porter's Stemming algorithm for English to the terms
 <li>
 Once terms have been processed through the TermPipeline, they are aggregated and the following data structures are created by their corresponding DocumentBuilders: DirectIndex, DocumentIndex, Lexicon, and InvertedIndex.
 </li>
-<li>For single-pass indexing, the structures are written in a different order. Inverted file postings are built in memory, and committed to 'runs' when memory is exhausted. Once the collection had been indexed, all runs are merged to form the inverted index and the lexicon.</li>
+<li>For single-pass indexing, the structures are written in a different order. Inverted file postings are built in memory, and committed to 'runs' when memory is exhausted. Once the collection had been indexed, all runs are merged form the inverted index and the lexicon.</li>
 </ul>
 
 
@@ -71,18 +71,18 @@ In a first step the query will be parsed and an instantiation of a Query object
 will take place.
 </li>
 <li>
-Afterwards the query will be handed to the Manager component.
+Afterwards, the query will be handed to the Manager component.
 The manager firstly pre-processes the query, by applying it to the configured TermPipeline.
 </li>
 <li>
 After the Pre-Processing the query will be handed to the Matching component.
 The Matching component is responsible for initialising the appropriate 
 WeightingModel and DocumentScoreModifiers. Once all
-these components have been instantiated the computation of document scores 
+these components have been instantiated, the computation of document scores 
 with respect to the query will take place.
 </li>
 <li>
-Afterwards the Post Processing and PostFiltering takes place.
+Afterwards, the PostProcessing and PostFiltering takes place.
 In PostProcessing, the ResultSet can be altered in any way - for example,
 QueryExpansion expands the query, and then calls Matching again to generate
 an improved ranking of documents. PostFiltering is simpler, allowing documents
@@ -90,7 +90,7 @@ to be either included or excluded - this is ideal for interactive applications
 where users want to restrict the domain of the documents being retrieved.
 </li>
 <li>
-Finally the ResultSet will be returned to the application component.
+Finally, the ResultSet will be returned to the application component.
 </li>
 
 </ul>
@@ -149,7 +149,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	</td>
 	 	<td>
 	 	Used by Document objects to break sequences of text (e.g. sentences)
-	 	into a stream of words to index. See <a href="javadoc/org/terrier/indexing/tokenisation">org.terrier.indexing.tokenisation</a>
+	 	into a stream of words to index. See <a href="javadoc/org/terrier/indexing/tokenisation/Tokeniser.html">org.terrier.indexing.tokenisation.Tokeniser</a>
 	 	for more details.
 	 	</td>
  	</tr>
@@ -173,7 +173,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	<td>
 	 	 The component responsible for managing the indexing process. It instantiates
       	 TermPipelines and Builders. 
-      	 See <a href="javadoc/org/terrier/indexing/Indexer.html">org.terrier.indexing.Indexer </a>
+      	 See <a href="javadoc/org/terrier/structures/indexing/Indexer.html">org.terrier.structures.indexing.Indexer </a>
       	 for more details.
 	 	</td>
  	</tr>
@@ -210,7 +210,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	</td>
 	 	<td>
 	 	A highly compressed I/O layer using gamma and unary encodings.
-	 	See <a href="javadoc/org/terrier/compression/">org.terrier.compression</a>
+	 	See the org.terrier.compression packages
 	 	for more details.
 	 	</td>
  	</tr>
@@ -222,7 +222,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	The direct index stores the identifiers of terms that appear
 		in each document and the corresponding frequencies. It is used for automatic
 		query expansion, but can also be used for user profiling activities.
-		See <a href="javadoc/org/terrier/structures/DirectIndex.html">org.terrier.structures.DirectIndex</a>
+		See <a href="javadoc/org/terrier/structures/bit/DirectIndex.html">org.terrier.structures.bit.DirectIndex</a>
 	 	for more details.
 	 	</td>
  	</tr>
@@ -246,7 +246,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	The inverted index stores the posting lists, i.e. the identifiers of the
 	 	documents and their corresponding term frequencies. Moreover it is 
 	 	capable of storing the position of terms within a document.
-	 	See <a href="javadoc/org/terrier/structures/InvertedIndex.html">org.terrier.structures.InvertedIndex</a>
+	 	See <a href="javadoc/org/terrier/structures/bit/InvertedIndex.html">org.terrier.structures.bit.InvertedIndex</a>
 	 	for more details.
 	 	</td>
  	</tr>
@@ -390,7 +390,7 @@ Here we provide a listing and brief description of Terrier's components.
 	 	</td>
 	 	<td>
 	 	An application that enables indexing and querying of TREC collections.
-	 	See <a href="javadoc/TrecTerrier.html">TrecTerrier</a>
+	 	See <a href="javadoc/org/terrier/applications/TrecTerrier.html">org.terrier.applications.TrecTerrier</a>
 	 	for more details.
 	 	</td>
  	</tr>
@@ -429,7 +429,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

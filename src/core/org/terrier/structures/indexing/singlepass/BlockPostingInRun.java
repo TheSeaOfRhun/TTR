@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockPostingInRun.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,14 +28,14 @@ package org.terrier.structures.indexing.singlepass;
 
 import java.io.IOException;
 
-import org.terrier.compression.BitOut;
+import org.terrier.compression.bit.BitOut;
 import org.terrier.structures.postings.BlockPosting;
 import org.terrier.structures.postings.BlockPostingImpl;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.structures.postings.WritablePosting;
 /** Class holding the information for a posting list read
  * from a previously written run at disk. Used in the merging phase of the Single pass inversion method.
- * This class knows how to append itself to a {@link org.terrier.compression.BitOut} and it
+ * This class knows how to append itself to a {@link org.terrier.compression.bit.BitOut} and it
  * represents a posting with blocks information <code>(tf, df, [docid, idf, blockFr [blockid]])</code>
  * @author Roi Blanco
  *
@@ -50,7 +50,7 @@ public class BlockPostingInRun extends SimplePostingInRun
 	}
 
 	/**
-	 * Writes the document data of this posting to a {@link org.terrier.compression.BitOut} 
+	 * Writes the document data of this posting to a {@link org.terrier.compression.bit.BitOut} 
 	 * It encodes the data with the right compression methods.
 	 * The stream is written as <code>d1, idf(d1), blockNo(d1), bid1, bid2, ...,  d2 - d1, idf(d2), blockNo(d2), ...</code> etc
 	 * @param bos BitOut to be written.

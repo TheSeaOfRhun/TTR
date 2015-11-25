@@ -8,7 +8,7 @@
 
 <body>
 <!--!bodystart-->
-[<a href="extend_retrieval.html">Previous: Extending Retrieval</a>] [<a href="index.html">Contents</a>] [<a href="dfr_description.html">Next: DFR Description</a>]
+[<a href="compression.html">Previous: Pluggable Compression</a>] [<a href="index.html">Contents</a>] [<a href="dfr_description.html">Next: DFR Description</a>]
 </br><br><h1>Non English language support in Terrier</h1>
 
 <h2>Indexing</h2>
@@ -25,9 +25,19 @@ TRECCollection</a>, the <a href="javadoc/org/terrier/indexing/Document.html">Doc
 should be informed of the expected character set using the property <tt>trec.encoding</tt>.
 </p>
 
-<h2>Tokenisers</h2>
+<h2>File Encodings</h2>
+<p>While Terrier uses UTF internally to represent terms, the Collection and Document classes need 
+to ensure that they are correctly opening files using the correct character encodings. For instance,
+while valid XML files will specify the encoding at the top of the file, a corpus of Hungarian
+in TREC format may be encoded in ISO 8859-16 or UTF-8. You should specify the encoding that
+TRECCollection should use to open the files, using the <tt>trec.encoding</tt> property. Note that
+Terrier will default to the Java default encoding if <tt>trec.encoding</tt> is not set. In a Unix-like
+operating system, Java's choice of default encoding may be influenced by the LANG environment variable -
+e.g. LANG=en_US.UTF-8 will cause Java to default to opening files using UTF-8 encoding, while 
+en_US will use ISO-8859-1.</p>
 
-<p>Tokenisers are designed to identify the terms from a stream of text. It is expected that no markup will be present in the text passed to the tokenisers (for indexing, the removal of markup is handled by <a href="javadoc/org/terrier/indexing/Document.html">Document</a> implementations - e.g. HTML tags are parsed by <a href="javadoc/org/terrier/indexing/TaggedDocument.html">TaggedDocument</a>). The choice of tokeniser to use depends on the language being dealt with. Terrier 3.5 ships with three different tokenisers for use when indexing text or parsing queries.</p>
+<h2>Tokenisers</h2>
+<p>Tokenisers are designed to identify the terms from a stream of text. It is expected that no markup will be present in the text passed to the tokenisers (for indexing, the removal of markup is handled by <a href="javadoc/org/terrier/indexing/Document.html">Document</a> implementations - e.g. HTML tags are parsed by <a href="javadoc/org/terrier/indexing/TaggedDocument.html">TaggedDocument</a>). The choice of tokeniser to use depends on the language being dealt with. Terrier 3.5 ships with three different tokenisers for use when indexing text or parsing queries. The choice of tokeniser is specified by the tokeniser property, e.g. <tt>tokeniser=EnglishTokeniser</tt>.</p>
 <ul>
  <li><a href="javadoc/org/terrier/indexing/tokenisation/EnglishTokeniser.html">EnglishTokeniser</a> - assumes that all valid characters in terms are A-Z, a-z and 0-9. Obviously this assumption is incorrect when indexing documents in languages other than English.</li>
  <li><a href="javadoc/org/terrier/indexing/tokenisation/UTFTokeniser.html">UTFTokeniser</a> - uses Java's Character class to determine what valid characters in indexing terms are. In particular, a
@@ -62,7 +72,7 @@ should be informed of the expected character set using the property <tt>trec.enc
 <p>When experimenting with topics in files other than English, use the same <tt>tokeniser</tt> setting
 used during indexing. Moreover, you should also use the property <tt>trec.encoding</tt> to ensure that the correct encoding is used when reading the topic files.</p>
 
-[<a href="extend_retrieval.html">Previous: Extending Retrieval</a>] [<a href="index.html">Contents</a>] [<a href="dfr_description.html">Next: DFR Description</a>]
+[<a href="compression.html">Previous: Pluggable Compression</a>] [<a href="index.html">Contents</a>] [<a href="dfr_description.html">Next: DFR Description</a>]
 <!--!bodyend-->
 <hr>
 <small>
@@ -70,7 +80,7 @@ Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
 
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. All Rights Reserved.
 </small>
 </body>
 </html>

@@ -17,7 +17,7 @@
  *
  * The Original Code is Idf.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,21 +26,20 @@
  *   Vassilis Plachouras <vassilis{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
+import static org.terrier.matching.models.WeightingModelLibrary.LOG_2_OF_E;
 import java.io.Serializable;
 
-//import org.terrier.structures.CollectionStatistics;
 /**
  * This class computes the idf values for specific terms in the collection.
  * @author Gianni Amati, Ben He, Vassilis Plachouras
  */
 public final class Idf implements Serializable, Cloneable{
 	private static final long serialVersionUID = 1L;
-	/** The natural logarithm of 2, used to change the base of logarithms.*/
-	public static final double LOG_2_OF_E = Math.log(2.0D);
-	/** The reciprocal of CONSTANT, computed for efficiency.*/
-	public static final double REC_LOG_2_OF_E = 1.0D / LOG_2_OF_E;
+
 	/** The number of documents in the collection.*/
 	private double numberOfDocuments;
+
 	/** A default constructor. NOTE: You must set the number of documents
 	  * if you intend to use the idf* functions in this class */
 	public Idf() {}
@@ -68,7 +67,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the base 2 log of numberOfDocuments/d
 	 */
 	public double idf(double d) {
-		return (Math.log(numberOfDocuments/d) * REC_LOG_2_OF_E);
+		return (Math.log(numberOfDocuments/d) * LOG_2_OF_E);
 	}
 	
 	/**
@@ -77,7 +76,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the idf of the given number d.
 	 */
 	public double idf(int d) {
-		return (Math.log(numberOfDocuments/((double)d)) * REC_LOG_2_OF_E);
+		return (Math.log(numberOfDocuments/((double)d)) * LOG_2_OF_E);
 	}
 	
 	/**
@@ -86,7 +85,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the base 2 log of numberOfDocuments/d
 	 */
 	public double idfDFR(double d) {
-		return (Math.log((numberOfDocuments+1)/(d+0.5)) * REC_LOG_2_OF_E);
+		return (Math.log((numberOfDocuments+1)/(d+0.5)) * LOG_2_OF_E);
 	}
 	
 	/**
@@ -95,7 +94,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the idf of the given number d.
 	 */
 	public double idfDFR(int d) {
-		return (Math.log((numberOfDocuments+1)/((double)d+0.5d)) * REC_LOG_2_OF_E);
+		return (Math.log((numberOfDocuments+1)/((double)d+0.5d)) * LOG_2_OF_E);
 	}
 	
 	/**
@@ -106,7 +105,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the INQUERY idf of the number d
 	 */
 	public double idfENQUIRY(double d) {
-		return (Math.log(numberOfDocuments - d / d) * REC_LOG_2_OF_E);
+		return (Math.log(numberOfDocuments - d / d) * LOG_2_OF_E);
 	}
 	
 	/**
@@ -115,7 +114,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the normalised idf of d
 	 */
 	public double idfN(double d) {
-		return (log(numberOfDocuments, d) / log(numberOfDocuments));
+		return (WeightingModelLibrary.log(numberOfDocuments, d) / log(numberOfDocuments));
 	}
 	/**
 	 * Set number of documents
@@ -131,7 +130,7 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the normalised idf of d
 	 */
 	public double idfN(int d) {
-		return (log(numberOfDocuments, (double)d) / log(numberOfDocuments));
+		return (WeightingModelLibrary.log(numberOfDocuments, (double)d) / log(numberOfDocuments));
 	}
 	
 	/**
@@ -140,27 +139,9 @@ public final class Idf implements Serializable, Cloneable{
 	 * @return the normalised INQUERY idf of d
 	 */
 	public double idfNENQUIRY(double d) {
-		return (log(numberOfDocuments + 1.0D, d + 0.5D) / log(numberOfDocuments+1.0D));
+		return (WeightingModelLibrary.log(numberOfDocuments + 1.0D, d + 0.5D) / log(numberOfDocuments+1.0D));
 	}
-	
-	/**
-	 * Returns the base 2 log of the given double precision number.
-	 * @param d The number of which the log we will compute
-	 * @return the base 2 log of the given number
-	 */
-	public static double log(double d) {
-		return (Math.log(d) * REC_LOG_2_OF_E);
-	}
-	
-	/**
-	 * Returns the base 2 log of d1 over d2
-	 * @param d1 the nominator
-	 * @param d2 the denominator
-	 * @return the base 2 log of d1/d2
-	 */
-	public static double log(double d1, double d2) {
-		return (Math.log(d1/d2) * REC_LOG_2_OF_E);
-	}
+
 	/**
 	 * main
 	 * @param args
@@ -172,4 +153,38 @@ public final class Idf implements Serializable, Cloneable{
 			System.out.println("log_2("+v+")=" +log(Double.parseDouble(v)));
 		}
 	}
+	
+	/**
+	 *Returns the base 2 log of the given double precision number.
+	 * Method has been moved to WeightingModelLibrary
+	 * @param d The number of which the log we will compute
+	 * @return the base 2 log of the given numbers
+	 */
+	@Deprecated
+	public static double log(double d) {
+		return WeightingModelLibrary.log(d);
+	}
+	
+	/**
+	 * Returns the base 2 log of d1 over d2. Do not use, moved to WeightingModelLibrary
+	 * @param d1 the numerator
+	 * @param d2 the denominator
+	 * @return the base 2 log of d1/d2
+	 * @return the base 2 log of the given numbers
+	 *  Do not use, moved to WeightingModelLibrary
+	 */
+	@Deprecated 
+	public static double log(double d1, double d2) {
+		return WeightingModelLibrary.log(d1,d2);
+	}
+	
+	/** The natural logarithm of 2, used to change the base of logarithms.
+	 Do not use, moved to WeightingModelLibrary*/
+	@Deprecated
+	public static final double LOG_E_OF_2 = Math.log(2.0D);
+	/** The logarithm in base 2 of e, used to change the base of logarithms.
+	 * Do not use, moved to WeightingModelLibrary*/
+	@Deprecated
+	public static final double REC_LOG_2_OF_E = 1.0D / LOG_E_OF_2;
+	
 }

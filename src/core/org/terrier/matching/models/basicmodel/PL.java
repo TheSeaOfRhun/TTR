@@ -17,7 +17,7 @@
  *
  * The Original Code is PL.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,29 +27,32 @@
  */
 package org.terrier.matching.models.basicmodel;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.*;
 
 /**
  * This class implements the PL weighting model.
  * @author Gianni Amati, Ben He, Vassilis Plachouras
  * @since 3.0
  */
-public class PL extends P
-{
+public class PL extends P {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public double score(double tf, double documentFrequency,
-			double F_t, double keyFrequency, double documentLength) {
+	public double score(
+			double tf,
+			double documentFrequency,
+			double F_t,
+			double keyFrequency,
+			double documentLength) {
 		double NORM = 1.0D / (tf + 1d);
 		double f = F_t / numberOfDocuments;
 
 		return NORM
 			* keyFrequency
-			* (tf * Idf.log(1d / f)
-				+ f * Idf.REC_LOG_2_OF_E
-				+ 0.5d * Idf.log(2 * Math.PI * tf)
-				+ tf * (Idf.log(tf) - Idf.REC_LOG_2_OF_E));
+			* (tf * log(1d / f)
+				+ f * LOG_2_OF_E
+				+ 0.5d * log(2 * Math.PI * tf)
+				+ tf * (log(tf) - LOG_2_OF_E));
 	}
 
 	@Override

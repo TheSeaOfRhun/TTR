@@ -17,7 +17,7 @@
  *
  * The Original Code is DependenceScoreModifier.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -36,6 +36,9 @@ import org.terrier.sorting.MultiSort;
 import org.terrier.structures.CollectionStatistics;
 import org.terrier.structures.EntryStatistics;
 import org.terrier.structures.Index;
+import org.terrier.structures.Lexicon;
+import org.terrier.structures.LexiconEntry;
+import org.terrier.structures.Pointer;
 import org.terrier.structures.postings.BlockPosting;
 import org.terrier.structures.postings.IterablePosting;
 import org.terrier.structures.postings.Posting;
@@ -141,7 +144,9 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 				.println("ERROR: Wrong function id specified for ProximityScoreModifierTREC2009");
 			}
 	
-			PostingListManager plm = new PostingListManager(index, index.getCollectionStatistics(), terms);
+			boolean splitSynonyms = Boolean.parseBoolean(ApplicationSetup.getProperty(
+				"proximity.plm.split.synonyms", "true"));
+			PostingListManager plm = new PostingListManager(index, index.getCollectionStatistics(), terms, splitSynonyms);
 			plm.prepare(false);
 			phraseTerms = new String[plm.getNumTerms()];
 			EntryStatistics[] es = new EntryStatistics[plm.getNumTerms()];
@@ -195,6 +200,18 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 	protected void determineGlobalStatistics(String[] terms, EntryStatistics[] es, boolean SD) throws IOException
 	{}
 	
+	/** Opens the posting list for an index and lexicon entry **/
+	protected void openPostingLists(Index index, LexiconEntry[] les, IterablePosting[] ips) throws IOException
+	{
+		final Lexicon<String> lexicon = index.getLexicon();		
+		for (int i = 0; i < phraseTerms.length; i++) {
+			les[i] = lexicon.getLexiconEntry(phraseTerms[i]);
+			if (les[i] != null) {
+				ips[i] = index.getInvertedIndex().getPostings((Pointer) les[i]);
+			}
+		}
+	}
+
 	
 	protected void doDependency(Index index, final EntryStatistics es[], final IterablePosting ips[], ResultSet rs, final double[] phraseTermWeights, boolean SD) throws IOException 
 	{
@@ -219,13 +236,18 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 		final double[] scores = rs.getScores();
 		final short[] occurrences = rs.getOccurrences();
 	
+		int altered = 0;
+		
 		// Sort by docid so that term postings can be read sequentially (ip.next())
 		MultiSort.ascendingHeapSort(docids, scores, occurrences, docids.length);
 	
 		
 		// firstly, apply w_t to all document scores
 		final int docidsLength = docids.length;
+		boolean allZero = true;
 		for (int i = 0; i < docidsLength; i++) {
+			if (scores[i] != 0.0d)
+				allZero = false;
 			scores[i] = w_t * scores[i];
 		}
 	
@@ -235,7 +257,7 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 			int i = -1;
 			int targetDocId = docids[k];
 			
-			if (scores[k] <= 0.0d)
+			if (! allZero && scores[k] <= 0.0d)
 				continue DOC;
 			
 			//System.err.print("docid=" + targetDocId);
@@ -258,7 +280,7 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 				
 				while (ip.getId() < targetDocId) {
 				//do {
-					if (! (ip.next() != IterablePosting.EOL)) {
+					if (ip.next() == IterablePosting.EOL) {
 						okToUse[i] = false;
 						postingListFinished[i] = true;
 						continue TERM;
@@ -277,7 +299,7 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 				//this document will not be considered, as it has no pair of query terms present
 				continue DOC;
 			}
-			
+			altered++;
 			// ok, all postings which have okToUse set to true, can be used in
 			// prox calculation
 			if (SD) {
@@ -348,6 +370,7 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 			if (ip != null)
 				ip.close();
 		}
+		System.err.println(this.getClass().getSimpleName() + " altered scores for " + altered + " documents");
 	
 	}
 
@@ -395,14 +418,20 @@ public abstract class DependenceScoreModifier  implements DocumentScoreModifier 
 	 */
 	protected double scoreFDSD(boolean SD, int i, final Posting ip1, int j, final Posting ip2, final double _avgDocLen) {
 			
-				final int[] blocks1 = ((BlockPosting) ip1).getPositions();
-				final int[] blocks2 = ((BlockPosting) ip2).getPositions();
-				int docLength = ip1.getDocumentLength();
+		final int[] blocks1 = ((BlockPosting) ip1).getPositions();
+		final int[] blocks2 = ((BlockPosting) ip2).getPositions();
+		int docLength = ip1.getDocumentLength();
 			
-				final int matchingNGrams = SD 
-					? Distance.noTimesSameOrder(blocks1, blocks2, ngramLength, docLength) 
-					: Distance.noTimes(blocks1, blocks2, ngramLength, docLength);
-				return scoreFDSD(matchingNGrams, docLength);
+		final int matchingNGrams = SD 
+			? Distance.noTimesSameOrder(blocks1, blocks2, ngramLength, docLength) 
+			: Distance.noTimes(blocks1, blocks2, ngramLength, docLength);
+		final double s = scoreFDSD(matchingNGrams, docLength);
+		if (Double.isNaN(s))
+		{
+			System.err.println(this.getClass().getSimpleName() + " returned NaN for document " 
+				+ ip1.getId() + " "+i+","+j+" pf="+matchingNGrams + " l="+ docLength);
+		}	
+		return s;
 	}
 
 }

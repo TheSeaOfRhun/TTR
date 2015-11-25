@@ -17,7 +17,7 @@
  *
  * The Original Code is CollectionStatistics.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -25,8 +25,13 @@
  */
 package org.terrier.structures;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.apache.hadoop.io.Writable;
 
 /**
  * This class provides basic statistics for the indexed
@@ -39,7 +44,7 @@ import java.util.Arrays;
  *
  * @author Gianni Amati, Vassilis Plachouras, Craig Macdonald
  */
-public class CollectionStatistics implements Serializable {
+public class CollectionStatistics implements Serializable,Writable {
 	private static final long serialVersionUID = 1L;
 	/** Number of fields used to index */
 	protected int numberOfFields;
@@ -90,6 +95,8 @@ public class CollectionStatistics implements Serializable {
 		relcaluateAverageLengths();
 	}
 	
+	public CollectionStatistics(){}
+	
 	protected void relcaluateAverageLengths()
 	{
 		if (numberOfDocuments != 0)
@@ -103,6 +110,16 @@ public class CollectionStatistics implements Serializable {
 			averageDocumentLength = 0.0D;
 			Arrays.fill(avgFieldLengths, 0.0d);
 		}
+	}
+	
+	/** Returns a concrete representation of an index's statistics */
+	public String toString()
+	{
+		return 
+			"Number of documents: " + getNumberOfDocuments() + "\n" + 
+			"Number of terms: " + getNumberOfUniqueTerms() + "\n"  + 
+			"Number of fields: " + getNumberOfFields() + "\n" + 
+			"Number of tokens: " + getNumberOfTokens() + "\n";		
 	}
 	
 	/**
@@ -171,6 +188,35 @@ public class CollectionStatistics implements Serializable {
 			fieldTokens[fi] += otherFieldTokens[fi];
 		
 		relcaluateAverageLengths();
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		numberOfDocuments = in.readInt();
+		numberOfUniqueTerms = in.readInt();
+		numberOfTokens = in.readLong();
+		numberOfPointers = in.readLong();
+		numberOfFields = in.readInt();
+		fieldTokens = new long[numberOfFields];
+		avgFieldLengths = new double[numberOfFields];
+		for(int fi=0;fi<numberOfFields;fi++)
+		{
+			fieldTokens[fi] = in.readLong();
+		}
+		relcaluateAverageLengths();
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(numberOfDocuments);
+		out.writeInt(numberOfUniqueTerms);
+		out.writeLong(numberOfTokens);
+		out.writeLong(numberOfPointers);
+		out.writeInt(numberOfFields);
+		for(int fi=0;fi<numberOfFields;fi++)
+		{
+			out.writeLong(fieldTokens[fi]);
+		}
 	}
 
 }

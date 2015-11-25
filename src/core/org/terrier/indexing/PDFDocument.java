@@ -17,36 +17,38 @@
  *
  * The Original Code is PDFDocument.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Craig Macdonald <craigm{a.}dcs.gla.ac.uk> (original author)
  */
 package org.terrier.indexing;
-import java.io.CharArrayReader;
-import java.io.CharArrayWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.pdfbox.pdfparser.PDFParser;
-import org.pdfbox.pdmodel.PDDocument;
-import org.pdfbox.util.PDFTextStripper;
+import org.apache.pdfbox.exceptions.CryptographyException;
+import org.apache.pdfbox.exceptions.InvalidPasswordException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.util.PDFTextStripper;
 import org.terrier.indexing.tokenisation.Tokeniser;
+import org.terrier.utility.Files;
 /** 
- * Implements a Document object for reading PDF documents. This object uses the
- * <a href="http://www.pdfbox.org">PDFBox.org</a> library, so you'll need
- * to ensure that PDFBox-0.6.7a.jar or greater is in your classpath when
- * compiling or using this document. For using this class, you will also
- * need the library <a href="http://logging.apache.org/log4j/">log4j</a>.
+ * Implements a Document object for reading PDF documents, using <a href="http://pdfbox.apache.org/">Apache PDFBox</a>.
  * @author Craig Macdonald
  */
 public class PDFDocument extends FileDocument
 {
+	static boolean USE_PDF_TITLE = false;
 	protected static final Logger logger = Logger.getLogger(PDFDocument.class);
-	/** 
+	/**
 	 * Constructs a new PDFDocument, which will convert the docStream
 	 * which represents the file to a Document object from which an Indexer
 	 * can retrieve a stream of terms.
@@ -93,46 +95,82 @@ public class PDFDocument extends FileDocument
 	 * through the PDFParser etc provided in the org.pdfbox library.
 	 * On error, it returns null, and sets EOD to true, so no terms 
 	 * can be read from this document.
-	 * @param docStream the input stream that represents the document's file.
+	 * @param is the input stream that represents the document's file.
 	 * @return Reader a reader that is fed to an indexer.
 	 */
-	protected Reader getReader(InputStream docStream)
+	protected Reader getReader(InputStream is)
 	{
 		
-		PDFParser parser = null; PDDocument document = null; PDFTextStripper stripper = null;
-		CharArrayWriter writer = null;
-		try{
-			parser = new PDFParser(docStream);
-			parser.parse();
-			document = parser.getPDDocument();
-			writer = new CharArrayWriter();
-			stripper = new PDFTextStripper();
-			stripper.setLineSeparator("\n");
-			stripper.writeText(document, writer);
-			document.close();
-			writer.close();
-			parser.getDocument().close();
-			return new CharArrayReader(writer.toCharArray());
-		}catch (Exception e){
-				logger.warn("WARNING: Problem converting PDF: ",e);
-			try{
-				document.close();				
-			}catch(Exception e1){
-				logger.warn("WARNING: Problem converting PDF: ",e1);
-			}
-			try{
-				writer.close();
-			}catch(Exception e2){
-				logger.warn("WARNING: Problem converting PDF: ",e2);
-			}
-			try{
-				parser.getDocument().close();
-			}catch(Exception e3){
-				logger.warn("WARNING: Problem converting PDF: ",e3);	
-			}
-			parser = null; document = null; writer = null; stripper = null;
-			EOD=true;
-			return null;
+		if ((Files.length(filename)/1048576)>300) {
+			logger.info("Skipping document "+filename+" because it's size exceeds 300Mb");
+			return new StringReader("");
 		}
+		
+		PDDocument pdfDocument = null;
+		Reader rtr = null;
+        try
+        {
+            pdfDocument = PDDocument.load( is );
+
+            if( pdfDocument.isEncrypted() )
+            {
+                //Just try using the default password and move on
+                pdfDocument.decrypt( "" );
+            }
+
+            //create a writer where to append the text content.
+            StringWriter writer = new StringWriter();
+			PDFTextStripper stripper = new PDFTextStripper();
+            stripper.writeText( pdfDocument, writer );
+
+			String contents = writer.getBuffer().toString();
+			int spaceCount = StringUtils.countMatches(contents, " ");
+			for(char badChar : new char[]{
+				'\u00A0',
+				'\u2029',
+				'#'})
+			{
+				final int count = StringUtils.countMatches(contents, ""+badChar);
+				if (count > spaceCount / 2)
+				{
+					contents = contents.replace(badChar, ' ');
+					spaceCount += count;
+				}
+			}
+			rtr = new StringReader(contents);
+		
+			PDDocumentInformation info = pdfDocument.getDocumentInformation();
+            if(info != null && USE_PDF_TITLE) 
+            {	
+				setProperty("title", info.getTitle() );
+			}
+			else
+			{
+				setProperty("title", new java.io.File(super.filename).getName() );
+			}
+		}
+		catch( CryptographyException e )
+        {
+            throw new RuntimeException( "Error decrypting PDF document: " + e );
+        }
+        catch( InvalidPasswordException e )
+        {
+            //they didn't suppply a password and the default of "" was wrong.
+            throw new RuntimeException( 
+                "Error: The PDF document is encrypted and will not be indexed." );
+        }
+		catch (Exception e) {
+			throw new RuntimeException("Error extracting PDF document",  e);	
+		}
+        finally
+        {
+            if( pdfDocument != null )
+            {
+				try{
+                	pdfDocument.close();
+				} catch (IOException ioe){}
+            }
+        }
+		return rtr;
 	}
 }

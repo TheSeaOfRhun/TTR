@@ -17,7 +17,7 @@
  *
  * The Original Code is Posting.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,7 +29,7 @@ package org.terrier.structures.indexing.singlepass;
 
 import java.io.IOException;
 
-import org.terrier.compression.MemorySBOS;
+import org.terrier.compression.bit.MemorySBOS;
 
 /**
  * Class representing a simple posting list in memory.

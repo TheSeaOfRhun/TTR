@@ -13,19 +13,22 @@
 <p>List of features and known issues that are marked for future Terrier versions:<br/>
 <h2>Future Features</h2>
 <ul>
-<li>Terrier's own Exceptions for setup, indexing, querying.</li>
-<li>Move towards more systematic updatable indices.</li>
-<li>Move towards generic index structure classes in Index: e.g. <a href="javadoc/org/terrier/structures/PostingIndex.html">PostingIndex</a> instead of <a href="javadoc/org/terrier/structures/InvertedIndex.html">InvertedIndex</a>. New code should use PostingIndex where possible.</li>
+<li>Consider the use of Maven to build and package Terrier</li>
+<li>The addition of Terrier's own Exceptions for setup, indexing, querying.</li>
 </ul> 
 <h2>Known Issues</h2>
 <ul>
+<li>CompressionFactory/CompressionConfig is not supported by single-pass or Hadoop indexing.</li>
 <li>Query language should be refined: In particular, ambiguity warnings when generating the parser with ANTLR should be removed, and a more structured query language should be introduced.</li>
+<li>The real-time index structures do not currently support block indexing</li>
 </ul>
 <h2>Deprecations, Scheduled Refactorings</h2>
 <p>The following classes and interfaces are/may be deprecated in this version of Terrier and will likely be removed or refactored in a future release:</p>
 <ul>
-<li><a href="javadoc/org/terrier/indexing/Indexer.html">Indexer</a> and <a href="javadoc/org/terrier/structures/indexing">org.terrier.structures.indexing</a> hierarchy may be refactored in a future release.</li>
+<li>BlockLexiconEntry & BlockFieldLexiconEntry will be removed in a future version of Terrier</li>
 <li><a href="javadoc/org/terrier/utility/ApplicationSetup.html">ApplicationSetup</a> will be replaced with a new non-global configuration API.</li>
+<li>The five field weighting model score() methods are being deprecated since only the two field versions are used.
+<li>Terrier currently uses Hadoop version 0.20. Future releases of Terrier will upgrade to a later branch. Instructions to upgrade Terrier yourself can be found <a href="http://ir.dcs.gla.ac.uk/wiki/Terrier/UpgradingHadoop">here</a></li> 
 </ul>
 
 <p>
@@ -40,7 +43,7 @@
 <small> Webpage: <a href="http://terrier.org">http://terrier.org</a><br>
 Contact: <a href="mailto:terrier@dcs.gla.ac.uk">terrier@dcs.gla.ac.uk</a><br>
 <a href="http://www.dcs.gla.ac.uk/">School of Computing Science</a><br>
-Copyright (C) 2004-2011 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. 
+Copyright (C) 2004-2014 <a href="http://www.gla.ac.uk/">University of Glasgow</a>. 
 All Rights Reserved. </small> 
 </body>
 </html>

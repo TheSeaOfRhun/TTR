@@ -17,7 +17,7 @@
  *
  * The Original Code is BasicShakespeareEndToEndTest.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -28,17 +28,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.terrier.structures.BitIndexPointer;
-import org.terrier.structures.BitPostingIndex;
-import org.terrier.structures.BitPostingIndexInputStream;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
+import org.terrier.structures.Pointer;
+import org.terrier.structures.PostingIndex;
+import org.terrier.structures.PostingIndexInputStream;
 import org.terrier.structures.postings.FieldPosting;
 import org.terrier.structures.postings.IterablePosting;
 
 public class BasicShakespeareEndToEndTest extends ShakespeareEndToEndTest {
 
 	String testQrels = System.getProperty("user.dir") + "/share/tests/shakespeare/test.shakespeare-merchant.all.qrels";
-		
+	
 	public BasicShakespeareEndToEndTest()
 	{
 		retrievalTopicSets.add(System.getProperty("user.dir") + "/share/tests/shakespeare/test.shakespeare-merchant.basic.topics");		
@@ -47,7 +48,7 @@ public class BasicShakespeareEndToEndTest extends ShakespeareEndToEndTest {
 	@Test public void testBasicClassical() throws Exception {
 		System.err.println(this.getClass().getName() +" : testBasicClassical");
 		doTrecTerrierIndexingRunAndEvaluate(
-				new String[]{"-i"}, 
+				new String[]{"-i", "-Dindexer.meta.reverse.keys=docno"}, 
 				new String[0], new String[0],
 				testQrels, 1.0f);
 		
@@ -57,11 +58,12 @@ public class BasicShakespeareEndToEndTest extends ShakespeareEndToEndTest {
 	@Test public void testBasicClassicalUTFTokeniser() throws Exception {
 		System.err.println(this.getClass().getName() +" : testBasicClassicalUTFTokeniser");
 		doTrecTerrierIndexingRunAndEvaluate(
-				new String[]{"-i", "-Dtokeniser=UTFTokeniser" /* "-Dtrec.collection.class=TRECUTFCollection" */}, 
+				new String[]{"-i", "-Dtokeniser=UTFTokeniser", "-Dindexer.meta.reverse.keys=docno", /* "-Dtrec.collection.class=TRECUTFCollection" */}, 
 				new String[0], new String[0],
 				testQrels, 1.0f);
 	}
 	
+	@SuppressWarnings("unchecked")
 	static class FieldBatchEndToEndTestEventChecks extends BatchEndToEndTestEventHooks
 	{
 		@Override
@@ -84,24 +86,27 @@ public class BasicShakespeareEndToEndTest extends ShakespeareEndToEndTest {
 			
 			
 			//now check correct type of all structures
-			BitPostingIndexInputStream bpiis;
+			PostingIndexInputStream bpiis;
 			IterablePosting ip;
-			BitPostingIndex bpi;
+			PostingIndex<Pointer> bpi;
 			
 			//check stream structures
-			bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("direct");
+			bpiis = (PostingIndexInputStream) index.getIndexStructureInputStream("direct");
 			ip = bpiis.next();
 			assertTrue(ip instanceof FieldPosting);
-			bpiis = (BitPostingIndexInputStream) index.getIndexStructureInputStream("inverted");
+			bpiis.close();
+			
+			bpiis = (PostingIndexInputStream) index.getIndexStructureInputStream("inverted");
 			ip = bpiis.next();
 			assertTrue(ip instanceof FieldPosting);
+			bpiis.close();
 			
 			//check random structures
-			bpi = (BitPostingIndex) index.getInvertedIndex();
-			ip = bpi.getPostings((BitIndexPointer) index.getLexicon().getLexiconEntry(0).getValue());
+			bpi = (PostingIndex<Pointer>) index.getInvertedIndex();
+			ip = bpi.getPostings(index.getLexicon().getLexiconEntry(0).getValue());
 			assertTrue(ip instanceof FieldPosting);
-			bpi = (BitPostingIndex) index.getDirectIndex();
-			ip = bpi.getPostings((BitIndexPointer) index.getDocumentIndex().getDocumentEntry(0));
+			bpi = (PostingIndex<Pointer>) index.getDirectIndex();
+			ip = bpi.getPostings(index.getDocumentIndex().getDocumentEntry(0));
 			assertTrue(ip instanceof FieldPosting);
 		}
 	}
@@ -111,13 +116,13 @@ public class BasicShakespeareEndToEndTest extends ShakespeareEndToEndTest {
 		System.err.println(this.getClass().getName() +" : testBasicClassicalFields");
 		testHooks.add(new FieldBatchEndToEndTestEventChecks());
 		doTrecTerrierIndexingRunAndEvaluate(
-				new String[]{"-i", "-DFieldTags.process=TITLE,SPEAKER"}, 
+				new String[]{"-i", "-DFieldTags.process=TITLE,SPEAKER", "-Dindexer.meta.reverse.keys=docno"}, 
 				new String[]{System.getProperty("user.dir") + "/share/tests/shakespeare/test.shakespeare-merchant.field.topics"}, new String[0],
 				testQrels, 1.0f);
 	}
 
 	@Override
-	protected void addDirectStructure(Index index) throws Exception {}
+	protected void addDirectStructure(IndexOnDisk index) throws Exception {}
 
 	
 }

@@ -17,7 +17,7 @@
  *
  * The Original Code is FileRunIterator.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -29,8 +29,8 @@ package org.terrier.structures.indexing.singlepass;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import org.terrier.compression.BitIn;
-import org.terrier.compression.BitInputStream;
+import org.terrier.compression.bit.BitIn;
+import org.terrier.compression.bit.BitInputStream;
 import org.terrier.utility.Files;
 
 /** Reads runs of flushed term posting lists by reading them from files.

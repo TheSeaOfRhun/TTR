@@ -17,7 +17,7 @@
  *
  * The Original Code is Scope.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -70,10 +70,10 @@ public class Scope implements PostFilter
 	  * @param m The manager controlling this query
 	  * @param srq The search request being processed
 	  * @param rs the resultset that is being iterated through
-	  * @param DocAtNo which array index in the resultset have we reached
+	  * @param rank the array index in the resultset have we reached
 	  * @param docid The document number of the currently being procesed result.
 	  */
-	public byte filter(Manager m, SearchRequest srq, ResultSet rs, int DocAtNo, int docid)
+	public byte filter(Manager m, SearchRequest srq, ResultSet rs, int rank, int docid)
 	{
 		if (! useScopes)
 			return FILTER_OK;
@@ -85,7 +85,7 @@ public class Scope implements PostFilter
 			{
 				return FILTER_REMOVE;
 			}
-			rs.addMetaItem("docid", DocAtNo, docno); //can we know if this is needed?
+			rs.addMetaItem("docid", rank, docno); //can we know if this is needed?
 			return FILTER_OK;
 		}catch (Exception e) {
 			return FILTER_OK;

@@ -17,7 +17,7 @@
  *
  * The Original Code is ArrayUtils.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -42,6 +42,18 @@ public class ArrayUtils {
 	/* TODO: use as an integer to reduce FP operations */
 	/** the Golden ration (&phi;). */ 
 	protected static final double GOLDEN_RATIO = 1.618;
+	
+	
+	public static int[][] invert(final int[][] input)
+	{
+		int L1 = input.length;
+		int L2 = input[0].length;
+		int[][] rtr = new int[L2][L1];
+		for(int i=0;i<L1;i++)
+			for(int j=0;j<L2;j++)
+				rtr[j][i] = input[i][j];
+		return rtr;
+	}
 	
 	/** Grow an array to ensure it is the desired length. 
  	  * @param array input array
@@ -86,6 +98,17 @@ public class ArrayUtils {
 			array = buffer;
 		}
 		return array;
+	}
+	
+	
+	public static int[] growOrCreate(int[] arr, int len) {
+		
+		return (arr == null) ? new int[len] : grow(arr, len);
+	}
+
+	public static byte[] growOrCreate(byte[] arr, int len) {
+		
+		return (arr == null) ? new byte[len] : grow(arr, len);
 	}
 	
 	/** Reverse the order of an array of doubles */

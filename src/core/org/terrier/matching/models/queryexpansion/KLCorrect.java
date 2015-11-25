@@ -17,7 +17,7 @@
  *
  * The Original Code is KLCorrect.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,7 +27,7 @@
  */
 package org.terrier.matching.models.queryexpansion;
 
-import org.terrier.matching.models.Idf;
+import static org.terrier.matching.models.WeightingModelLibrary.log;
 
 /** 
  * This class implements the correct Kullback-Leibler divergence for
@@ -72,7 +72,7 @@ public class KLCorrect extends QueryExpansionModel {
             return 0;
         double f = withinDocumentFrequency / this.totalDocumentLength;
         double p = termFrequency / this.collectionLength;
-        double D = f * Idf.log(f, p) + f * Idf.log(1 - f, 1 - p);
+        double D = f * log(f, p) + f * log(1 - f, 1 - p);
         return D;
     } 
     
@@ -96,7 +96,7 @@ public class KLCorrect extends QueryExpansionModel {
             return 0;
         double f = withinDocumentFrequency / totalDocumentLength;
         double p = termFrequency / collectionLength;
-        double D = f * Idf.log(f, p) + f * Idf.log(1 - f, 1 - p);
+        double D = f * log(f, p) + f * log(1 - f, 1 - p);
         return D;    
     }
 }

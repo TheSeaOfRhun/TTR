@@ -17,7 +17,7 @@
  *
  * The Original Code is EnglishTokeniser.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -82,7 +82,11 @@ public class EnglishTokeniser extends Tokeniser {
 
 		public EnglishTokenStream(Reader _br)
 		{
-			this.br = _br;			
+			this.br = _br;
+			if (this.br == null)
+			{
+				this.eos = true;
+			}
 		}
 		
 		@Override

@@ -17,7 +17,7 @@
  *
  * The Original Code is TagSet.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -238,9 +238,9 @@ public class TagSet {
 		whiteListSize = whiteList.size();
 
 		/*the id and doc tags do not have to be specified in the whitelist, as 
-		they are automatically added here
+		they are automatically added here*/
 		whiteList.add(idTag);
-		whiteList.add(docTag);*/
+		whiteList.add(docTag);
 	}
 	
 	/**

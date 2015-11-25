@@ -17,7 +17,7 @@
  *
  * The Original Code is EntryStatistics.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -44,4 +44,7 @@ public interface EntryStatistics extends Serializable
 	void add(EntryStatistics e);
 	/** Decrement the statistics of this object by that of another */
     void subtract(EntryStatistics e);
+    /** Get a copy of these entry statistics that can be reused.
+     * @since 3.6 */
+    EntryStatistics getWritableEntryStatistics();
 }

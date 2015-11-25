@@ -17,7 +17,7 @@
  *
  * The Original Code is PL2.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -67,39 +67,46 @@ public class PL2 extends WeightingModel {
 	 */
 	public final double score(double tf, double docLength) {
 		double TF =
-			tf * Idf.log(1.0d + (c * averageDocumentLength) / docLength);
+			tf * WeightingModelLibrary.log(1.0d + (c * averageDocumentLength) / docLength);
 		double NORM = 1.0D / (TF + 1d);
 		double f = (1.0D * termFrequency) / (1.0D * numberOfDocuments);
 		return NORM
 			* keyFrequency
-			* (TF * Idf.log(1.0D / f)
-				+ f * Idf.REC_LOG_2_OF_E
-				+ 0.5d * Idf.log(2 * Math.PI * TF)
-				+ TF * (Idf.log(TF) - Idf.REC_LOG_2_OF_E));
+			* (TF * WeightingModelLibrary.log(1.0D / f)
+				+ f * WeightingModelLibrary.LOG_2_OF_E
+				+ 0.5d * WeightingModelLibrary.log(2 * Math.PI * TF)
+				+ TF * (WeightingModelLibrary.log(TF) - WeightingModelLibrary.LOG_2_OF_E));
 	}
 	/**
-	 * Uses PL2 to compute a weight for a term in a document.
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
 	 * @param tf The term frequency in the document
 	 * @param docLength the document's length
 	 * @param n_t The document frequency of the term
 	 * @param F_t the term frequency in the collection
 	 * @param keyFrequency the term frequency in the query
-	 * @return the score assigned by the weighting model PL2.
+	 * @return the score returned by the implemented weighting model.
 	 */
+	@Deprecated
+	@Override
 	public final double score(
 		double tf,
 		double docLength,
 		double n_t,
 		double F_t,
 		double keyFrequency) {
-		double TF = tf * Idf.log(1.0d + (c * averageDocumentLength) / docLength);
+		double TF = tf * WeightingModelLibrary.log(1.0d + (c * averageDocumentLength) / docLength);
 		double NORM = 1.0D / (TF + 1d);
 		double f = F_t / numberOfDocuments;
 		return NORM
 			* keyFrequency
-			* (TF * Idf.log(1d / f)
-				+ f * Idf.REC_LOG_2_OF_E
-				+ 0.5d * Idf.log(2 * Math.PI * TF)
-				+ TF * (Idf.log(TF) - Idf.REC_LOG_2_OF_E));
+			* (TF * WeightingModelLibrary.log(1d / f)
+				+ f * WeightingModelLibrary.LOG_2_OF_E
+				+ 0.5d * WeightingModelLibrary.log(2 * Math.PI * TF)
+				+ TF * (WeightingModelLibrary.log(TF) - WeightingModelLibrary.LOG_2_OF_E));
 	}
 }

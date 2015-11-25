@@ -66,6 +66,7 @@ REM ------------------------
 call "%BIN%\lcp.bat" %CLASSPATH%
 SET LOCALCLASSPATH="%JAVA_HOME%\lib\tools.jar"
 FOR %%i IN ("%TERRIER_LIB%\jetty-ext\*.jar") DO call "%BIN%\lcp.bat" "%%i"
+FOR %%i IN ("%TERRIER_LIB%\crawler4j\*.jar") DO call "%BIN%\lcp.bat" "%%i"
 
 if [%1]==[] (
 	%TERRIER_HOME%\bin\anyclass.bat org.terrier.utility.SimpleJettyHTTPServer 8080 %TERRIER_HOME%/src/webapps/simple/

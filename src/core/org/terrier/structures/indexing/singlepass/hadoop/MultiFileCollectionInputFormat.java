@@ -17,7 +17,7 @@
  *
  * The Original Code is MultiFileCollectionInputFormat.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -119,13 +119,11 @@ public class MultiFileCollectionInputFormat extends MultiFileInputFormat<Text, S
 		final int numPaths = paths.length;
 		long[] lengths = new long[numPaths];
 		TObjectLongHashMap<String>[] locations = (TObjectLongHashMap<String>[])Array.newInstance(TObjectLongHashMap.class, numPaths);
-		long totLength = 0;
 		final FileSystem fs = FileSystem.get(job);
 		for(int i=0; i<paths.length; i++) 
 		{
 			final FileStatus fss = fs.getFileStatus(paths[i]);
 			lengths[i] = fss.getLen();
-			totLength += lengths[i];
 			final TObjectLongHashMap<String> location2size = locations[i] = new TObjectLongHashMap<String>();
 			final long normalblocksize = fss.getBlockSize();
 			for(long offset = 0; offset < lengths[i]; offset += normalblocksize)

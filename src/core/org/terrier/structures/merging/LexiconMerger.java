@@ -17,7 +17,7 @@
  *
  * The Original Code is BlockDirectIndex.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -35,6 +35,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.terrier.structures.FSOMapFileLexiconOutputStream;
 import org.terrier.structures.Index;
+import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.LexiconOutputStream;
@@ -45,16 +46,16 @@ import org.terrier.structures.seralization.FixedSizeWriteableFactory;
 
 /**
  * Merges many lexicons, termids and offsets are not kept.
- * @author vassilis
+ * @author Vassilis Plachouras
  */
 public class LexiconMerger {
 
 	/** The logger used */
 	private static Logger logger = Logger.getLogger(LexiconMerger.class);
 
-	protected Index srcIndex1;
-	protected Index srcIndex2;
-	protected Index destIndex;
+	protected IndexOnDisk srcIndex1;
+	protected IndexOnDisk srcIndex2;
+	protected IndexOnDisk destIndex;
 
 	
 	/**
@@ -64,7 +65,7 @@ public class LexiconMerger {
 	 * @param src2 Source index 2
 	 * @param dest Destination index
 	 */
-	public LexiconMerger(Index src1, Index src2, Index dest)
+	public LexiconMerger(IndexOnDisk src1, IndexOnDisk src2, IndexOnDisk dest)
 	{
 		srcIndex1 = src1;
 		srcIndex2 = src2;
@@ -192,9 +193,9 @@ public class LexiconMerger {
 		}
 		Index.setIndexLoadingProfileAsRetrieval(false);
 		
-		Index indexSrc1 = Index.createIndex(args[0], args[1]);
-		Index indexSrc2 = Index.createIndex(args[2], args[3]);
-		Index indexDest = Index.createNewIndex(args[4], args[5]);
+		IndexOnDisk indexSrc1 = Index.createIndex(args[0], args[1]);
+		IndexOnDisk indexSrc2 = Index.createIndex(args[2], args[3]);
+		IndexOnDisk indexDest = Index.createNewIndex(args[4], args[5]);
 
 		LexiconMerger lMerger = new LexiconMerger(indexSrc1, indexSrc2, indexDest);
 		long start = System.currentTimeMillis();

@@ -17,7 +17,7 @@
  *
  * The Original Code is FSADocumentIndex.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -26,13 +26,13 @@
 package org.terrier.structures;
 
 import java.io.IOException;
-import java.util.NoSuchElementException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.apache.log4j.Logger;
-
 import org.terrier.structures.collections.FSArrayFile;
 import org.terrier.structures.seralization.FixedSizeWriteableFactory;
+import org.terrier.utility.TerrierTimer;
 /** 
  * Document Index saved as a fixed size array
  */
@@ -49,13 +49,13 @@ public class FSADocumentIndex extends FSArrayFile<DocumentIndexEntry> implements
 	 * @param structureName
 	 * @throws IOException
 	 */
-	public FSADocumentIndex(Index index, String structureName) throws IOException
+	public FSADocumentIndex(IndexOnDisk index, String structureName) throws IOException
 	{
 		this(index, structureName, true);		
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected FSADocumentIndex(Index index, String structureName, boolean initialise) throws IOException
+	protected FSADocumentIndex(IndexOnDisk index, String structureName, boolean initialise) throws IOException
 	{
 		super(
 				index.getPath() + "/" + index.getPrefix() + "."+ structureName + FSArrayFile.USUAL_EXTENSION,
@@ -66,16 +66,19 @@ public class FSADocumentIndex extends FSArrayFile<DocumentIndexEntry> implements
 			initialise(index, structureName);
 	}
 	
-	protected void initialise(Index index, String structureName) throws IOException
+	protected void initialise(IndexOnDisk index, String structureName) throws IOException
 	{
-		logger.info("Loading document lengths for " + structureName + " structure into memory");
+		logger.debug("Loading document lengths for " + structureName + " structure into memory", new Exception());
 		docLengths = new int[this.size()];
 		int i=0;
 		Iterator<DocumentIndexEntry> iter = new FSADocumentIndexIterator(index, structureName);
+		TerrierTimer tt = new TerrierTimer("Loading "+structureName+ " document lengths", this.size());tt.start();
 		while(iter.hasNext())
 		{
 			docLengths[i++] = iter.next().getDocumentLength();
+			tt.increment();
 		}
+		tt.finished();
 		IndexUtil.close(iter);
 	}
 	/** 
@@ -113,7 +116,7 @@ public class FSADocumentIndex extends FSArrayFile<DocumentIndexEntry> implements
 		 * @throws IOException
 		 */
 		@SuppressWarnings("unchecked")
-		public FSADocumentIndexIterator(Index index, String structureName) throws IOException
+		public FSADocumentIndexIterator(IndexOnDisk index, String structureName) throws IOException
 		{
 			super(
 					index.getPath() + "/" + index.getPrefix() + "."+ structureName + FSArrayFile.USUAL_EXTENSION, 

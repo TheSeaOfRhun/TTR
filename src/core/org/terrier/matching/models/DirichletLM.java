@@ -17,12 +17,13 @@
  *
  * The Original Code is DirichletLM.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s): Craig Macdonald <craigm{a.}dcs.gla.ac.uk>
  */
 package org.terrier.matching.models;
+
 
 /** Bayesian smoothing with Dirichlet Prior. This has one parameter, mu &gt; 0. <i>"The optimal value of
  * mu also tends to be larger for long queries than for title queries. The optimal ... seems to vary from
@@ -39,12 +40,9 @@ package org.terrier.matching.models;
  * @since 3.0
  */
 public class DirichletLM extends WeightingModel {
+
 	private static final long serialVersionUID = 1L;
 
-	@Override
-	public String getInfo() {
-		return "DirichletLM_mu" + c;
-	}
 	/** 
 	 * Constructs an instance of DirichletLM
 	 */
@@ -55,14 +53,34 @@ public class DirichletLM extends WeightingModel {
 
 	@Override
 	public double score(double tf, double docLength) {
-		return Idf.log(1 + (tf/(c * (super.termFrequency / numberOfTokens))) ) + Idf.log(c/(docLength+c));
+		return WeightingModelLibrary.log(1 + (tf/(c * (super.termFrequency / numberOfTokens))) ) + WeightingModelLibrary.log(c/(docLength+c));
 	}
 
+	/**
+	 * This method provides the contract for implementing weighting models.
+	 * 
+	 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+	 * since it is not used. The two parameter score method should be used
+	 * instead. Tagged for removal in a later version.
+	 * 
+	 * @param tf The term frequency in the document
+	 * @param docLength the document's length
+	 * @param n_t The document frequency of the term
+	 * @param F_t the term frequency in the collection
+	 * @param keyFrequency the term frequency in the query
+	 * @return the score returned by the implemented weighting model.
+	 */
+	@Deprecated
 	@Override
 	public double score(double tf, double docLength, double n_t, double F_t,
 			double keyFrequency)
 	{
-		return Idf.log(1 + (tf/(c * (F_t / numberOfTokens))) ) + Idf.log(c/(docLength+c));
+		return WeightingModelLibrary.log(1 + (tf/(c * (F_t / numberOfTokens))) ) + WeightingModelLibrary.log(c/(docLength+c));
+	}
+
+	@Override
+	public String getInfo() {
+		return "DirichletLM";
 	}
 
 }

@@ -17,7 +17,7 @@
  *
  * The Original Code is TestQueryParser.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -33,6 +33,7 @@ import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestQueryParser {
@@ -42,6 +43,14 @@ public class TestQueryParser {
 	public TestQueryParser()
 	{
 		Logger.getRootLogger().setLevel(Level.ALL);
+	}
+	
+	@Ignore @Test public void testEmptyQuery() throws Exception
+	{
+		Query q = QueryParser.parseQuery("");
+		List<Query> terms = new ArrayList<Query>();
+		q.getTerms(terms);
+		assertEquals(0, terms.size());
 	}
 	
 	@Test public void testSingleTermQuery() throws Exception

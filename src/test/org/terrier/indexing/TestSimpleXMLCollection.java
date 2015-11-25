@@ -17,7 +17,7 @@
  *
  * The Original Code is TestSimpleXMLCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -159,6 +159,22 @@ public class TestSimpleXMLCollection extends ApplicationSetupBasedTest {
 		ApplicationSetup.setProperty("xml.doctag", "doc");
 		ApplicationSetup.setProperty("xml.terms", "doc");
 		SimpleXMLCollection c = getCollection("<?xml version=\"1.0\"?><doc>test </doc>");
+		assertTrue(c.nextDocument());
+		Document d = c.getDocument();
+		assertNotNull(d);
+		assertFalse(d.endOfDocument());
+		String t = d.getNextTerm();
+		assertEquals("test", t);
+		assertTrue(d.endOfDocument());
+		assertFalse(c.nextDocument());
+		assertTrue(c.endOfCollection());
+	}
+	
+	@Test public void testSingleTermSingleDocumentWithDocType() throws Exception
+	{
+		ApplicationSetup.setProperty("xml.doctag", "test-doctype");
+		ApplicationSetup.setProperty("xml.terms", "test-doctype");
+		SimpleXMLCollection c = getCollection("<?xml version=\"1.0\"?><!DOCTYPE test-doctype><test-doctype>test</test-doctype>");
 		assertTrue(c.nextDocument());
 		Document d = c.getDocument();
 		assertNotNull(d);
@@ -589,6 +605,40 @@ public class TestSimpleXMLCollection extends ApplicationSetupBasedTest {
 		assertFalse(!d.endOfDocument());
 		assertFalse(c.nextDocument());
 		assertTrue(c.endOfCollection());
+		assertTrue(d.endOfDocument());
+		assertFalse(c.nextDocument());
+		assertTrue(c.endOfCollection());
+	}
+	
+	@Test public void testSingleTermSingleDocumentWithDTDMetaTags() throws Exception
+	{
+		ApplicationSetup.setProperty("xml.doctag", "doc");
+		ApplicationSetup.setProperty("xml.terms", "doc");
+		ApplicationSetup.setProperty("indexer.meta.forward.keys", "meta.name");
+		ApplicationSetup.setProperty("indexer.meta.forward.keylens", "20");
+
+		//write DTD
+		File f = super.tmpfolder.newFile("mydtd.dtd");
+		if (f.exists())
+			f.delete();
+		Writer w = Files.writeFileWriter(f);
+		w.write("<!ELEMENT doc ( text ) > ");
+		w.close();
+		//write and open XML file
+		SimpleXMLCollection c = getCollection(
+				"<?xml version=\"1.0\"?>"
+				+"<!DOCTYPE document SYSTEM \""+f.toString()+"\">"
+				+"<doc><head>"
+				+"<meta name=\"keywords\" content=\"HTML,CSS,XML,JavaScript\"/>"
+				+"</head>"
+				+"test</doc>");
+		assertTrue(c.nextDocument());
+		Document d = c.getDocument();
+		assertNotNull(d);
+		assertFalse(d.endOfDocument());
+		String t = d.getNextTerm();
+		assertEquals("test", t);
+		assertTrue(d.getProperty("meta.name").equalsIgnoreCase("keywords"));
 		assertTrue(d.endOfDocument());
 		assertFalse(c.nextDocument());
 		assertTrue(c.endOfCollection());

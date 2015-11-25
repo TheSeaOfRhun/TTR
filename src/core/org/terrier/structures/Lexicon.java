@@ -17,7 +17,7 @@
  *
  * The Original Code is Lexicon.java
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,13 +27,13 @@
  */
 package org.terrier.structures;
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.Map;
-//import java.util.NoSuchElementException;
 
 /** Abstract Lexicon implementation. The Lexicon class typically represents
  * the list of terms (dictionary) in the index, together with their statistics
  * (see {@link EntryStatistics}) and the pointer ({@link Pointer}) to the 
- * offset of that term's postings in the {@link InvertedIndex}. The 
+ * offset of that term's postings in the {@link PostingIndex} returned by {@link Index#getInvertedIndex()}. The 
  * {@link EntryStatistics} and {@link Pointer} are combined in a single
  * {@link LexiconEntry} object.
  * 
@@ -80,7 +80,7 @@ public abstract class Lexicon<KEY> implements Closeable, Iterable<Map.Entry<KEY,
             return value;    
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "rawtypes" })
 		public boolean equals(Object o)
         {
             if (! (o instanceof Map.Entry))
@@ -118,4 +118,12 @@ public abstract class Lexicon<KEY> implements Closeable, Iterable<Map.Entry<KEY,
      * @return Map.Entry tuple containing the term and the LexiconEntry
      */
     public abstract Map.Entry<KEY,LexiconEntry> getIthLexiconEntry(int index);
+    
+    /** Returns an iterator over a set of LexiconEntries within a range of
+     * entries in the lexicon.
+     * @param from low endpoint term in the subset, inclusive.
+     * @param to high endpoint term in the subset, exclusive.
+     * @return Iterator over the set.
+     */
+    public abstract Iterator<Map.Entry<KEY,LexiconEntry>> getLexiconEntryRange(KEY from, KEY to);
 }

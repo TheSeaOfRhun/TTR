@@ -17,13 +17,15 @@
  *
  * The Original Code is Js_KLs.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
  *   Gianni Amati <gba{a.}fub.it> (Original author)
  */
 package org.terrier.matching.models;
+
+
 /**
  * This class implements the Js_KLs weighting model, which is the product 
  * of two measures: the Jefrreys' divergence with the Kullback Leibler's divergence.
@@ -81,15 +83,22 @@ public class Js_KLs extends WeightingModel {
 	}
 
 	
-	/**
-	 * Uses Js_KLs to compute a weight for a term in a document.
-	 * @param tf The term frequency of the term in the document
-	 * @param docLength the document's length
-	 * @param documentFrequency The document frequency of the term (ignored)
-	 * @param termFrequency the term frequency in the collection (ignored)
-	 * @param keyFrequency the term frequency in the query (ignored).
-	 * @return the score assigned by the weighting model Js_KLs.
-	 */
+		/**
+		 * This method provides the contract for implementing weighting models.
+		 * 
+		 * As of Terrier 3.6, the 5-parameter score method is being deprecated
+		 * since it is not used. The two parameter score method should be used
+		 * instead. Tagged for removal in a later version.
+		 * 
+		 * @param tf The term frequency in the document
+		 * @param docLength the document's length
+		 * @param documentFrequency The document frequency of the term
+		 * @param termFrequency the term frequency in the collection
+		 * @param keyFrequency the term frequency in the query
+		 * @return the score returned by the implemented weighting model.
+		 */
+		@Deprecated
+		@Override
 	public final double score(
 		double tf,
 		double docLength,
@@ -106,10 +115,10 @@ public class Js_KLs extends WeightingModel {
 	    double collectionPrior = termFrequency/numberOfTokens;
 	    
 	    /** The divergence measure in the document between neighbouring distributions. */
- 	    double Js =   (docLength /(docLength+1))*(1 - maximumLikelihoodEstimate) * Idf.log ((tf+1d)/tf);
+ 	    double Js =   (docLength /(docLength+1))*(1 - maximumLikelihoodEstimate) * WeightingModelLibrary.log ((tf+1d)/tf);
 	    // The information of the sample wrt  collection priors
  	    double KLs =    
- 	    	Idf.log ( smoothedProbability/collectionPrior) + tf*Idf.log (1+1d/tf);
+ 	    		WeightingModelLibrary.log ( smoothedProbability/collectionPrior) + tf*WeightingModelLibrary.log (1+1d/tf);
 	     return keyFrequency   *   tf * Js *KLs  ;
 	}
 }

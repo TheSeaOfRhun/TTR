@@ -17,7 +17,7 @@
  *
  * The Original Code is TestTRECCollection.java.
  *
- * The Original Code is Copyright (C) 2004-2011 the University of Glasgow.
+ * The Original Code is Copyright (C) 2004-2014 the University of Glasgow.
  * All Rights Reserved.
  *
  * Contributor(s):
@@ -27,6 +27,7 @@
 package org.terrier.indexing;
 
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.terrier.tests.ApplicationSetupBasedTest;
 import org.terrier.utility.ApplicationSetup;
@@ -71,6 +72,57 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("doc1", d.getProperty("docno"));
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
+	}
+	
+	@Test public void testSingleDocumentDocnoSensitivity() throws Exception
+	{
+		String dataFilename = writeTemporaryFile("test.trec", new String[]{
+				"<DOC>",
+				"<DOCNO>doc1</DOCNO>",
+				"test",
+				"</DOC>"
+			});
+		
+		ApplicationSetup.setProperty("TrecDocTags.casesensitive", "true");
+		ApplicationSetup.setProperty("TrecDocTags.idtag", "docno");
+		Collection c = openCollection(dataFilename);
+		assertFalse(c.nextDocument()); // do documents should have been parsed
+		
+		
+		ApplicationSetup.setProperty("TrecDocTags.idtag", "DOCNO");
+		c = openCollection(dataFilename);
+		assertTrue(c.nextDocument());
+		Document d = c.getDocument();
+		assertNotNull(d);
+		assertEquals("doc1", d.getProperty("docno")); // case sensitivity in tagged document is always on
+		assertEquals("doc1", d.getProperty("DOCNO"));
+		assertFalse(c.nextDocument());
+		c.close();
+	}
+	
+
+
+	
+	
+	//test a basic document
+	@Test 
+	public void testSingleDocumentSingleTermDocnoSpaces() throws Exception
+	{
+		String dataFilename = writeTemporaryFile("test.trec", new String[]{
+				"<DOC>",
+				"<DOCNO> doc1 </DOCNO>",
+				"test",
+				"</DOC>"
+			});
+		Collection c = openCollection(dataFilename);
+		assertTrue(c.nextDocument());
+		Document d = c.getDocument();
+		assertNotNull(d);
+		assertEquals("doc1", d.getProperty("docno"));
+		checkContents(d, "test");
+		assertFalse(c.nextDocument());
+		c.close();
 	}
 
 	
@@ -90,6 +142,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("doc1", d.getProperty("docno"));
 		checkContents(d, "t", "est");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	//test a single document with a process (whitelist)
@@ -110,6 +163,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("doc1", d.getProperty("docno"));
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	
@@ -132,6 +186,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("url1", d.getProperty("url"));
 		checkContents(d, "test");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	//test a single document with a property tag
@@ -168,6 +223,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("01/02/11", d.getProperty("date"));
 		checkContents(d, "test", "this", "here", "now");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	// test multiple documents, including with DOCHDRs
@@ -200,6 +256,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("doc2", d.getProperty("docno"));
 		checkContents(d, "test", "this", "here", "now");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 	
 	// test multiple documents, including multiple fields
@@ -234,6 +291,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 		assertEquals("doc2", d.getProperty("docno"));
 		checkContents(d, "not", "test", "this", "here", "now");
 		assertFalse(c.nextDocument());
+		c.close();
 	}
 
 	
@@ -274,6 +332,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 			checkContents(d, "not", "test", "this", "here", "now");
 			assertEquals("NOT", d.getProperty("TITLE"));
 			assertFalse(c.nextDocument());
+			c.close();
 		}
 		
 		// test multiple documents, including multiple fields
@@ -301,6 +360,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 			assertEquals("No 'title' More title", d.getProperty("TITLE"));
 
 			assertFalse(c.nextDocument());
+			c.close();
 		}
 		
 		
@@ -344,6 +404,7 @@ public class TestTRECCollection extends ApplicationSetupBasedTest {
 			assertEquals("NOT", d.getProperty("TITLE"));
 			assertEquals("Wazza te", d.getProperty("SUMMARY"));
 			assertFalse(c.nextDocument());
+			c.close();
 		}
 	
 }
