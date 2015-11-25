@@ -8,15 +8,15 @@ public class BXD extends WeightingModel {
     public BXD() {super();}
     public final String getInfo() {return name;}
 
-    public final double log(double n, double b){
-	return Math.log(n)/Math.log(b);
+    public final double log(double n){
+	return Math.log(n)/Math.log(2.0);
     }
 
     public final double score(double tf, double dl) {
 	double N    = numberOfDocuments;
 	double n    = documentFrequency;
-	double w;
-	w = 1.0 * 1.0 / dl;
+	double adl  = averageDocumentLength;
+	double w    = (1.0) * (1.0) / (dl);
 	return w;
     }
 

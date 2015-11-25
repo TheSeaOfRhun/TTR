@@ -8,15 +8,15 @@ public class TFD extends WeightingModel {
     public TFD() {super();}
     public final String getInfo() {return name;}
 
-    public final double log(double n, double b){
-	return Math.log(n)/Math.log(b);
+    public final double log(double n){
+	return Math.log(n)/Math.log(2.0);
     }
 
     public final double score(double tf, double dl) {
 	double N    = numberOfDocuments;
 	double n    = documentFrequency;
-	double w;
-	w = tf * log(N/n,2) / dl;
+	double adl  = averageDocumentLength;
+	double w    = (tf) * (log(N / n)) / (dl);
 	return w;
     }
 
