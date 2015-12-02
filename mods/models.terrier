@@ -21,7 +21,7 @@
 "xsqram"            :"XSqrA_M",
 "tf"                :"Tf",
 "tfidf"             :"TF_IDF",
-"TMPL"              :"TMPL",
+"tmpl"              :"TMPL",
 "TerrierTFIDF"      :"TerrierTFIDF",
 "TerrierBM25A"      :"TerrierBM25A",
 "TerrierBM25B"      :"TerrierBM25B",
