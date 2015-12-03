@@ -1,6 +1,5 @@
 {
 "bm25"              :"BM25",
-"bm25f"             :"BM25F",
 "dfic"              :"DFIC",
 "dfiz"              :"DFIZ",
 "dfr_bm25"          :"DFR_BM25",
@@ -22,7 +21,6 @@
 "mdl2"              :"MDL2",
 "ml2"               :"ML2",
 "pl2"               :"PL2",
-"pl2f"              :"PL2F",
 "tf_idf"            :"TF_IDF",
 "tf"                :"Tf",
 "xsqra_m"           :"XSqrA_M",
