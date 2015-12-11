@@ -17,7 +17,8 @@ bin/trec_terrier.sh -i
 		    -Dtermpipelines=Stop,SStemmer
 		    -DTrecDocTags.doctag=DOC
 		    -DTrecDocTags.idtag=DOCNO
-		    -DTrecDocTags.process=TEXT,H3,DOCTITLE,HEADLINE,TTL
+		    -DTrecDocTags.process=
+		    -DTrecDocTags.skip=		    
 		    -DTrecDocTags.casesensitive=false
 ```
 
