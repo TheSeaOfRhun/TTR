@@ -18,7 +18,7 @@ cd /x/TTR
 ant
 ```
 
-###### Indexing
+###### Index
 
 ```
 bin/trec_terrier.sh -i                                       \
@@ -33,7 +33,7 @@ bin/trec_terrier.sh -i                                       \
 		    -DTrecDocTags.casesensitive=false
 ```
 
-###### Retrieval
+###### Retrieve
 
 ```
 bin/trec_terrier.sh -r                                                  \
@@ -58,7 +58,7 @@ bin/trec_terrier.sh -r                                                  \
 		    -Dtrec.results.file=T7.733.s.bm25.50.T.bo1
 ```
 
-###### Locations of input and output data
+###### Locations
 
 ```
 /x
