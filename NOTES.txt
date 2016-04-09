@@ -103,15 +103,15 @@ To index a TREC corpus, execute the Bash script with the following
 options:
 
 bin/trec_terrier.sh -i
-		    -Dcollection.spec=r
-		    -Dterrier.index.path=s
-		    -Dstopwords.filename=t
-		    -Dtermpipelines=u
-		    -DTrecDocTags.doctag=v
-		    -DTrecDocTags.idtag=w
-		    -DTrecDocTags.process=x
-		    -DTrecDocTags.skip=y		       
-		    -DTrecDocTags.casesensitive=z
+		    -Dcollection.spec=[r]
+		    -Dterrier.index.path=[s]
+		    -Dstopwords.filename=[t]
+		    -Dtermpipelines=[u]
+		    -DTrecDocTags.doctag=[v]
+		    -DTrecDocTags.idtag=[w]
+		    -DTrecDocTags.process=[x]
+		    -DTrecDocTags.skip=[y]		       
+		    -DTrecDocTags.casesensitive=[z]
 
 where the configuration parameters are
 
@@ -164,23 +164,23 @@ E. RETRIEVAL
 bin/trec_terrier.sh -r
 		    -q
 		    -c i
-		    -Dterrier.index.path=j
-		    -Dtrec.topics=k
-		    -DTrecQueryTags.doctag=l
-		    -DTrecQueryTags.idtag=m
-		    -DTrecQueryTags.process=n
-		    -DTrecQueryTags.skip=o
-		    -DTrecQueryTags.casesensitive=p
-		    -Dstopwords.filename=q
-		    -Dtermpipelines=r
-		    -Dtrec.model=s
-		    -Dquerying.postprocesses.controls=t
-		    -Dquerying.postprocesses.order=u
-		    -Dtrec.qe.model=v
-		    -Dexpansion.terms=w
-		    -Dexpansion.documents=x
-		    -Dtrec.results=y
-		    -Dtrec.results.file=z
+		    -Dterrier.index.path=[j]
+		    -Dtrec.topics=[k]
+		    -DTrecQueryTags.doctag=[l]
+		    -DTrecQueryTags.idtag=[m]
+		    -DTrecQueryTags.process=[n]
+		    -DTrecQueryTags.skip=[o]
+		    -DTrecQueryTags.casesensitive=[p]
+		    -Dstopwords.filename=[q]
+		    -Dtermpipelines=[r]
+		    -Dtrec.model=[s]
+		    -Dquerying.postprocesses.controls=[t]
+		    -Dquerying.postprocesses.order=[u]
+		    -Dtrec.qe.model=[v]
+		    -Dexpansion.terms=[w]
+		    -Dexpansion.documents=[x]
+		    -Dtrec.results=[y]
+		    -Dtrec.results.file=[z]
 
 [i] - A term-frequency normalization constant. Voodoo! The table shows
       a range of values to pick for different similarity models and
