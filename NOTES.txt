@@ -1,0 +1,317 @@
+----------------------------------------------------------------------
+TABLE OF CONTENTS
+
+A. STOP WORDS
+
+B. STEMMERS
+
+C. MODELS
+
+   1. MODIFYING MODELS
+
+D. INDEXING
+
+E. RETRIEVAL
+
+F. CONFIGURATION PITFALLS
+
+G. FAQ
+
+----------------------------------------------------------------------
+A. STOP WORDS
+
+Terrier-4.0 is packaged with a file containing 733 stop-words which is
+to be found here;
+
+TTR/share/stopword-list.txt
+
+Enabling stop-word removal in Terrier-4.0 most probably makes use of
+this list.
+
+----------------------------------------------------------------------
+B. STEMMERS
+
+Here are a handful of popular stemming algorithms. There are many more
+in Terrier-4.0 mentioned on this page:
+
+http://terrier.org/docs/v4.0/javadoc/org/terrier/terms/Stemmer.html
+
+PorterStemmer
+WeakPorterStemmer
+EnglishSnowballStemmer
+SStemmer
+
+SStemmer is an implementation of the S-Stemmer algorithm described in:
+
+Harman, Donna. "How effective is suffixing?." Journal of the American
+Society for Information Science 42.1 (1991): 7.
+
+The code is a useful guide to modifying stemming algorithms in
+Terrier-4.0.
+
+TTR/src/core/org/terrier/terms/SStemmer.java
+
+----------------------------------------------------------------------
+C. MODELS
+
+A full list of models available in Terrier-4.0 is to be found in the
+package org.terrier.matching.models:
+
+http://terrier.org/docs/v4.0/javadoc/org/terrier/matching/models/package-summary.html
+
+----------------------------------------------------------------------
+1. MODIFYING MODELS
+
+TMPL.java is a no-frills version of a Java class that implements a
+retrieval model in Terrier-4.0. To implement a variation of BM25,
+calling it BM25SIMPLE, you need to do the following:
+
+a) Replace the class name 'TMPL' and constructor name 'TMPL' to
+   'BM25SIMPLE', and, rename the file to BM25SIMPLE.java.
+
+b) Initialize the constants k1 and b in the constructor.
+
+c) In the score() function, edit this line
+
+   double w = 1.0;
+
+   to read
+   
+   double w = (k1 * tf) / (k1 * (1.0 - b + b * (dl/adl)) + tf) * log(N/n);
+
+   Note that the score() function is called with respect to a query
+   term and the following parameters are available in score() in these
+   variables:
+
+   dl                    - Document length
+   tf                    - Term frequency
+   numberOfDocuments     - Number of documents in the corpus
+   documentFrequency     - Number of documents in which the term exists
+   averageDocumentLength - Average document length in the corpus
+   keyFrequency          - Frequency of the term in the query
+   
+d) Then move BM25SIMPLE.java to:
+
+   TTR/src/core/org/terrier/matching/models/
+
+e) Recompile by typing "ant" in the shell.
+
+----------------------------------------------------------------------
+D. INDEXING
+
+To index a TREC corpus, execute the Bash script with the following
+options:
+
+bin/trec_terrier.sh -i
+		    -Dcollection.spec=r
+		    -Dterrier.index.path=s
+		    -Dstopwords.filename=t
+		    -Dtermpipelines=u
+		    -DTrecDocTags.doctag=v
+		    -DTrecDocTags.idtag=w
+		    -DTrecDocTags.process=x
+		    -DTrecDocTags.skip=y		       
+		    -DTrecDocTags.casesensitive=z
+
+where the configuration parameters are
+
+[r] - A file listing the paths to each file of the corpus. Basically,
+      this file contains the output of "find -L corpus/* -type f".
+
+[s] - Path to the directory where the index will be put.
+
+[t] - A file containing the stop-words.
+
+[u] - s1,s2 (Two comma-separated strings.)
+
+      [s1] is the string 'Stopwords', to tell Terrier to do
+      	     'stop-word removal' during indexing.
+    
+      [s2] is the Java class name of the stemmer.
+
+      To switch off either of these two steps use the string 'NoOp' in
+      place of s1 and s2; 'NoOp,NoOp' means no stopping and no
+      stemming.
+
+[v] - The tag that encloses 'one' TREC document. This is not to be
+      confused with the 'files' listed in the file specified using
+      parameter [u]. Many TREC documents are kept concatenated in each
+      of the files in that list, since it is inefficient to store
+      millions of documents in as many files on disk.
+
+[w] - The tag that enclosed the unique identifier of a TREC
+      document. Ground-truth information maps queries to documents
+      using these identifier strings. Queries have unique identifiers
+      too.
+
+[x] - The mark-up tags in documents whose content is considered to be
+      part of Terrier's 'view' of a document.
+  
+      Set it to "TEXT,TITLE,HEAD,HL" to index TREC CD 1-2.
+      "TEXT,H3,DOC,TITLE,HEADLINE,TTL" to index TREC CD 4-5. To be
+      able to index all the text within all the children of the 'DOC'
+      tag, which is useful as a one-shot solution to index CD 1-5,
+      leave x and y (mentioned next) blank. See the references below
+      for sources of this information.
+
+[y] - Comma-separated list of tags to ignore.
+
+[z] - Set to 'false'
+
+----------------------------------------------------------------------
+E. RETRIEVAL
+
+bin/trec_terrier.sh -r
+		    -q
+		    -c i
+		    -Dterrier.index.path=j
+		    -Dtrec.topics=k
+		    -DTrecQueryTags.doctag=l
+		    -DTrecQueryTags.idtag=m
+		    -DTrecQueryTags.process=n
+		    -DTrecQueryTags.skip=o
+		    -DTrecQueryTags.casesensitive=p
+		    -Dstopwords.filename=q
+		    -Dtermpipelines=r
+		    -Dtrec.model=s
+		    -Dquerying.postprocesses.controls=t
+		    -Dquerying.postprocesses.order=u
+		    -Dtrec.qe.model=v
+		    -Dexpansion.terms=w
+		    -Dexpansion.documents=x
+		    -Dtrec.results=y
+		    -Dtrec.results.file=z
+
+[i] - A term-frequency normalization constant. Voodoo! The table shows
+      a range of values to pick for different similarity models and
+      parts of a TREC query; Title and Description.
+
+
+         BM25     PL2  LM-dirichlet TF_IDF
+	 ----------------------------------
+      T  0.3-0.5  4-7  750-1000     0.3-0.5
+      D  0.6-0.8  1-2  1500-2000    0.6-0.8
+      	 ----------------------------------
+
+[j] - Path to the directory containing the index.
+
+[k] - The file containing the queries.
+
+[l] - The tag enclosing each query in the file containing queries.
+
+[m] - The tag containing a query's unique identifier.
+
+[n] - The tags to process. This is ugly. Terrier stipulates that you
+      specify tags in 'l' and 'm' and once and again mention them here
+      to tell the system to use its contents.
+
+[o] - The parts of the query to skip, specified by a comma-separated
+      list of the names of the tags enclosing those parts. It so
+      happens that Terrier needs to be told what to 'process' and what
+      to 'skip' simultaneously. 'process' this, this and this, does
+      not imply 'not processing' the others. Terrier's documentation
+      recommends specifying 'TOP,NUM,TITLE' for the .process tag and
+      'DESC,NARR' for the .skip tag for the situation where you only
+      want to use the 'TITLE' part of a query.
+
+[p] - false
+
+[q] - A file containing the stop-words.
+
+[r] - s1,s2 (Two comma-separated strings.) This is identical to the
+      parameter [v] used during indexing.
+
+[s] - The name of the retrieval model (the similarity algorithm).
+
+[t] - "qe:QueryExpansion" To switch on query expansion. Voodoo.
+
+[u] - "QueryExpansion" Some more voodoo.
+
+[v] - The fully qualified Java class name of the query expansion
+      algorithm. For example:
+      org.terrier.matching.models.queryexpansion.Bo1.
+
+[w] - The number of terms to add to a query to expand it.
+
+[x] - Number of top documents from the first round of search results
+      to use for computing query expansion statistics.
+
+[y] - The directory in which to place the files containing the search
+      results.
+
+[z] - The name of the files containing the ranked search result.
+
+----------------------------------------------------------------------
+F. CONFIGURATION PITFALLS
+
+1. Specifying the stop-words-file does not switch on the 'removal of
+   stopwords'. It has to be switched on by another specification (See
+   the parameters [u] and [v] in INDEXING).
+
+2. A term-frequency normalization that can be specified ([i];
+   Retrieval) doesn't tell which model it is for. What if I use BM25
+   and set i = 1000?
+
+3. From a set of items U, specifying a subset of items, A, to
+   'process' does not exclude the remaining set of items B = U - A
+   from being processed. The set of 'do not process' items, B, has to
+   be specified again. If this is so, it is not clear what happens
+   when:
+
+   A intersection B != [EMPTY SET]
+
+   or,
+
+   A union B != U?
+
+   (The parameters [n] and [o] in the Retrieval section.)
+
+4. Two models in Terrier-4.0, named BM25 and TF_IDF, can lead to
+   confusion. BM25 can be traced to two unconventional variations
+   (which I label A and B) in the source code (BM25.java). A does not
+   use the constant K1 in the numerator at all, and, B multiplies 'tf'
+   in the denominator by a factor '2.0'. Both these cannot be traced
+   to any other source. I could assume it is a bug, or a tweak
+   introduced by Terrier's author to improve performance as is often
+   done to tune a weighting function. The 'TF_IDF' model is actually a
+   variation of the BM25 formula. It is easy to mistake 'TF_IDF' for a
+   naive 'w = TF * IDF' formulation, since there is a separate
+   implementation called 'BM25'.
+
+   BM25.java: http://kak.tx0.org/IR/TRECBOX/.files/ap.tgz
+   
+   Note that there are two polymorphic functions (one deprecated) that
+   implement A and B.
+   
+   BM25 (A)
+   k1 = 1.2
+   k3 = 8.0
+   b  = 0.75
+   w  = tf / (k1 * (1.0 - b + b * (dl / adl)) + tf) * log((N - n + 0.5) / (n + 0.5)) * (((k3 + 1.0) * tfq) / (k3 + tfq))
+       
+   BM25 (B)
+   k1 = 1.2
+   k3 = 8.0
+   b  = 0.75
+   w  = ((k1 + 1.0) * tf) / (k1 * (1.0 - b + b * (dl / adl)) + 2.0 * tf) * log((N - n + 0.5) / (n + 0.5))  * (((k3 + 1.0) * tfq) / (k3 + tfq))
+
+   TF_IDF
+   k1 = 1.2
+   b  = 0.75
+   w  = (k1 * tf) / (k1 * (1.0 - b + b * (dl / adl)) + tf) * log((N / n) + 1.0)
+
+----------------------------------------------------------------------
+G. Frequently Asked Questions
+
+Q: Why has Terrier-4.0 been used; there are newer versions?
+
+A: For lack of time, this exposition is confined to Terrier-4.0. Newer
+   versions have changed the build system to Maven and making that
+   shift might require more work. Till a major release swings by, most
+   of what I document here should remain relevant.
+
+Q: Has TTR's version number got anything to do with Terrier's version
+   number?
+
+A: No. TTR is modded off Terrier-4.0 and I have no plans to keep up
+   with Terrier.
