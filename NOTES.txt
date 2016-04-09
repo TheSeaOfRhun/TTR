@@ -184,14 +184,18 @@ bin/trec_terrier.sh -r
 
 [i] - A term-frequency normalization constant. Voodoo! The table shows
       a range of values to pick for different similarity models and
-      parts of a TREC query; Title and Description.
+      parts of a TREC query; Title (T)and Description (D).
 
+         BM25     PL2  LM-dirichlet  TF_IDF
+	 -----------------------------------
+      T  0.3-0.5  4-7  750-1000      0.3-0.5
+      D  0.6-0.8  1-2  1500-2000     0.6-0.8
+      	 -----------------------------------
 
-         BM25     PL2  LM-dirichlet TF_IDF
-	 ----------------------------------
-      T  0.3-0.5  4-7  750-1000     0.3-0.5
-      D  0.6-0.8  1-2  1500-2000    0.6-0.8
-      	 ----------------------------------
+      Scroll down to the 'Weighting Models and Parameters' section
+      where this constant is mentioned:
+      
+      http://terrier.org/docs/v4.0/configure_retrieval.html
 
 [j] - Path to the directory containing the index.
 
@@ -245,57 +249,54 @@ bin/trec_terrier.sh -r
 F. CONFIGURATION PITFALLS
 
 1. Specifying the stop-words-file does not switch on the 'removal of
-   stopwords'. It has to be switched on by another specification (See
+   stop words'. It has to be switched on by another specification (See
    the parameters [u] and [v] in INDEXING).
 
-2. A term-frequency normalization that can be specified ([i];
-   Retrieval) doesn't tell which model it is for. What if I use BM25
-   and set i = 1000?
+2. Specifying a models parameter through a single specification,
+   dubbed as 'term frequency normalization' is confusing because
+   models have more than one parameter to be set and the parameters
+   themselves can range from fractions to large integers. This kind of
+   specification does not stipulate that the user also mention the
+   model for which it is meant. (See [i] in RETRIEVAL for a table of
+   values.)
 
-3. From a set of items U, specifying a subset of items, A, to
-   'process' does not exclude the remaining set of items B = U - A
-   from being processed. The set of 'do not process' items, B, has to
-   be specified again. If this is so, it is not clear what happens
-   when:
+3. Specifying the tags to 'process' does not implicitly exclude the
+   remaining tags from being processed. The set of 'do not process'
+   items, has to be specified again as a list of things to 'skip'. It
+   is unclear what would happend if the two lists have items in
+   common, or, one of the lists is empty. (See [x], [y] in INDEXING,
+   and, [n] [o] in RETRIEVAL)
 
-   A intersection B != [EMPTY SET]
+4. Two models in Terrier-4.0, named 'BM25' and 'TF_IDF' is a source of
+   confusion. The BM25 has two unconventional variations (which I
+   label A and B) in the source code (BM25.java) which I cannot trace
+   to any IR literatur. In type A the constant 'K1' is absent from the
+   numerator, and, in type B a factor '2 * tf' is present in the
+   denominator (K = c + tf is set, and then the expression K + tf
+   shows up, which reduces to c + 2 * tf). I could assume it is a bug,
+   or a tweak to improve performance, as is often done to tune a
+   term-weighting model. Lastly, the 'TF_IDF' model is actually a
+   variation of the BM25 formula as shown:
 
-   or,
-
-   A union B != U?
-
-   (The parameters [n] and [o] in the Retrieval section.)
-
-4. Two models in Terrier-4.0, named BM25 and TF_IDF, can lead to
-   confusion. BM25 can be traced to two unconventional variations
-   (which I label A and B) in the source code (BM25.java). A does not
-   use the constant K1 in the numerator at all, and, B multiplies 'tf'
-   in the denominator by a factor '2.0'. Both these cannot be traced
-   to any other source. I could assume it is a bug, or a tweak
-   introduced by Terrier's author to improve performance as is often
-   done to tune a weighting function. The 'TF_IDF' model is actually a
-   variation of the BM25 formula. It is easy to mistake 'TF_IDF' for a
-   naive 'w = TF * IDF' formulation, since there is a separate
-   implementation called 'BM25'.
-
-   BM25.java: http://kak.tx0.org/IR/TRECBOX/.files/ap.tgz
-   
    Note that there are two polymorphic functions (one deprecated) that
-   implement A and B.
+   implement the two types of BM25; A and B.
    
    BM25 (A)
+   
    k1 = 1.2
    k3 = 8.0
    b  = 0.75
    w  = tf / (k1 * (1.0 - b + b * (dl / adl)) + tf) * log((N - n + 0.5) / (n + 0.5)) * (((k3 + 1.0) * tfq) / (k3 + tfq))
        
    BM25 (B)
+   
    k1 = 1.2
    k3 = 8.0
    b  = 0.75
    w  = ((k1 + 1.0) * tf) / (k1 * (1.0 - b + b * (dl / adl)) + 2.0 * tf) * log((N - n + 0.5) / (n + 0.5))  * (((k3 + 1.0) * tfq) / (k3 + tfq))
 
    TF_IDF
+   
    k1 = 1.2
    b  = 0.75
    w  = (k1 * tf) / (k1 * (1.0 - b + b * (dl / adl)) + tf) * log((N / n) + 1.0)
