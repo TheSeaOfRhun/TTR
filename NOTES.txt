@@ -59,6 +59,40 @@ TTR/src/core/org/terrier/terms/SStemmer.java
 ----------------------------------------------------------------------
 C. MODELS
 
+The models in LTR are to in the 'models' file. The first column are
+names TTR uses to identify the Java classes in the second
+column. Since these strings show up in the run tag, it was necessary
+to map them to shorter strings. Also, it is useful to have descriptive
+strings for cryptic names used in Terrier. The models file provides
+the facility to do that.
+
+    bm25        BM25
+    dfic        DFIC
+    dfiz        DFIZ
+    dfr_bm25    DFR_BM25
+    dfree       DFRee
+    dfreeklim   DFReeKLIM
+    dlh         DLH
+    dlh13       DLH13
+    dph         DPH
+    dirichletlm DirichletLM
+    dl          Dl
+    hiemstra_lm Hiemstra_LM
+    ifb2        IFB2
+    inb2        InB2
+    inl2        InL2
+    in_expb2    In_expB2
+    in_expc2    In_expC2
+    js_kls      Js_KLs
+    lemurtf_idf LemurTF_IDF
+    mdl2        MDL2
+    ml2         ML2
+    pl2         PL2
+    tf_idf      TF_IDF
+    tf          Tf
+    xsqra_m     XSqrA_M
+    tmpl        TMPL
+
 A full list of models available in Terrier-4.0 is to be found in the
 package org.terrier.matching.models:
 
@@ -311,10 +345,10 @@ G. Frequently Asked Questions
 
 Q: Why has Terrier-4.0 been used; there are newer versions?
 
-A: For lack of time, this exposition is confined to Terrier-4.0. Newer
-   versions have changed the build system to Maven and making that
-   shift might require more work. Till a major release swings by, most
-   of what I document here should remain relevant.
+A: This exposition is confined to Terrier-4.0. Newer versions of
+   Terrier have switched the build system to Maven and I don't have
+   time to make that shift. Untill a major Terrier release swings by,
+   most of what I document here should remain relevant.
 
 Q: Has TTR's version number got anything to do with Terrier's version
    number?
