@@ -24,3 +24,7 @@ tf_idf      TF_IDF
 tf          Tf
 xsqra_m     XSqrA_M
 tmpl        TMPL
+SMART_dtb_nnn SMART_dtb_nnn
+OKAPI_BM25    OKAPI_BM25
+TerrierBM25A  TerrierBM25A
+TerrierBM25B  TerrierBM25B
