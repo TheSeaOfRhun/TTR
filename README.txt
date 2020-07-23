@@ -15,8 +15,7 @@ experiments using TREC data. The purpose of distributing this piece of
 software is to augment Terrier with better documentation. See
 NOTES.txt.
 
-To run the commands described below you will need the sample TREC data
-from: http://kak.tx0.org/IR/
+To run the commands described below you will need the sample TREC data: http://sauparna.sdf.org/Search/.files/ap.tgz
 
 ----------------------------------------------------------------------
 COMPILING
