@@ -1,4 +1,4 @@
-TTR
+Terrier Mod
 
 Sauparna Palchowdhury
 sauparna.palc [at] gmail [dot] com
