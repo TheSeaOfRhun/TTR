@@ -1,7 +1,7 @@
 TTR
 
-Rup Palchowdhury
-rup.palchowdhury [at] gmail [dot] com
+Sauparna Palchowdhury
+sauparna.palc [at] gmail [dot] com
 
 Terrier-4.0's README has been copied over to
 README-Terrier-4.0.txt. Any rights, responsibilities and credits stem
